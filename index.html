@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>The Artisan Grill &amp; Co. • Speed-Pad POS</title>
+
+  <!-- Inter Google Font & Space Mono Font -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Space+Mono:wght@700&display=swap"
+    rel="stylesheet">
+
+  <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+  <div class="pos-app-wrapper">
+
+    <!-- 1. TOP BAR -->
+    <header class="pos-header">
+      <!-- Left: Restaurant Title in bold typography -->
+      <div class="header-left">
+        <h1 class="brand-title">THE ARTISAN GRILL &amp; CO.</h1>
+      </div>
+
+      <!-- Center: Current Token ("TOKEN #043") in double-size bold text -->
+      <div class="header-center">
+        <div class="top-token-display" id="topTokenDisplay">TOKEN #043</div>
+      </div>
+
+      <!-- Right: "🖨️ Printer Ready" status dot and single "Clear Ticket" button -->
+      <div class="header-right">
+        <button class="printer-status-pill" id="connectBtBtn"
+          title="Thermal Printer • Click to pair or configure Bluetooth printer">
+          <span class="printer-ready-dot" id="printerStatusDot"></span>
+          <span class="printer-ready-text" id="printerBtnText">🔌 Connect Printer</span>
+        </button>
+        <button class="btn-clear-ticket" id="clearCartBtn" title="Clear current ticket (Esc)">
+          Clear Ticket
+        </button>
+      </div>
+    </header>
+
+    <!-- MAIN WORKSPACE: 65% / 35% SPLIT -->
+    <main class="pos-workspace">
+
+      <!-- 1. FIXED SPEED-DIAL GRID (65% Width, NO SCROLL, NO TABS) -->
+      <section class="speed-pad-panel">
+        <div class="speed-dial-grid" id="speedDialGrid">
+          <!-- Populated with 12 fixed touch blocks via app.js -->
+        </div>
+      </section>
+
+      <!-- 2. TICKET PANEL (35% Width on Desktop, Responsive Drawer on Mobile) -->
+      <section class="ticket-panel" id="ticketPanel">
+
+        <!-- Mobile Toggle Bar (Visible only on screens <= 768px) -->
+        <div class="mobile-ticket-bar" id="mobileTicketBar">
+          <div class="mobile-bar-summary">
+            <span class="mobile-badge" id="mobileTicketBadge">0 ITEMS</span>
+            <span class="mobile-total" id="mobileTotalDisplay">Rs. 0</span>
+          </div>
+          <button class="mobile-toggle-btn" id="mobileToggleBtn" type="button" aria-label="Toggle ticket details">
+            <span class="toggle-text" id="mobileToggleText">VIEW TICKET</span>
+            <span class="toggle-arrow" id="mobileToggleArrow">▲</span>
+          </button>
+        </div>
+
+        <!-- Ticket Header Banner -->
+        <div class="ticket-header-banner">
+          <div class="ticket-header-info">
+            <span class="ticket-header-title">CURRENT TICKET</span>
+            <span class="ticket-token-pill" id="ticketPanelToken">TOKEN #043</span>
+          </div>
+          <div class="ticket-header-actions">
+            <span class="ticket-badge-count" id="ticketCountBadge">0 ITEMS</span>
+            <button class="mobile-drawer-close-btn" id="closeMobileDrawerBtn" type="button"
+              aria-label="Close ticket drawer">✕</button>
+          </div>
+        </div>
+
+        <!-- Customer Name Input (Directly below TOKEN #043) -->
+        <div class="ticket-customer-bar">
+          <div class="customer-input-wrapper">
+            <span class="customer-input-icon">👤</span>
+            <input 
+              type="text" 
+              id="customerNameInput" 
+              class="customer-name-input" 
+              placeholder="Customer Name (e.g. Ali) [Optional]" 
+              autocomplete="off" 
+              spellcheck="false"
+              maxlength="32"
+            />
+            <button type="button" class="customer-clear-btn" id="clearCustomerNameBtn" title="Clear customer name" style="display: none;">✕</button>
+          </div>
+        </div>
+
+        <!-- Paper-white ticket background with clean itemized list -->
+        <div class="ticket-items-scroll" id="ticketItemsContainer">
+          <div class="ticket-empty-state" id="ticketEmptyState">
+            <div class="empty-icon">🧾</div>
+            <p class="empty-title">Ticket is Empty</p>
+            <p class="empty-hint">Tap any Speed-Pad tile on the left to punch items</p>
+          </div>
+        </div>
+
+        <!-- Bottom Section:  q
+             * Massive "TOTAL: Rs. X,XXX" in heavy black text.
+             * Secondary Outline Button: "🖨️ Print Customer Bill [Space]" (Height: 44px)
+             * Primary Giant Action Button: "PRINT KOT (KITCHEN) ⚡ [Enter]" (Height: 56px, Solid Orange #F97316)
+        -->
+        <div class="ticket-bottom-section">
+          <div class="ticket-total-row">
+            <span class="total-heading">TOTAL:</span>
+            <span class="total-value" id="summaryGrandTotal">Rs. 0</span>
+          </div>
+
+          <div class="ticket-actions-group">
+            <button class="secondary-bill-btn" id="printCustomerBillBtn" type="button" disabled title="Print Customer Receipt [Space]">
+              🖨️ Print Customer Bill [Space]
+            </button>
+
+            <button class="giant-punch-btn primary-kot-btn" id="checkoutBtn" disabled title="Send KOT to Kitchen & Next Customer [Enter]">
+              PRINT KOT (KITCHEN) ⚡ [Enter]
+            </button>
+          </div>
+        </div>
+
+      </section>
+
+    </main>
+
+    <!-- Mobile Drawer Backdrop Overlay -->
+    <div class="mobile-drawer-backdrop" id="mobileDrawerBackdrop"></div>
+
+    <!-- TOAST NOTIFICATION CONTAINER -->
+    <div class="toast-container" id="toastContainer"></div>
+
+    <!-- PHYSICAL THERMAL RECEIPT (Used for print spooling and window.print) -->
+    <div class="thermal-receipt-container" id="receiptPrintContainer" style="display: none;">
+      <div class="thermal-paper mode-both" id="thermalPaper">
+
+        <!-- KITCHEN KOT SECTION (Chef Copy) -->
+        <div class="receipt-section kot-section" id="receiptKotSection">
+          <div class="receipt-double-line">================================</div>
+          <div class="kot-badge">*** KITCHEN KOT ***</div>
+          <div class="receipt-double-line">================================</div>
+          <div class="receipt-meta-grid-large">
+            <span class="kot-token-text" id="receiptKotToken">TOKEN #043</span>
+            <span class="kot-type-pill" id="receiptKotOrderType">COUNTER</span>
+          </div>
+          <div class="kot-customer-name-row" id="receiptKotCustomerName">NAME: COUNTER</div>
+          <div class="receipt-meta-grid">
+            <span id="receiptKotDate">19-OCT-2026</span>
+            <span id="receiptKotTime">08:45 PM</span>
+          </div>
+          <div class="receipt-dashed-line">--------------------------------</div>
+          <div class="kot-header-cols">
+            <span>QTY</span>
+            <span>ITEM</span>
+          </div>
+          <div class="kot-items-table" id="receiptKotItems">
+            <!-- Rendered dynamically -->
+          </div>
+          <div class="receipt-dashed-line">--------------------------------</div>
+          <div class="kot-footer-note" id="receiptKotNotes">FAST FOOD COUNTER ORDER</div>
+          <div class="receipt-double-line">================================</div>
+        </div>
+
+        <!-- 4 EMPTY LINE FEEDS + CUT GUIDE BETWEEN SLIPS -->
+        <div class="receipt-cut-guide-zone">
+          <div class="receipt-feed-space">&nbsp;</div>
+          <div class="receipt-feed-space">&nbsp;</div>
+          <div class="receipt-tear-line">- - - - - - - TEAR HERE - - - - - - -</div>
+          <div class="receipt-feed-space">&nbsp;</div>
+          <div class="receipt-feed-space">&nbsp;</div>
+        </div>
+
+        <!-- CUSTOMER RECEIPT SECTION (Customer Copy) -->
+        <div class="receipt-section customer-section" id="receiptCustomerSection">
+          <div class="receipt-double-line">================================</div>
+          <div class="receipt-header-center">
+            <div class="receipt-logo-ascii">THE ARTISAN GRILL &amp; CO.</div>
+            <div class="receipt-address">Fast-Food Counter Register</div>
+          </div>
+          <div class="receipt-dashed-line">--------------------------------</div>
+
+          <div class="receipt-meta-grid">
+            <span id="receiptCustomerToken">Token #043</span>
+            <span id="receiptCustomerOrderType">Counter Sale</span>
+          </div>
+          <div class="receipt-meta-line" id="receiptCustomerNameRow">
+            <span id="receiptCustomerName">Customer: Counter</span>
+          </div>
+          <div class="receipt-meta-grid">
+            <span id="receiptCustomerDate">19-Oct-2026</span>
+            <span id="receiptCustomerTime">08:45 PM</span>
+          </div>
+
+          <div class="receipt-dashed-line">--------------------------------</div>
+
+          <div class="receipt-items-list" id="receiptCustomerItems">
+            <!-- Rendered dynamically -->
+          </div>
+
+          <div class="receipt-dashed-line">--------------------------------</div>
+
+          <div class="receipt-totals-table">
+            <div class="rt-row rt-grand">
+              <span>TOTAL:</span>
+              <span id="receiptGrandTotal">Rs. 0</span>
+            </div>
+            <div class="rt-row">
+              <span>Payment Mode:</span>
+              <span>CASH</span>
+            </div>
+          </div>
+
+          <div class="receipt-dashed-line">--------------------------------</div>
+
+          <div class="receipt-footer-msg">
+            <div>Thank You For Dining With Us!</div>
+            <div>Please Retain Slip For Order</div>
+          </div>
+          <div class="receipt-double-line">================================</div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- PRINTER SETUP MODAL (ADMIN / ONE-TIME SETUP) -->
+    <div class="printer-modal-backdrop" id="printerModalBackdrop" style="display: none;">
+      <div class="printer-modal-card" role="dialog" aria-modal="true" aria-labelledby="printerModalTitle">
+        <div class="printer-modal-header">
+          <div class="printer-modal-title-group">
+            <span class="printer-modal-icon">🖨️</span>
+            <div>
+              <h2 class="printer-modal-title" id="printerModalTitle">Pair POS Printer (One-Time)</h2>
+              <p class="printer-modal-subtitle">YD583 & MPT-II On-Demand Architecture. Sleep/standby handled gracefully without loops.</p>
+            </div>
+          </div>
+          <button type="button" class="printer-modal-close" id="closePrinterModalBtn" aria-label="Close setup modal">✕</button>
+        </div>
+
+        <div class="printer-modal-body">
+          <!-- Connection Status Card -->
+          <div class="printer-status-box" id="modalPrinterStatusBox">
+            <div class="ps-indicator-row">
+              <span class="ps-dot" id="modalStatusDot"></span>
+              <span class="ps-status-text" id="modalStatusText">Checking connection...</span>
+            </div>
+            <div class="ps-device-name" id="modalDeviceName">No printer paired</div>
+            <div class="ps-device-id" id="modalDeviceId"></div>
+          </div>
+
+          <!-- Feature Highlights / Admin Guidance -->
+          <div class="printer-guide-box">
+            <div class="guide-item">
+              <span class="guide-badge">ON-DEMAND</span>
+              <span><strong>YD583 Standby Architecture</strong>: Connects on-demand and sleeps gracefully to save battery.</span>
+            </div>
+            <div class="guide-item">
+              <span class="guide-badge">BUFFER-SAFE</span>
+              <span><strong>Zero Buffer Overflow</strong>: 100-byte slices with 20ms delays prevent print stutter.</span>
+            </div>
+          </div>
+
+          <!-- Action Buttons -->
+          <div class="printer-modal-actions">
+            <button type="button" class="btn-primary-pair" id="pairNewPrinterBtn">
+              🔍 Pair YD583 / POS Printer
+            </button>
+            <button type="button" class="btn-test-print" id="modalTestPrintBtn">
+              🖨️ Print Test Slip
+            </button>
+            <button type="button" class="btn-forget-printer" id="forgetPrinterBtn" style="display: none;">
+              Forget Printer
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <script src="app.js"></script>
+</body>
+
+</html>
