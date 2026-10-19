@@ -142,7 +142,8 @@ const state = {
   cart: [], // Array of { id, name, price, qty }
   tokenNumber: 43, // Starts at TOKEN #043
   customerName: '', // Streamlined customer name for active ticket
-  printerConnected: true,
+  printerConnected: false,
+  printerStatus: 'idle',
   bluetoothDevice: null,
   gattServer: null,
   writeCharacteristic: null,
@@ -1167,34 +1168,65 @@ function isBluetoothPrinterConnected() {
   );
 }
 
-function updatePrinterStatusUI() {
+function getPrinterDisplayName(customName) {
+  const name = customName || state.bluetoothDevice?.name || localStorage.getItem('pos_printer_name') || 'MPT-II';
+  if (name.toUpperCase().includes('YD583')) return 'YD583';
+  if (name.toUpperCase().includes('MPT')) return 'MPT-II';
+  return name.trim() || 'MPT-II';
+}
+
+function updatePrinterStatusUI(statusOverride, deviceNameOverride) {
   const pill = document.getElementById('connectBtBtn');
   const dot = document.getElementById('printerStatusDot');
   const text = document.getElementById('printerBtnText');
   if (!pill) return;
 
   const savedId = localStorage.getItem('pos_printer_id');
-  const isPaired = !!(savedId || state.bluetoothDevice);
-  const savedName = localStorage.getItem('pos_printer_name') || state.bluetoothDevice?.name || 'YD583';
+  const savedName = localStorage.getItem('pos_printer_name');
 
+  let currentStatus = statusOverride || state.printerStatus;
+
+  if (!statusOverride) {
+    if (isBluetoothPrinterConnected()) {
+      currentStatus = 'connected';
+    } else if (savedId) {
+      currentStatus = state.printerStatus && state.printerStatus !== 'idle' ? state.printerStatus : 'not_connected';
+    } else {
+      currentStatus = 'unpaired';
+    }
+  }
+
+  state.printerStatus = currentStatus;
   pill.classList.remove('connected', 'reconnecting', 'disconnected');
 
-  if (isPaired) {
+  const displayName = getPrinterDisplayName(deviceNameOverride || savedName);
+
+  if (currentStatus === 'checking') {
+    pill.classList.add('reconnecting');
+    if (dot) dot.className = 'printer-ready-dot reconnecting';
+    if (text) text.textContent = '🟡 Checking Printer...';
+  } else if (currentStatus === 'connected') {
     pill.classList.add('connected');
     if (dot) dot.className = 'printer-ready-dot connected';
-    // Exact requirement: "🟢 YD583 Ready"
-    const displayName = savedName.includes('YD583') ? 'YD583' : (savedName || 'YD583');
-    if (text) text.textContent = `🟢 ${displayName} Ready`;
+    if (text) text.textContent = `🟢 ${displayName} Connected`;
+  } else if (currentStatus === 'disconnected') {
+    pill.classList.add('disconnected');
+    if (dot) dot.className = 'printer-ready-dot disconnected';
+    if (text) text.textContent = '🔴 Disconnected';
+  } else if (currentStatus === 'not_connected') {
+    pill.classList.add('disconnected');
+    if (dot) dot.className = 'printer-ready-dot disconnected';
+    if (text) text.textContent = '🔴 Not Connected';
   } else {
+    // unpaired / default
     if (dot) dot.className = 'printer-ready-dot';
-    // Exact requirement: "🔌 Connect Printer"
     if (text) text.textContent = '🔌 Connect Printer';
   }
 
-  updateModalStatusUI();
+  updateModalStatusUI(currentStatus, displayName);
 }
 
-function updateModalStatusUI() {
+function updateModalStatusUI(statusOverride, labelOverride) {
   const statusDot = document.getElementById('modalStatusDot');
   const statusText = document.getElementById('modalStatusText');
   const devName = document.getElementById('modalDeviceName');
@@ -1203,22 +1235,47 @@ function updateModalStatusUI() {
   const testBtn = document.getElementById('modalTestPrintBtn');
   if (!statusText) return;
 
-  const isPaired = !!(localStorage.getItem('pos_printer_id') || state.bluetoothDevice);
   const savedId = localStorage.getItem('pos_printer_id');
-  const savedName = localStorage.getItem('pos_printer_name') || state.bluetoothDevice?.name || 'YD583';
-  const displayName = savedName.includes('YD583') ? 'YD583' : (savedName || 'YD583');
+  const savedName = localStorage.getItem('pos_printer_name');
+  const displayName = labelOverride || getPrinterDisplayName(savedName);
+  const currentStatus = statusOverride || state.printerStatus || (savedId ? 'not_connected' : 'unpaired');
 
   if (statusDot) statusDot.className = 'ps-dot';
 
-  if (isPaired) {
+  if (currentStatus === 'checking') {
+    if (statusDot) statusDot.classList.add('reconnecting');
+    statusText.textContent = '🟡 Checking Printer...';
+    statusText.style.color = '#d97706';
+    if (devName) devName.textContent = state.bluetoothDevice?.name || savedName || 'Checking paired printer...';
+    if (devId) devId.textContent = savedId ? `Device ID: ${savedId} (Verifying GATT)` : '';
+    if (forgetBtn) forgetBtn.style.display = savedId ? 'block' : 'none';
+    if (testBtn) testBtn.disabled = true;
+  } else if (currentStatus === 'connected') {
     if (statusDot) statusDot.classList.add('connected');
-    statusText.textContent = `🟢 ${displayName} Ready`;
+    statusText.textContent = `🟢 ${displayName} Connected`;
     statusText.style.color = '#15803d';
-    if (devName) devName.textContent = state.bluetoothDevice?.name || savedName || 'YD583 Mini Thermal Printer';
-    if (devId) devId.textContent = `Device ID: ${state.bluetoothDevice?.id || savedId || ''} (On-Demand Active)`;
+    if (devName) devName.textContent = state.bluetoothDevice?.name || savedName || `${displayName} Thermal Printer`;
+    if (devId) devId.textContent = `Device ID: ${state.bluetoothDevice?.id || savedId || ''} (GATT Server Connected)`;
     if (forgetBtn) forgetBtn.style.display = 'block';
     if (testBtn) testBtn.disabled = false;
+  } else if (currentStatus === 'disconnected') {
+    if (statusDot) statusDot.classList.add('disconnected');
+    statusText.textContent = '🔴 Disconnected';
+    statusText.style.color = '#dc2626';
+    if (devName) devName.textContent = state.bluetoothDevice?.name || savedName || `${displayName} (Disconnected)`;
+    if (devId) devId.textContent = savedId ? `Device ID: ${savedId} (Power Off / Standby)` : '';
+    if (forgetBtn) forgetBtn.style.display = savedId ? 'block' : 'none';
+    if (testBtn) testBtn.disabled = false;
+  } else if (currentStatus === 'not_connected') {
+    if (statusDot) statusDot.classList.add('disconnected');
+    statusText.textContent = '🔴 Not Connected';
+    statusText.style.color = '#dc2626';
+    if (devName) devName.textContent = savedName || 'Printer Not Connected';
+    if (devId) devId.textContent = savedId ? `Device ID: ${savedId} (Offline)` : '';
+    if (forgetBtn) forgetBtn.style.display = savedId ? 'block' : 'none';
+    if (testBtn) testBtn.disabled = false;
   } else {
+    // unpaired
     statusText.textContent = '⚪ No Printer Paired';
     statusText.style.color = '#64748b';
     if (devName) devName.textContent = 'Click "Pair New Printer" below to set up once';
@@ -1251,12 +1308,12 @@ function handlePrinterPillClick() {
  * Handles printer sleep / idle disconnect cleanly without any auto-retrying recursion.
  */
 function onDisconnected(event) {
-  console.log('YD583 / 58mm Bluetooth disconnected / entering power-save standby:', event);
+  console.log('Bluetooth thermal printer disconnected / standby:', event);
   state.printerConnected = false;
   state.gattServer = null;
   state.writeCharacteristic = null;
   window.writeCharacteristic = null;
-  updatePrinterStatusUI();
+  updatePrinterStatusUI('disconnected');
 }
 
 function attachGattListeners(device) {
@@ -1271,14 +1328,18 @@ async function getOrRestoreBluetoothDevice() {
   }
 
   const savedId = localStorage.getItem('pos_printer_id');
+  const savedName = localStorage.getItem('pos_printer_name');
   if (!savedId) return null;
 
   if (navigator.bluetooth && typeof navigator.bluetooth.getDevices === 'function') {
     try {
       const devices = await navigator.bluetooth.getDevices();
       let target = devices.find(d => d.id === savedId);
+      if (!target && savedName) {
+        target = devices.find(d => d.name && (d.name.includes(savedName) || savedName.includes(d.name)));
+      }
       if (!target && devices.length > 0) {
-        target = devices[0];
+        target = devices.find(d => d.name && PRINTER_NAME_PREFIXES.some(p => d.name.toUpperCase().includes(p))) || devices[0];
       }
       if (target) {
         state.bluetoothDevice = target;
@@ -1336,32 +1397,86 @@ async function resolveWriteCharacteristic(server) {
 }
 
 /**
- * Pre-fetches permitted BluetoothDevice reference on page load without eager GATT connection.
+ * 2. PROPER SILENT RECONNECT SEQUENCE ON PAGE LOAD:
+ * Check if navigator.bluetooth && navigator.bluetooth.getDevices.
+ * Find permitted device matching stored ID or name ("MPT-II" / "YD583").
+ * Call await device.gatt.connect() and retrieve Primary Service & Writable Characteristic.
+ * ONLY after GATT server successfully connects: turn UI status to "🟢 MPT-II Connected".
+ * If connection fails or no device found: cleanly set status to "🔴 Not Connected".
  */
 async function initSavedPrinterReference() {
   const savedId = localStorage.getItem('pos_printer_id');
+  const savedName = localStorage.getItem('pos_printer_name');
+
+  // If never paired, status is cleanly "🔌 Connect Printer"
   if (!savedId) {
-    updatePrinterStatusUI();
+    updatePrinterStatusUI('unpaired');
     return;
   }
 
-  if (navigator.bluetooth && typeof navigator.bluetooth.getDevices === 'function') {
-    try {
-      const devices = await navigator.bluetooth.getDevices();
-      let target = devices.find(d => d.id === savedId);
-      if (!target && devices.length > 0) {
-        target = devices[0];
-      }
-      if (target) {
-        state.bluetoothDevice = target;
-        attachGattListeners(target);
-      }
-    } catch (e) {
-      console.debug('Pre-fetching Bluetooth device on startup:', e);
-    }
+  // 1. REMOVE FAKE INITIAL STATE:
+  // On page load / initial render, do NOT blindly set status to "Connected".
+  // Default status must be: "🟡 Checking Printer...".
+  updatePrinterStatusUI('checking');
+
+  if (!navigator.bluetooth || typeof navigator.bluetooth.getDevices !== 'function') {
+    console.debug('Web Bluetooth getDevices() API not available.');
+    updatePrinterStatusUI('not_connected');
+    return;
   }
 
-  updatePrinterStatusUI();
+  try {
+    const devices = await navigator.bluetooth.getDevices();
+    let target = null;
+
+    if (savedId) {
+      target = devices.find(d => d.id === savedId);
+    }
+    if (!target && savedName) {
+      target = devices.find(d => d.name && (d.name.includes(savedName) || savedName.includes(d.name)));
+    }
+    if (!target && devices.length > 0) {
+      target = devices.find(d => d.name && PRINTER_NAME_PREFIXES.some(p => d.name.toUpperCase().includes(p))) || devices[0];
+    }
+
+    if (!target) {
+      console.log('No permitted Bluetooth printer found in getDevices().');
+      state.bluetoothDevice = null;
+      state.printerConnected = false;
+      updatePrinterStatusUI('not_connected');
+      return;
+    }
+
+    state.bluetoothDevice = target;
+    attachGattListeners(target);
+
+    // Call await device.gatt.connect()
+    console.log(`Silent reconnecting to: ${target.name || savedName || 'Thermal Printer'}...`);
+    const server = await target.gatt.connect();
+    state.gattServer = server;
+
+    // Retrieve Primary Service and Writable Characteristic
+    const writeChar = await resolveWriteCharacteristic(server);
+    if (!writeChar) {
+      throw new Error('Connected to GATT server but failed to resolve writable characteristic');
+    }
+
+    state.writeCharacteristic = writeChar;
+    window.writeCharacteristic = writeChar;
+    state.printerConnected = true;
+
+    // ONLY after GATT server successfully connects: turn UI status to "🟢 MPT-II Connected"
+    const displayName = getPrinterDisplayName(target.name || savedName);
+    updatePrinterStatusUI('connected', displayName);
+    console.log(`Silent reconnect success: ${displayName} GATT connected & active.`);
+  } catch (err) {
+    console.warn('Silent reconnect on page load failed (printer turned off or out of range):', err);
+    state.printerConnected = false;
+    state.gattServer = null;
+    state.writeCharacteristic = null;
+    window.writeCharacteristic = null;
+    updatePrinterStatusUI('not_connected');
+  }
 }
 
 const autoConnectSavedPrinter = initSavedPrinterReference;
@@ -1369,7 +1484,7 @@ const autoConnectSavedPrinter = initSavedPrinterReference;
 /**
  * 1. BLUETOOTH REQUEST FILTER:
  * Allows scanning with name prefixes ["YD583", "MPT", "POS", "RPP", "MTP"] and vendor UUIDs,
- * or acceptAllDevices: true to ensure YD583 is immediately discoverable.
+ * or acceptAllDevices: true to ensure discovery.
  */
 async function pairNewPrinter(options = {}) {
   if (!navigator.bluetooth || typeof navigator.bluetooth.requestDevice !== 'function') {
@@ -1378,7 +1493,7 @@ async function pairNewPrinter(options = {}) {
   }
 
   try {
-    showToast('🔍 Scanning for YD583 / 58mm printer...');
+    showToast('🔍 Scanning for thermal printer...');
 
     let device;
     if (options.acceptAll) {
@@ -1396,7 +1511,6 @@ async function pairNewPrinter(options = {}) {
         if (filterErr.name === 'NotFoundError') {
           throw filterErr;
         }
-        // Fallback to acceptAllDevices to ensure YD583 is immediately discoverable
         device = await navigator.bluetooth.requestDevice({
           acceptAllDevices: true,
           optionalServices: PRINTER_SERVICES
@@ -1406,10 +1520,8 @@ async function pairNewPrinter(options = {}) {
 
     if (!device) return;
 
-    // 3. PERSISTENCE:
-    // Save selected device name ("YD583") and device.id into localStorage
-    const rawName = device.name && device.name.trim() ? device.name.trim() : 'YD583';
-    const savedName = rawName.includes('YD583') ? 'YD583' : rawName;
+    const rawName = device.name && device.name.trim() ? device.name.trim() : 'MPT-II';
+    const savedName = rawName.toUpperCase().includes('YD583') ? 'YD583' : (rawName.toUpperCase().includes('MPT') ? 'MPT-II' : rawName);
 
     state.bluetoothDevice = device;
     localStorage.setItem('pos_printer_id', device.id);
@@ -1421,19 +1533,19 @@ async function pairNewPrinter(options = {}) {
     const server = await device.gatt.connect();
     state.gattServer = server;
 
-    // 2. GATT SERVICE DISCOVERY & WRITE CHARACTERISTIC:
     const writeChar = await resolveWriteCharacteristic(server);
     if (writeChar) {
       state.writeCharacteristic = writeChar;
       window.writeCharacteristic = writeChar;
       state.printerConnected = true;
       soundEngine.playPrinterFeed();
-      showToast(`✅ ${savedName} Paired & Ready!`);
+      showToast(`✅ ${savedName} Connected!`);
+      updatePrinterStatusUI('connected', savedName);
     } else {
       showToast('⚠️ Paired, but no writable characteristic found');
+      updatePrinterStatusUI('not_connected', savedName);
     }
 
-    updatePrinterStatusUI();
     closePrinterSetupModal();
   } catch (err) {
     if (err.name !== 'NotFoundError') {
@@ -1473,9 +1585,10 @@ function forgetCurrentPrinter() {
   state.writeCharacteristic = null;
   window.writeCharacteristic = null;
   state.printerConnected = false;
+  state.printerStatus = 'unpaired';
 
   // Cleanly reset UI status to "🔌 Connect Printer"
-  updatePrinterStatusUI();
+  updatePrinterStatusUI('unpaired');
   showToast('Printer forgotten. Reset to Connect Printer.');
 }
 
@@ -1534,6 +1647,7 @@ async function executeOnDemandPrint(uint8Bytes) {
     const device = await getOrRestoreBluetoothDevice();
     if (!device) {
       console.warn('Bluetooth device not found in permissions list.');
+      updatePrinterStatusUI('not_connected');
       return;
     }
 
@@ -1550,13 +1664,14 @@ async function executeOnDemandPrint(uint8Bytes) {
       // Step 3: Retrieve Primary Service and Write Characteristic
       writeChar = await resolveWriteCharacteristic(server);
       if (!writeChar) {
-        console.warn('No writable characteristic found on YD583 device');
+        console.warn('No writable characteristic found on printer device');
+        updatePrinterStatusUI('not_connected');
         return;
       }
       state.writeCharacteristic = writeChar;
       window.writeCharacteristic = writeChar;
       state.printerConnected = true;
-      updatePrinterStatusUI();
+      updatePrinterStatusUI('connected', device.name);
     }
 
     // Step 4: Write the ESC/POS byte chunks (in 100-byte slices with 20ms delays to prevent MPT-II buffer overflow)
@@ -1583,7 +1698,7 @@ async function executeOnDemandPrint(uint8Bytes) {
     state.gattServer = null;
     state.writeCharacteristic = null;
     window.writeCharacteristic = null;
-    updatePrinterStatusUI();
+    updatePrinterStatusUI('disconnected');
   }
 }
 
@@ -1780,7 +1895,7 @@ function initPOS() {
     ticketPanelToken.textContent = tokenStr;
   }
 
-  // Silent Standby initialization on App Load without eager GATT connection
+  // Genuine Silent Reconnect Sequence via Web Bluetooth getDevices() on App Load
   initSavedPrinterReference();
 }
 
