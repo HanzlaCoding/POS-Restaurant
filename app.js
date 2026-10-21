@@ -2,19 +2,29 @@
  * The Artisan Grill & Co. • Speed-Pad Touch POS (High-Throughput Cashier System)
  * Ergonomics: Fixed 4x3 Speed Pad • Zero Scroll • Zero Tabs • Muscle Memory
  * Color Coding: Red/Orange = Burgers, Yellow = Sides/Fries, Blue/Green = Drinks
+ *
+ * Web Bluetooth Instant Speed Pipeline:
+ * - window.printerChar: Global characteristic cache
+ * - Keep-Alive Heartbeat: 8-second interval null-byte (0x00)
+ * - Zero-Latency Fast Path: Direct 10ms chunked dispatch
  */
+
+// Global Bluetooth Pipeline Cache
+window.printerChar = null;
+let keepAliveTimer = null;
 
 // ============================================================================
 // 1. TOP 12 MOST-SOLD ITEMS (FIXED SPEED-DIAL COORDINATES)
 // ============================================================================
 const SPEED_ITEMS = [
-  // --- ROW 1: BURGERS (Red / Vermilion Tiles) ---
+  // --- ROW 1: BURGERS (Red / Vermilion Accent) ---
   {
     id: 'sp-01',
     code: 'B1',
     hotkey: '1',
-    name: 'Wagyu Smash Burger',
-    shortName: 'WAGYU SMASH',
+    name: 'WAGYU SMASH',
+    urduName: 'واگیو برگر',
+    englishName: 'Wagyu Smash Burger',
     category: 'burger',
     image: 'assets/images/wagyu_smash.jpg',
     price: 1490
@@ -23,8 +33,9 @@ const SPEED_ITEMS = [
     id: 'sp-02',
     code: 'B2',
     hotkey: '2',
-    name: 'Smoked Truffle Burger',
-    shortName: 'SMOKED TRUFFLE',
+    name: 'SMOKED TRUFFLE',
+    urduName: 'ٹرفل برگر',
+    englishName: 'Smoked Truffle Burger',
     category: 'burger',
     image: 'assets/images/truffle_burger.jpg',
     price: 1350
@@ -33,8 +44,9 @@ const SPEED_ITEMS = [
     id: 'sp-03',
     code: 'B3',
     hotkey: '3',
-    name: 'Crispy Jalapeno Burger',
-    shortName: 'JALAPENO BURGER',
+    name: 'CRISPY JALAPENO',
+    urduName: 'ہلاپینو برگر',
+    englishName: 'Crispy Jalapeno Burger',
     category: 'burger',
     image: 'assets/images/jalapeno_burger.jpg',
     price: 1190
@@ -43,20 +55,22 @@ const SPEED_ITEMS = [
     id: 'sp-04',
     code: 'B4',
     hotkey: '4',
-    name: 'Double Cheese Burger',
-    shortName: 'DOUBLE CHEESE',
+    name: 'DOUBLE CHEESE',
+    urduName: 'ڈبل چیز برگر',
+    englishName: 'Double Cheese Burger',
     category: 'burger',
     image: 'assets/images/double_cheese.jpg',
     price: 1090
   },
 
-  // --- ROW 2: FRIES & SIDES (Yellow / Amber Tiles) ---
+  // --- ROW 2: FRIES & SIDES (Warm Amber Accent) ---
   {
     id: 'sp-05',
     code: 'S1',
     hotkey: '5',
-    name: 'Loaded Truffle Fries',
-    shortName: 'LOADED FRIES',
+    name: 'LOADED FRIES',
+    urduName: 'لوڈڈ فرائز',
+    englishName: 'Loaded Truffle Fries',
     category: 'side',
     image: 'assets/images/loaded_fries.jpg',
     price: 690
@@ -65,8 +79,9 @@ const SPEED_ITEMS = [
     id: 'sp-06',
     code: 'S2',
     hotkey: '6',
-    name: 'Peri Peri Crispy Fries',
-    shortName: 'PERI PERI FRIES',
+    name: 'PERI PERI FRIES',
+    urduName: 'پیری پیری فرائز',
+    englishName: 'Peri Peri Crispy Fries',
     category: 'side',
     image: 'assets/images/peri_fries.jpg',
     price: 490
@@ -75,8 +90,9 @@ const SPEED_ITEMS = [
     id: 'sp-07',
     code: 'S3',
     hotkey: '7',
-    name: 'Gourmet Onion Rings',
-    shortName: 'ONION RINGS',
+    name: 'ONION RINGS',
+    urduName: 'انین رنگز',
+    englishName: 'Gourmet Onion Rings',
     category: 'side',
     image: 'assets/images/onion_rings.jpg',
     price: 550
@@ -85,20 +101,22 @@ const SPEED_ITEMS = [
     id: 'sp-08',
     code: 'S4',
     hotkey: '8',
-    name: 'Buffalo Wings (6 Pcs)',
-    shortName: 'BUFFALO WINGS',
+    name: 'BUFFALO WINGS',
+    urduName: 'بفیلو ونگز (6 عدد)',
+    englishName: 'Buffalo Wings (6 Pcs)',
     category: 'side',
     image: 'assets/images/buffalo_wings.jpg',
     price: 850
   },
 
-  // --- ROW 3: DRINKS (Blue / Cyan Tiles) ---
+  // --- ROW 3: DRINKS (Electric Cyan Accent) ---
   {
     id: 'sp-09',
     code: 'D1',
     hotkey: '9',
-    name: 'Mint Lemonade Cooler',
-    shortName: 'MINT COOLER',
+    name: 'MINT COOLER',
+    urduName: 'منٹ لیمونیڈ',
+    englishName: 'Mint Lemonade Cooler',
     category: 'drink',
     image: 'assets/images/mint_cooler.jpg',
     price: 390
@@ -107,8 +125,9 @@ const SPEED_ITEMS = [
     id: 'sp-10',
     code: 'D2',
     hotkey: '0',
-    name: 'Artisan Peach Iced Tea',
-    shortName: 'PEACH ICED TEA',
+    name: 'PEACH ICED TEA',
+    urduName: 'پیچ آئس ٹی',
+    englishName: 'Artisan Peach Iced Tea',
     category: 'drink',
     image: 'assets/images/peach_tea.jpg',
     price: 420
@@ -117,8 +136,9 @@ const SPEED_ITEMS = [
     id: 'sp-11',
     code: 'D3',
     hotkey: '-',
-    name: 'Classic Coca-Cola Can',
-    shortName: 'COCA-COLA CAN',
+    name: 'COCA-COLA CAN',
+    urduName: 'کوک کین',
+    englishName: 'Classic Coca-Cola Can',
     category: 'drink',
     image: 'assets/images/cola_can.jpg',
     price: 180
@@ -127,8 +147,9 @@ const SPEED_ITEMS = [
     id: 'sp-12',
     code: 'D4',
     hotkey: '=',
-    name: 'Caramel Thick Shake',
-    shortName: 'CARAMEL SHAKE',
+    name: 'CARAMEL SHAKE',
+    urduName: 'کیریمل شیک',
+    englishName: 'Caramel Thick Shake',
     category: 'drink',
     image: 'assets/images/caramel_shake.jpg',
     price: 650
@@ -181,7 +202,7 @@ class POSSoundEngine {
       gain.connect(this.ctx.destination);
       osc.start();
       osc.stop(this.ctx.currentTime + 0.05);
-    } catch (e) {}
+    } catch (e) { }
   }
 
   playRemoveBeep() {
@@ -197,7 +218,7 @@ class POSSoundEngine {
       gain.connect(this.ctx.destination);
       osc.start();
       osc.stop(this.ctx.currentTime + 0.08);
-    } catch (e) {}
+    } catch (e) { }
   }
 
   playPrinterFeed() {
@@ -216,7 +237,7 @@ class POSSoundEngine {
         osc.start(now + i * 0.045);
         osc.stop(now + i * 0.045 + 0.035);
       }
-    } catch (e) {}
+    } catch (e) { }
   }
 }
 
@@ -294,13 +315,13 @@ function renderSpeedGrid() {
         id="tile-${item.id}"
         role="button"
         tabindex="0"
-        title="${item.name} - ${formatPKR(item.price)}"
+        title="${item.englishName} - ${formatPKR(item.price)}"
       >
-        <!-- Top 60%: Crisp Appetizing Food Thumbnail -->
+        <!-- Top Section: Clean High-Res Food Thumbnail, Zero Text Overlay Clutter -->
         <div class="tile-image-section">
           <img 
             src="${item.image}" 
-            alt="${item.shortName}" 
+            alt="${item.name}" 
             class="tile-thumbnail" 
             loading="eager" 
             draggable="false"
@@ -309,9 +330,12 @@ function renderSpeedGrid() {
           <span class="tile-qty-badge" id="badge-${item.id}">x${qty}</span>
         </div>
 
-        <!-- Bottom 40%: Short Name in Bold Uppercase + High-Contrast Bold Price -->
+        <!-- Bottom Section: Clear, Non-Overlapping Typography -->
         <div class="tile-info-section">
-          <div class="tile-name">${item.shortName}</div>
+          <div class="tile-title-group">
+            <div class="tile-english-name">${item.name}</div>
+            <div class="tile-urdu-name">${item.urduName}</div>
+          </div>
           <div class="tile-price">${formatPKR(item.price)}</div>
         </div>
       </div>
@@ -331,58 +355,64 @@ function updateTileBadges() {
     const qty = cartEntry ? cartEntry.qty : 0;
 
     if (qty > 0) {
-      tile.classList.add('has-qty');
-      badge.textContent = `x${qty}`;
+      if (!tile.classList.contains('has-qty')) tile.classList.add('has-qty');
+      const text = `x${qty}`;
+      if (badge.textContent !== text) badge.textContent = text;
     } else {
-      tile.classList.remove('has-qty');
-      badge.textContent = '';
+      if (tile.classList.contains('has-qty')) tile.classList.remove('has-qty');
+      if (badge.textContent !== '') badge.textContent = '';
     }
   });
 }
 
-// Attach Pointer & Long-Press Handlers for High-Speed Touch
+// Optimized Ultra-Fast Touch Listeners (Zero-delay pointerdown execution)
+let isTileTouchDelegated = false;
 function attachTileTouchListeners() {
-  const tiles = document.querySelectorAll('.speed-tile');
-  tiles.forEach(tile => {
+  if (isTileTouchDelegated) return;
+  const grid = document.getElementById('speedDialGrid');
+  if (!grid) return;
+
+  // 1. Instant punch on pointerdown (eliminates 300ms touch delay)
+  grid.addEventListener('pointerdown', (e) => {
+    const tile = e.target.closest('.speed-tile');
+    if (!tile) return;
+
+    // Prevent synthetic delay & scrolling pauses
+    if (e.pointerType === 'touch' || e.pointerType === 'mouse' || e.pointerType === 'pen') {
+      e.preventDefault();
+    }
+
     const itemId = tile.dataset.id;
-    let longPressTimer = null;
-    let isLongPress = false;
+    if (!itemId) return;
 
-    function handleStart() {
-      isLongPress = false;
-      longPressTimer = setTimeout(() => {
-        isLongPress = true;
-        // Long-press removes/resets item from ticket!
-        removeItemCompletely(itemId);
-        tile.classList.remove('has-qty');
-        tile.classList.add('pulse-active');
-        setTimeout(() => tile.classList.remove('pulse-active'), 200);
-      }, 550);
+    soundEngine.playBeep();
+    addToCart(itemId);
+
+    // Instant tactile visual punch
+    tile.classList.remove('pulse-active');
+    void tile.offsetWidth;
+    tile.classList.add('pulse-active');
+    setTimeout(() => tile.classList.remove('pulse-active'), 180);
+  }, { passive: false });
+
+  // 2. Suppress synthetic duplicate click events
+  grid.addEventListener('click', (e) => {
+    if (e.target.closest('.speed-tile')) {
+      e.preventDefault();
+      e.stopPropagation();
     }
-
-    function handleEnd(e) {
-      if (longPressTimer) clearTimeout(longPressTimer);
-      if (!isLongPress) {
-        // Normal One-Touch Tap: Adds 1 or increments!
-        tile.classList.remove('pulse-active');
-        void tile.offsetWidth;
-        tile.classList.add('pulse-active');
-        setTimeout(() => tile.classList.remove('pulse-active'), 200);
-
-        soundEngine.playBeep();
-        addToCart(itemId);
-      }
-    }
-
-    function handleCancel() {
-      if (longPressTimer) clearTimeout(longPressTimer);
-    }
-
-    tile.addEventListener('pointerdown', handleStart);
-    tile.addEventListener('pointerup', handleEnd);
-    tile.addEventListener('pointerleave', handleCancel);
-    tile.addEventListener('pointercancel', handleCancel);
   });
+
+  // 3. Right-click / context menu to remove item
+  grid.addEventListener('contextmenu', (e) => {
+    const tile = e.target.closest('.speed-tile');
+    if (tile && tile.dataset.id) {
+      e.preventDefault();
+      removeItemCompletely(tile.dataset.id);
+    }
+  });
+
+  isTileTouchDelegated = true;
 }
 
 // ============================================================================
@@ -399,6 +429,8 @@ function addToCart(itemId) {
     state.cart.push({
       id: itemDef.id,
       name: itemDef.name,
+      englishName: itemDef.englishName,
+      urduName: itemDef.urduName,
       price: itemDef.price,
       qty: 1
     });
@@ -451,48 +483,115 @@ function calculateGrandTotal() {
   return state.cart.reduce((sum, item) => sum + (item.price * item.qty), 0);
 }
 
+// Delegated Touch/Pointer Stepper & Delete Handlers
+let isTicketContainerDelegated = false;
+function setupTicketContainerDelegation() {
+  if (isTicketContainerDelegated) return;
+  const container = document.getElementById('ticketItemsContainer');
+  if (!container) return;
+
+  container.addEventListener('pointerdown', (e) => {
+    const btn = e.target.closest('button');
+    if (!btn) return;
+    const action = btn.dataset.action;
+    const itemId = btn.dataset.id;
+    if (!itemId) return;
+
+    e.preventDefault();
+    if (action === 'increase') {
+      updateCartQty(itemId, 1);
+    } else if (action === 'decrease') {
+      updateCartQty(itemId, -1);
+    } else if (action === 'delete') {
+      removeItemCompletely(itemId);
+    }
+  });
+
+  isTicketContainerDelegated = true;
+}
+
+// In-place DOM update without tearing down the container on every tap
 function renderTicketItems() {
   const container = document.getElementById('ticketItemsContainer');
   const badge = document.getElementById('ticketCountBadge');
   if (!container) return;
 
   const totalQty = state.cart.reduce((sum, item) => sum + item.qty, 0);
-  if (badge) {
-    badge.textContent = `${totalQty} ITEM${totalQty === 1 ? '' : 'S'}`;
+  const badgeStr = `${totalQty} ITEM${totalQty === 1 ? '' : 'S'}`;
+  if (badge && badge.textContent !== badgeStr) {
+    badge.textContent = badgeStr;
   }
 
   if (state.cart.length === 0) {
-    container.innerHTML = `
-      <div class="ticket-empty-state" id="ticketEmptyState">
-        <div class="empty-icon">🧾</div>
-        <p class="empty-title">Ticket is Empty</p>
-        <p class="empty-sub">Tap any Speed-Pad tile on the left to punch items</p>
-      </div>
-    `;
+    if (!document.getElementById('ticketEmptyState')) {
+      container.innerHTML = `
+        <div class="ticket-empty-state" id="ticketEmptyState">
+          <div class="empty-icon">🧾</div>
+          <p class="empty-title">Ticket is Empty</p>
+          <p class="empty-sub">Tap any Speed-Pad tile on the left to punch items</p>
+        </div>
+      `;
+    }
     return;
   }
 
-  const rowsHtml = state.cart.map(item => {
-    const rowSubtotal = item.price * item.qty;
-    return `
-      <div class="ticket-item-row" data-id="${item.id}">
+  const emptyState = document.getElementById('ticketEmptyState');
+  if (emptyState) {
+    emptyState.remove();
+  }
+
+  // Remove rows no longer in cart
+  const cartIds = new Set(state.cart.map(i => i.id));
+  const currentRows = container.querySelectorAll('.ticket-item-row');
+  currentRows.forEach(row => {
+    if (!cartIds.has(row.dataset.id)) {
+      row.remove();
+    }
+  });
+
+  // In-place update existing or append new
+  state.cart.forEach(item => {
+    let row = container.querySelector(`.ticket-item-row[data-id="${item.id}"]`);
+    const subtotalStr = formatPKR(item.price * item.qty);
+
+    if (row) {
+      const valEl = row.querySelector('.touch-step-val');
+      if (valEl && valEl.textContent !== String(item.qty)) {
+        valEl.textContent = item.qty;
+      }
+      const subtotalEl = row.querySelector('.ticket-item-subtotal');
+      if (subtotalEl && subtotalEl.textContent !== subtotalStr) {
+        subtotalEl.textContent = subtotalStr;
+      }
+    } else {
+      const newRow = document.createElement('div');
+      newRow.className = 'ticket-item-row';
+      newRow.dataset.id = item.id;
+      newRow.innerHTML = `
         <div class="ticket-item-left">
-          <div class="ticket-item-name">${item.name}</div>
-          <div class="ticket-item-subtotal">${formatPKR(rowSubtotal)}</div>
+          <div class="ticket-item-title-row">
+            <span class="ticket-item-name">${item.name}</span>
+            ${item.urduName ? `<span class="ticket-item-urdu">${item.urduName}</span>` : ''}
+          </div>
+          <div class="ticket-item-pricing">
+            <span class="ticket-item-unit-price">${formatPKR(item.price)} each</span>
+            <span class="ticket-item-subtotal">${subtotalStr}</span>
+          </div>
         </div>
         <div class="ticket-item-right">
           <div class="touch-stepper">
-            <button class="touch-step-btn" onclick="updateCartQty('${item.id}', -1)" aria-label="Decrease quantity">−</button>
+            <button class="touch-step-btn" data-action="decrease" data-id="${item.id}" aria-label="Decrease quantity">−</button>
             <span class="touch-step-val">${item.qty}</span>
-            <button class="touch-step-btn" onclick="updateCartQty('${item.id}', 1)" aria-label="Increase quantity">+</button>
+            <button class="touch-step-btn" data-action="increase" data-id="${item.id}" aria-label="Increase quantity">+</button>
           </div>
-          <button class="ticket-item-del-btn" onclick="removeItemCompletely('${item.id}')" title="Remove line item">✕</button>
+          <button class="ticket-item-del-btn" data-action="delete" data-id="${item.id}" title="Remove line item">✕</button>
         </div>
-      </div>
-    `;
-  }).join('');
+      `;
+      container.appendChild(newRow);
+    }
+  });
 
-  container.innerHTML = rowsHtml;
+  setupTicketContainerDelegation();
 }
 
 function toggleMobileDrawer(open) {
@@ -555,8 +654,7 @@ function updatePOS() {
 
   const billBtn = document.getElementById('printCustomerBillBtn');
   if (billBtn) {
-    const isBillAvailable = isKotReady || state.lastOrder !== null;
-    billBtn.disabled = !isBillAvailable;
+    billBtn.style.display = 'none';
   }
 }
 
@@ -566,9 +664,9 @@ function updatePOS() {
 // - 4 EMPTY LINE FEEDS + CUT GUIDE ("- - - TEAR HERE - - -") BETWEEN SLIPS
 // ============================================================================
 const ESC = 0x1B;
-const GS  = 0x1D;
-const FS  = 0x1C;
-const LF  = 0x0A;
+const GS = 0x1D;
+const FS = 0x1C;
+const LF = 0x0A;
 
 const ESCPOS = {
   INIT: [ESC, 0x40],
@@ -621,8 +719,8 @@ function formatTwoColumns(left, right, maxCols = 32) {
   const cleanLeft = sanitizeAscii(left);
   const cleanRight = sanitizeAscii(right);
   const availableForLeft = maxCols - cleanRight.length - 1;
-  const truncatedLeft = cleanLeft.length > availableForLeft 
-    ? cleanLeft.substring(0, availableForLeft) 
+  const truncatedLeft = cleanLeft.length > availableForLeft
+    ? cleanLeft.substring(0, availableForLeft)
     : cleanLeft;
   const spacesNeeded = Math.max(1, maxCols - truncatedLeft.length - cleanRight.length);
   return truncatedLeft + ' '.repeat(spacesNeeded) + cleanRight;
@@ -771,76 +869,74 @@ function parseDateTime(timestampStr) {
   return { date: clean, time: '' };
 }
 
-// 1. Kitchen KOT ESC/POS Generator
+// 1. Kitchen KOT ESC/POS Generator (Strict Minimal Clutter-Free Payload)
 function buildKitchenKotEscPos(order) {
   const b = new EscPosBuilder();
   const dt = parseDateTime(order.timestamp);
   b.init();
 
   b.cmd(ESCPOS.ALIGN_CENTER)
-   .doubleDivider()
-   .cmd(ESCPOS.BOLD_ON)
-   .line('*** KITCHEN KOT ***')
-   .cmd(ESCPOS.BOLD_OFF)
-   .doubleDivider();
+    .doubleDivider()
+    .cmd(ESCPOS.BOLD_ON)
+    .line('*** KITCHEN KOT ***')
+    .cmd(ESCPOS.BOLD_OFF)
+    .doubleDivider();
 
   // Double-Width + Double-Height Bold Token Header
   const tokenVal = order.token || String(order.tokenNumber || '000').padStart(3, '0');
   b.cmd(ESCPOS.ALIGN_CENTER)
-   .cmd(ESCPOS.TEXT_DOUBLE_SIZE) // GS ! 0x11
-   .cmd(ESCPOS.BOLD_ON)          // ESC E 1
-   .line(`TOKEN #${sanitizeAscii(tokenVal)}`)
-   .cmd(ESCPOS.TEXT_NORMAL)      // GS ! 0x00
-   .cmd(ESCPOS.BOLD_OFF);
+    .cmd(ESCPOS.TEXT_DOUBLE_SIZE) // GS ! 0x11
+    .cmd(ESCPOS.BOLD_ON)          // ESC E 1
+    .line(`TOKEN #${sanitizeAscii(tokenVal)}`)
+    .cmd(ESCPOS.TEXT_NORMAL)      // GS ! 0x00
+    .cmd(ESCPOS.BOLD_OFF);
 
-  // Directly below Double-Height Token: Customer Name in bold text (sanitized ASCII)
+  // Directly below Double-Height Token: Customer Name in bold text
   const rawCustomerName = (order.customerName || 'Counter').trim();
   const customerNameClean = sanitizeAscii(rawCustomerName || 'Counter').toUpperCase();
   b.cmd(ESCPOS.ALIGN_CENTER)
-   .cmd(ESCPOS.TEXT_DOUBLE_HEIGHT) // Double height so it stands out clearly for chef/packing boy
-   .cmd(ESCPOS.BOLD_ON)
-   .line(`NAME: ${customerNameClean}`)
-   .cmd(ESCPOS.TEXT_NORMAL)
-   .cmd(ESCPOS.BOLD_OFF);
+    .cmd(ESCPOS.TEXT_DOUBLE_HEIGHT)
+    .cmd(ESCPOS.BOLD_ON)
+    .line(`NAME: ${customerNameClean}`)
+    .cmd(ESCPOS.TEXT_NORMAL)
+    .cmd(ESCPOS.BOLD_OFF);
 
-  const orderType = sanitizeAscii(order.orderType || 'COUNTER').toUpperCase();
   b.cmd(ESCPOS.ALIGN_LEFT);
 
+  // Date and Time only
   if (dt.time) {
-    b.line(formatTwoColumns(`MODE: ${orderType}`, dt.time));
-    b.line(formatTwoColumns(`DATE: ${dt.date}`, ''));
+    b.line(formatTwoColumns(`TIME: ${dt.time}`, `DATE: ${dt.date}`));
   } else {
-    b.line(formatTwoColumns(`MODE: ${orderType}`, order.timestamp || ''));
+    b.line(`DATE/TIME: ${sanitizeAscii(order.timestamp || '')}`);
   }
 
   b.divider()
-   .cmd(ESCPOS.BOLD_ON)
-   .line('QTY  ITEM')
-   .cmd(ESCPOS.BOLD_OFF)
-   .divider();
+    .cmd(ESCPOS.BOLD_ON)
+    .line('QTY  ITEM')
+    .cmd(ESCPOS.BOLD_OFF)
+    .divider();
 
-  // Item List with clean word wrapping (no truncation)
+  // Item List (Qty + Clean ASCII Name ONLY, zero prices, zero bloat)
   (order.items || []).forEach(it => {
-    const wrappedLines = formatKotItemWrapped(it.qty, it.name, 32);
+    // Strip Urdu script in parentheses to guarantee clean single-byte ASCII
+    const rawName = it.englishName || it.name || '';
+    const cleanItemName = sanitizeAscii(rawName.replace(/\s*\([^)]*[\u0600-\u06FF]+[^)]*\)/g, '').trim()).toUpperCase();
+    const wrappedLines = formatKotItemWrapped(it.qty, cleanItemName, 32);
     wrappedLines.forEach((l, idx) => {
       if (idx === 0) b.cmd(ESCPOS.BOLD_ON);
       b.line(l);
       if (idx === 0) b.cmd(ESCPOS.BOLD_OFF);
     });
-
-    if (it.note) {
-      b.line(`      * NOTE: ${sanitizeAscii(it.note)}`);
-    }
   });
 
   const totalItemCount = (order.items || []).reduce((sum, it) => sum + (Number(it.qty) || 1), 0);
   b.divider()
-   .line(formatTwoColumns(`TOTAL ITEMS: ${totalItemCount}`, `ORDER: ${orderType}`))
-   .doubleDivider();
+    .line(formatTwoColumns(`TOTAL ITEMS: ${totalItemCount}`, ''))
+    .doubleDivider();
 
   // TEAR GAP: 3 empty line feeds so text fully clears the physical tear bar
   b.feed(3)
-   .cut();
+    .cut();
 
   return b.getBytes();
 }
@@ -851,20 +947,20 @@ function buildCustomerReceiptEscPos(order) {
   b.init();
 
   b.cmd(ESCPOS.ALIGN_CENTER)
-   .doubleDivider()
-   .cmd(ESCPOS.BOLD_ON)
-   .line('THE ARTISAN GRILL & CO.')
-   .cmd(ESCPOS.BOLD_OFF)
-   .line('Fast-Food Counter')
-   .doubleDivider();
+    .doubleDivider()
+    .cmd(ESCPOS.BOLD_ON)
+    .line('THE ARTISAN GRILL & CO.')
+    .cmd(ESCPOS.BOLD_OFF)
+    .line('Fast-Food Counter')
+    .doubleDivider();
 
   const dt = parseDateTime(order.timestamp);
   const tokenVal = order.token || String(order.tokenNumber || '000').padStart(3, '0');
   const custName = sanitizeAscii((order.customerName || 'Counter').trim());
 
   b.cmd(ESCPOS.ALIGN_LEFT)
-   .line(formatTwoColumns(`Token #${sanitizeAscii(tokenVal)}`, '[Counter Sale]'))
-   .line(`Customer: ${custName}`);
+    .line(formatTwoColumns(`Token #${sanitizeAscii(tokenVal)}`, '[Counter Sale]'))
+    .line(`Customer: ${custName}`);
 
   if (dt.time) {
     b.line(formatTwoColumns(dt.date, dt.time));
@@ -872,10 +968,10 @@ function buildCustomerReceiptEscPos(order) {
     b.line(formatTwoColumns('Date/Time:', order.timestamp || ''));
   }
   b.divider()
-   .cmd(ESCPOS.BOLD_ON)
-   .line(formatTwoColumns('QTY  ITEM', 'PRICE'))
-   .cmd(ESCPOS.BOLD_OFF)
-   .divider();
+    .cmd(ESCPOS.BOLD_ON)
+    .line(formatTwoColumns('QTY  ITEM', 'PRICE'))
+    .cmd(ESCPOS.BOLD_OFF)
+    .divider();
 
   // Itemized List with clean multi-line word-wrapping
   (order.items || []).forEach(it => {
@@ -894,21 +990,21 @@ function buildCustomerReceiptEscPos(order) {
   const totalStr = `Rs. ${Number(grandTotal).toLocaleString('en-PK')}`;
 
   b.cmd(ESCPOS.BOLD_ON)
-   .cmd(ESCPOS.TEXT_DOUBLE_HEIGHT) // GS ! 0x01
-   .line(formatTwoColumns('TOTAL:', totalStr))
-   .cmd(ESCPOS.TEXT_NORMAL)        // GS ! 0x00
-   .cmd(ESCPOS.BOLD_OFF)
-   .line(formatTwoColumns('Payment Mode:', 'CASH'))
-   .divider();
+    .cmd(ESCPOS.TEXT_DOUBLE_HEIGHT) // GS ! 0x01
+    .line(formatTwoColumns('TOTAL:', totalStr))
+    .cmd(ESCPOS.TEXT_NORMAL)        // GS ! 0x00
+    .cmd(ESCPOS.BOLD_OFF)
+    .line(formatTwoColumns('Payment Mode:', 'CASH'))
+    .divider();
 
   b.cmd(ESCPOS.ALIGN_CENTER)
-   .line('Thank You For Dining With Us!')
-   .line('Please Retain Slip For Order')
-   .doubleDivider();
+    .line('Thank You For Dining With Us!')
+    .line('Please Retain Slip For Order')
+    .doubleDivider();
 
   // TEAR GAP: 3 empty line feeds so text fully clears the physical tear bar
   b.feed(3)
-   .cut();
+    .cut();
 
   return b.getBytes();
 }
@@ -1305,6 +1401,39 @@ function handlePrinterPillClick(e) {
 }
 
 /**
+ * Web Bluetooth Keep-Alive Heartbeat:
+ * Sends a harmless null byte (0x00) every 8 seconds via window.printerChar to prevent
+ * YD583/MPT-II peripheral firmware from timing out into standby sleep.
+ */
+function startKeepAliveHeartbeat() {
+  stopKeepAliveHeartbeat();
+  keepAliveTimer = setInterval(async () => {
+    const char = window.printerChar || state.writeCharacteristic;
+    const dev = state.bluetoothDevice;
+    if (char && dev && dev.gatt && dev.gatt.connected) {
+      try {
+        if (typeof char.writeValueWithoutResponse === 'function') {
+          await char.writeValueWithoutResponse(new Uint8Array([0x00]));
+        } else if (typeof char.writeValue === 'function') {
+          await char.writeValue(new Uint8Array([0x00]));
+        }
+      } catch (e) {
+        console.warn('[Keep-Alive] Heartbeat ping skipped/failed:', e);
+      }
+    } else {
+      stopKeepAliveHeartbeat();
+    }
+  }, 8000);
+}
+
+function stopKeepAliveHeartbeat() {
+  if (keepAliveTimer) {
+    clearInterval(keepAliveTimer);
+    keepAliveTimer = null;
+  }
+}
+
+/**
  * Clean peripheral disconnect / standby listener:
  * When the printer goes idle and drops the physical link 10 seconds later to save battery,
  * cleanly resets internal GATT handles and keeps the UI at "🖨️ YD583 Ready".
@@ -1312,10 +1441,12 @@ function handlePrinterPillClick(e) {
  */
 function onDisconnected(event) {
   console.log('Bluetooth thermal printer link closed / standby:', event);
+  stopKeepAliveHeartbeat();
   state.printerConnected = false;
   state.gattServer = null;
   state.writeCharacteristic = null;
   window.writeCharacteristic = null;
+  window.printerChar = null;
   // Step 6: Do NOT trigger an error toast if the printer disconnects 10s later to save battery
   updatePrinterStatusUI();
 }
@@ -1330,6 +1461,9 @@ function attachGattListeners(device) {
  * Graceful peripheral teardown on page unload
  */
 function teardownBluetooth() {
+  stopKeepAliveHeartbeat();
+  window.printerChar = null;
+  window.writeCharacteristic = null;
   try {
     const dev = state.bluetoothDevice;
     if (dev && dev.gatt && dev.gatt.connected) {
@@ -1401,14 +1535,15 @@ async function resolveWriteCharacteristic(server) {
         const characteristics = await service.getCharacteristics();
         for (const char of characteristics) {
           if (char.properties.write || char.properties.writeWithoutResponse) {
+            window.printerChar = char;
             state.writeCharacteristic = char;
             window.writeCharacteristic = char;
             return char;
           }
         }
-      } catch (e) {}
+      } catch (e) { }
     }
-  } catch (e) {}
+  } catch (e) { }
 
   // 2. Fallback to known PRINTER_SERVICES
   for (const serviceUuid of PRINTER_SERVICES) {
@@ -1417,12 +1552,13 @@ async function resolveWriteCharacteristic(server) {
       const characteristics = await service.getCharacteristics();
       for (const char of characteristics) {
         if (char.properties.write || char.properties.writeWithoutResponse) {
+          window.printerChar = char;
           state.writeCharacteristic = char;
           window.writeCharacteristic = char;
           return char;
         }
       }
-    } catch (e) {}
+    } catch (e) { }
   }
 
   return null;
@@ -1432,15 +1568,11 @@ let isPrintSpoolerBusy = false;
 const spoolerQueue = [];
 
 /**
- * 2. THERMER-STYLE ON-DEMAND PRINT EXECUTION:
- * Single unified async printing wrapper dispatchPrintJob(escposBytes):
- * Step 1: Show a fast, subtle indicator: "Printing...".
- * Step 2: Check if (!device || !device.gatt). If not paired, trigger navigator.bluetooth.requestDevice().
- * Step 3: If !device.gatt.connected, execute await device.gatt.connect().
- * Step 4: Obtain the Primary Service and Writable Characteristic dynamically.
- * Step 5: Slice ESC/POS byte array into 100-byte chunks and write using
- *         writeCharacteristic.writeValueWithoutResponse() or writeValueWithResponse() with a 25ms interval.
- * Step 6: Once printing finishes, cleanly return. Do NOT trigger an error toast if the printer disconnects 10 seconds later to save battery.
+ * 2. WEB BLUETOOTH INSTANT SPEED PIPELINE:
+ * - Single unified async printing wrapper dispatchPrintJob(escposBytes)
+ * - Zero-Latency Print: Check if window.printerChar exists & device connected -> Immediate write!
+ * - No service re-discovery overhead on hot prints
+ * - 100-byte slices with 10ms intervals
  */
 async function dispatchPrintJob(escposBytes) {
   if (!escposBytes || escposBytes.length === 0) return false;
@@ -1459,7 +1591,7 @@ async function dispatchPrintJob(escposBytes) {
     }
     return true;
   } catch (err) {
-    console.warn('[On-Demand Spooler] Print execution error:', err);
+    console.warn('[Bluetooth Speed Pipeline] Print execution error:', err);
     showToast('⚠️ Printer offline or sleeping. Press Print again to wake.');
     return false;
   } finally {
@@ -1473,95 +1605,108 @@ async function executeOnDemandPrintJob(escposBytes) {
   showToast('Printing...');
   updatePrinterStatusUI('printing');
 
-  // Step 2: Check if (!device || !device.gatt). If not paired, trigger navigator.bluetooth.requestDevice().
-  let device = await getOrRestoreBluetoothDevice();
+  let dev = state.bluetoothDevice;
+  let char = window.printerChar || state.writeCharacteristic;
 
-  if (!device || !device.gatt) {
-    if (!navigator.bluetooth || typeof navigator.bluetooth.requestDevice !== 'function') {
-      showToast('⚠️ Web Bluetooth is not supported in this browser.');
-      throw new Error('Web Bluetooth requestDevice not available');
-    }
+  // Zero-Latency Fast Path:
+  // If window.printerChar exists and peripheral GATT is currently connected,
+  // skip all device querying and service re-discovery!
+  const isDirectReady = !!(char && dev && dev.gatt && dev.gatt.connected);
 
-    try {
-      device = await navigator.bluetooth.requestDevice({
-        filters: PRINTER_NAME_PREFIXES.map(prefix => ({ namePrefix: prefix })),
-        optionalServices: PRINTER_SERVICES
-      });
-    } catch (filterErr) {
-      if (filterErr.name === 'NotFoundError') {
-        showToast('⚠️ Bluetooth pairing cancelled');
+  if (!isDirectReady) {
+    dev = await getOrRestoreBluetoothDevice();
+
+    if (!dev || !dev.gatt) {
+      if (!navigator.bluetooth || typeof navigator.bluetooth.requestDevice !== 'function') {
+        showToast('⚠️ Web Bluetooth is not supported in this browser.');
+        throw new Error('Web Bluetooth requestDevice not available');
+      }
+
+      try {
+        dev = await navigator.bluetooth.requestDevice({
+          filters: PRINTER_NAME_PREFIXES.map(prefix => ({ namePrefix: prefix })),
+          optionalServices: PRINTER_SERVICES
+        });
+      } catch (filterErr) {
+        if (filterErr.name === 'NotFoundError') {
+          showToast('⚠️ Bluetooth pairing cancelled');
+          return false;
+        }
+        dev = await navigator.bluetooth.requestDevice({
+          acceptAllDevices: true,
+          optionalServices: PRINTER_SERVICES
+        });
+      }
+
+      if (!dev) {
         return false;
       }
-      device = await navigator.bluetooth.requestDevice({
-        acceptAllDevices: true,
-        optionalServices: PRINTER_SERVICES
-      });
+
+      const rawName = dev.name && dev.name.trim() ? dev.name.trim() : 'YD583';
+      const savedName = rawName.toUpperCase().includes('YD583') ? 'YD583' : (rawName.toUpperCase().includes('MPT') ? 'MPT-II' : rawName);
+
+      state.bluetoothDevice = dev;
+      localStorage.setItem('pos_printer_id', dev.id);
+      localStorage.setItem('pos_printer_name', savedName);
+      attachGattListeners(dev);
     }
 
-    if (!device) {
-      return false;
+    // Connect GATT server if disconnected
+    let server = dev.gatt;
+    if (!server || !server.connected) {
+      attachGattListeners(dev);
+      console.log(`[Bluetooth Speed Pipeline] Connecting GATT to ${dev.name || 'Printer'}...`);
+      try {
+        server = await dev.gatt.connect();
+        state.gattServer = server;
+      } catch (connectErr) {
+        console.warn('[Bluetooth Speed Pipeline] Connect rejected, retrying in 300ms...', connectErr);
+        await new Promise(res => setTimeout(res, 300));
+        server = await dev.gatt.connect();
+        state.gattServer = server;
+      }
     }
 
-    const rawName = device.name && device.name.trim() ? device.name.trim() : 'YD583';
-    const savedName = rawName.toUpperCase().includes('YD583') ? 'YD583' : (rawName.toUpperCase().includes('MPT') ? 'MPT-II' : rawName);
+    // Resolve writable characteristic dynamically
+    char = await resolveWriteCharacteristic(server);
+    if (!char) {
+      throw new Error('Writable GATT characteristic not found on printer peripheral');
+    }
 
-    state.bluetoothDevice = device;
-    localStorage.setItem('pos_printer_id', device.id);
-    localStorage.setItem('pos_printer_name', savedName);
-    attachGattListeners(device);
-  }
+    window.printerChar = char;
+    window.writeCharacteristic = char;
+    state.writeCharacteristic = char;
+    state.printerConnected = true;
 
-  // Step 3: If !device.gatt.connected, execute await device.gatt.connect()
-  let server = device.gatt;
-  if (!server || !server.connected) {
-    attachGattListeners(device);
-    console.log(`[On-Demand Spooler] Connecting GATT to ${device.name || 'Printer'}...`);
-    try {
-      server = await device.gatt.connect();
-      state.gattServer = server;
-    } catch (connectErr) {
-      console.warn('[On-Demand Spooler] Initial connect failed, waiting 300ms before retry...', connectErr);
-      await new Promise(res => setTimeout(res, 300));
-      server = await device.gatt.connect();
-      state.gattServer = server;
+    // Start 8-second keep-alive heartbeat to prevent peripheral sleeping
+    startKeepAliveHeartbeat();
+  } else {
+    // Zero-latency path: ensure heartbeat is running
+    if (!keepAliveTimer) {
+      startKeepAliveHeartbeat();
     }
   }
 
-  // Step 4: Obtain the Primary Service and Writable Characteristic dynamically
-  let writeChar = state.writeCharacteristic;
-  if (!writeChar || !server.connected) {
-    writeChar = await resolveWriteCharacteristic(server);
-  }
-  if (!writeChar) {
-    throw new Error('Writable GATT characteristic not found on printer peripheral');
-  }
-
-  state.writeCharacteristic = writeChar;
-  window.writeCharacteristic = writeChar;
-  state.printerConnected = true;
-
-  // Step 5: Slice ESC/POS byte array into 100-byte chunks and write using
-  // writeCharacteristic.writeValueWithoutResponse() or writeValueWithResponse() with a 25ms interval
+  // Zero-Latency Direct Write:
+  // Write raw ESC/POS bytes immediately via writeValueWithoutResponse() in 100-byte slices with 10ms intervals
   const CHUNK_SIZE = 100;
-  const CHUNK_DELAY_MS = 25;
+  const CHUNK_DELAY_MS = 10;
 
   for (let offset = 0; offset < escposBytes.length; offset += CHUNK_SIZE) {
     const chunk = escposBytes.slice(offset, offset + CHUNK_SIZE);
-    if (typeof writeChar.writeValueWithoutResponse === 'function') {
-      await writeChar.writeValueWithoutResponse(chunk);
-    } else if (typeof writeChar.writeValueWithResponse === 'function') {
-      await writeChar.writeValueWithResponse(chunk);
+    if (typeof char.writeValueWithoutResponse === 'function') {
+      await char.writeValueWithoutResponse(chunk);
+    } else if (typeof char.writeValueWithResponse === 'function') {
+      await char.writeValueWithResponse(chunk);
     } else {
-      await writeChar.writeValue(chunk);
+      await char.writeValue(chunk);
     }
     if (offset + CHUNK_SIZE < escposBytes.length) {
       await new Promise(resolve => setTimeout(resolve, CHUNK_DELAY_MS));
     }
   }
 
-  // Step 6: Once printing finishes, cleanly return.
-  // Do NOT trigger an error toast if the printer disconnects 10 seconds later to save battery.
-  console.log('[On-Demand Spooler] Print job dispatched successfully.');
+  console.log('[Bluetooth Speed Pipeline] Print job dispatched in zero latency (10ms chunks).');
   return true;
 }
 
@@ -1614,6 +1759,23 @@ async function pairNewPrinter(options = {}) {
     localStorage.setItem('pos_printer_name', savedName);
 
     attachGattListeners(device);
+
+    // Attempt immediate connection to populate global cache and start heartbeat
+    try {
+      const server = await device.gatt.connect();
+      state.gattServer = server;
+      const char = await resolveWriteCharacteristic(server);
+      if (char) {
+        window.printerChar = char;
+        window.writeCharacteristic = char;
+        state.writeCharacteristic = char;
+        state.printerConnected = true;
+        startKeepAliveHeartbeat();
+      }
+    } catch (e) {
+      console.debug('Immediate pair connect deferred to on-demand print:', e);
+    }
+
     updatePrinterStatusUI('ready', savedName);
     showToast(`✅ ${savedName} Paired (Ready)`);
     closePrinterSetupModal();
@@ -1626,9 +1788,11 @@ async function pairNewPrinter(options = {}) {
 }
 
 /**
- * Forget printer: clears stored device and resets UI
+ * Forget printer: clears stored device, stops heartbeat, resets UI
  */
 function forgetCurrentPrinter() {
+  stopKeepAliveHeartbeat();
+
   if (state.bluetoothDevice) {
     try {
       state.bluetoothDevice.removeEventListener('gattserverdisconnected', onDisconnected);
@@ -1649,6 +1813,7 @@ function forgetCurrentPrinter() {
   state.gattServer = null;
   state.writeCharacteristic = null;
   window.writeCharacteristic = null;
+  window.printerChar = null;
   state.printerConnected = false;
   state.printerStatus = 'unpaired';
 
@@ -1660,19 +1825,18 @@ function forgetCurrentPrinter() {
 async function printModalTestSlip() {
   soundEngine.playBeep();
   try {
-    const testBytes = buildDualPrintEscPos({
+    const testBytes = buildKitchenKotEscPos({
       token: "000",
       tokenNumber: 0,
       tokenFormatted: "TOKEN #000",
       customerName: "TEST PRINT",
-      timestamp: new Date().toLocaleTimeString('en-PK'),
+      timestamp: `${new Date().toLocaleDateString('en-GB')} ${new Date().toLocaleTimeString('en-PK')}`,
       date: new Date().toLocaleDateString('en-GB'),
-      items: [{ name: "TEST PRINT SUCCESS", qty: 1, price: 0 }],
-      grandTotal: 0
+      items: [{ name: "TEST PRINT SUCCESS", englishName: "TEST PRINT SUCCESS", qty: 1, price: 0 }]
     });
     await dispatchPrintJob(testBytes);
     soundEngine.playPrinterFeed();
-    showToast('✅ Test Slip Printed!');
+    showToast('✅ Test KOT Slip Printed!');
   } catch (err) {
     showToast('⚠️ Test print failed');
   }
@@ -1778,16 +1942,18 @@ function setupEventListeners() {
     checkoutBtn.addEventListener('click', () => printKitchenKOT(null, getCustomerNameValue()));
   }
 
-  // Secondary Outline "Print Customer Bill [Space]" Button
-  const billBtn = document.getElementById('printCustomerBillBtn');
-  if (billBtn) {
-    billBtn.addEventListener('click', () => printCustomerBill(null, getCustomerNameValue()));
-  }
-
   // Mobile Ticket Drawer toggles
   const mobileBar = document.getElementById('mobileTicketBar');
   if (mobileBar) {
     mobileBar.addEventListener('click', () => toggleMobileDrawer());
+  }
+
+  const mobileTotal = document.getElementById('mobileTotalDisplay');
+  if (mobileTotal) {
+    mobileTotal.addEventListener('click', (e) => {
+      e.stopPropagation();
+      toggleMobileDrawer(true);
+    });
   }
 
   const closeDrawerBtn = document.getElementById('closeMobileDrawerBtn');
@@ -1825,20 +1991,11 @@ function setupEventListeners() {
       return;
     }
 
-    // 1. Enter key: Primary Action -> Sends KOT to kitchen & clears order!
-    if (e.key === 'Enter') {
+    // 1. Enter key or Space key: Primary Action -> Sends KOT to kitchen & clears order!
+    if (e.key === 'Enter' || e.code === 'Space' || e.key === ' ') {
       if (state.cart.length > 0) {
         e.preventDefault();
         printKitchenKOT(null, getCustomerNameValue());
-      }
-      return;
-    }
-
-    // 2. Space key: Secondary Action -> Sends Customer Bill without clearing cart
-    if (e.code === 'Space' || e.key === ' ') {
-      if (state.cart.length > 0 || state.lastOrder) {
-        e.preventDefault();
-        printCustomerBill(null, getCustomerNameValue());
       }
       return;
     }

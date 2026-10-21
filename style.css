@@ -1,49 +1,63 @@
 /* ==========================================================================
-   THE ARTISAN GRILL & CO. • SPEED-PAD TOUCH POS (HIGH-THROUGHPUT REGISTER)
-   Ergonomics: Zero Scroll • Zero Tabs • Fixed Coordinates Muscle Memory
-   Left 65%: 4x3 Massive Fixed Speed-Dial Grid
-   Right 35%: Paper-White Ticket Panel + "PRINT & NEXT (Enter)"
+   THE ARTISAN GRILL & CO. • SPEED-PAD TOUCH POS
+   Vercel / Linear-Inspired Minimalist Dark Mode Aesthetic
+   Glassmorphism • High Throughput • Zero Layout Clutter • Bilingual Typography
    ========================================================================== */
 
 :root {
-  --color-white: #ffffff;
-  --color-paper: #ffffff;
-  --color-bg-workspace: #0f172a; /* Dark sleek bezel framing for punchy speed tiles */
-  --color-gray-50: #f8fafc;
-  --color-gray-100: #f1f5f9;
-  --color-gray-200: #e2e8f0;
-  --color-gray-300: #cbd5e1;
-  --color-gray-400: #94a3b8;
-  --color-gray-500: #64748b;
-  --color-gray-700: #334155;
-  --color-gray-800: #1e293b;
-  --color-black: #0f172a;
-  --color-heavy-black: #020617;
+  /* Base Palette: Deep Midnight Dark */
+  --bg-base: #07090E;
+  --bg-surface: #0E1420;
+  --bg-surface-elevated: #131B2A;
+  --bg-surface-glass: rgba(14, 20, 32, 0.85);
+  --bg-card: rgba(17, 24, 39, 0.72);
+  --bg-card-hover: rgba(24, 34, 53, 0.88);
 
-  /* Category Color Codings for Speed Pad */
-  --color-burger-bg: #dc2626;         /* Solid Vibrant Red/Orange */
-  --color-burger-hover: #b91c1c;
-  --color-burger-active: #991b1b;
-  --color-burger-text: #ffffff;
+  /* 1px Subtle Borders */
+  --border-subtle: rgba(255, 255, 255, 0.08);
+  --border-medium: rgba(255, 255, 255, 0.14);
+  --border-focus: rgba(255, 255, 255, 0.28);
 
-  --color-sides-bg: #f59e0b;          /* Solid Vibrant Yellow/Gold */
-  --color-sides-hover: #d97706;
-  --color-sides-active: #b45309;
-  --color-sides-text: #020617;        /* Ultra High Contrast Black */
+  /* Typography Colors */
+  --text-primary: #F8FAFC;
+  --text-secondary: #94A3B8;
+  --text-muted: #64748B;
+  --text-dim: #475569;
 
-  --color-drinks-bg: #0284c7;         /* Solid Vibrant Teal/Blue-Green */
-  --color-drinks-hover: #0369a1;
-  --color-drinks-active: #075985;
-  --color-drinks-text: #ffffff;
+  /* Category Accents (Refined & Muted Tones) */
+  /* 1. Burgers: Deep Vermilion Accent */
+  --cat-burger: #F43F5E;
+  --cat-burger-rgb: 244, 63, 94;
+  --cat-burger-glow: rgba(244, 63, 94, 0.28);
+  --cat-burger-badge: rgba(244, 63, 94, 0.16);
+  --cat-burger-border: rgba(244, 63, 94, 0.42);
 
-  /* Action Accents */
-  --action-orange: #f97316;
-  --action-orange-hover: #ea580c;
-  --action-orange-active: #c2410c;
-  --status-green: #22c55e;
-  --danger-red: #ef4444;
+  /* 2. Sides: Warm Amber Accent */
+  --cat-side: #F59E0B;
+  --cat-side-rgb: 245, 158, 11;
+  --cat-side-glow: rgba(245, 158, 11, 0.28);
+  --cat-side-badge: rgba(245, 158, 11, 0.16);
+  --cat-side-border: rgba(245, 158, 11, 0.42);
 
+  /* 3. Drinks: Electric Cyan Accent */
+  --cat-drink: #06B6D4;
+  --cat-drink-rgb: 6, 182, 212;
+  --cat-drink-glow: rgba(6, 182, 212, 0.28);
+  --cat-drink-badge: rgba(6, 182, 212, 0.16);
+  --cat-drink-border: rgba(6, 182, 212, 0.42);
+
+  /* Functional Accents */
+  --action-orange: #F97316;
+  --action-orange-hover: #EA580C;
+  --action-orange-active: #C2410C;
+  --action-orange-glow: rgba(249, 115, 22, 0.4);
+  --status-green: #22C55E;
+  --status-yellow: #EAB308;
+  --danger-red: #EF4444;
+
+  /* Fonts */
   --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-urdu: 'Noto Naskh Arabic', -apple-system, sans-serif;
   --font-mono: 'Space Mono', monospace;
 }
 
@@ -58,9 +72,11 @@
 html, body {
   width: 100%;
   height: 100%;
+  height: 100dvh;
+  min-height: 100dvh;
   overflow: hidden;
-  background-color: var(--color-bg-workspace);
-  color: var(--color-black);
+  background-color: var(--bg-base);
+  color: var(--text-primary);
   font-family: var(--font-sans);
   font-size: 15px;
   user-select: none;
@@ -73,44 +89,59 @@ html, body {
   flex-direction: column;
   width: 100vw;
   height: 100vh;
+  height: 100dvh;
+  min-height: 100dvh;
   overflow: hidden;
+  background-color: var(--bg-base);
 }
 
 /* ==========================================================================
-   1. TOP BAR
-   - Left: Restaurant Title in bold typography
-   - Center: Current Token ("TOKEN #043") in double-size bold text
-   - Right: "🖨️ Printer Ready" status dot and single "Clear Ticket" button
+   1. TOP BAR (Sleek Minimalist Glassmorphic Header)
    ========================================================================== */
 .pos-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  height: 64px;
-  min-height: 64px;
-  padding: 0 1.5rem;
-  background-color: var(--color-white);
-  border-bottom: 2px solid var(--color-gray-200);
+  height: 60px;
+  min-height: 60px;
+  padding: 0 1.25rem;
+  background: var(--bg-surface-glass);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border-bottom: 1px solid var(--border-subtle);
   z-index: 100;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.04);
+  box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.4);
 }
 
 .header-left {
   flex: 1;
   display: flex;
   align-items: center;
+  gap: 0.65rem;
+}
+
+.brand-badge {
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  padding: 2px 6px;
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid var(--border-subtle);
+  color: var(--text-secondary);
 }
 
 .brand-title {
-  font-size: 1.25rem;
-  font-weight: 900;
-  color: var(--color-heavy-black);
-  letter-spacing: -0.02em;
+  font-size: 1.08rem;
+  font-weight: 800;
+  color: var(--text-primary);
+  letter-spacing: -0.01em;
   text-transform: uppercase;
   white-space: nowrap;
 }
 
-/* Center: Current Token in double-size bold text */
+/* Center Token Display */
 .header-center {
   flex: 1;
   display: flex;
@@ -119,157 +150,152 @@ html, body {
 }
 
 .top-token-display {
-  font-size: 2.1rem;
-  font-weight: 900;
+  font-size: clamp(1.15rem, 1.8vw, 1.6rem);
+  font-weight: 800;
   letter-spacing: 0.04em;
-  color: var(--color-heavy-black);
-  font-family: var(--font-sans);
-  padding: 0.2rem 1.25rem;
-  background-color: var(--color-gray-100);
-  border: 2px solid var(--color-gray-300);
-  border-radius: 10px;
+  color: var(--text-primary);
+  font-family: var(--font-mono);
+  padding: 0.25rem 1.15rem;
+  background: rgba(19, 27, 42, 0.8);
+  border: 1px solid var(--border-medium);
+  border-radius: 8px;
   text-align: center;
-  line-height: 1.15;
-  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.06);
+  line-height: 1.2;
+  box-shadow: inset 0 1px 0 0 rgba(255, 255, 255, 0.06), 0 2px 8px rgba(0, 0, 0, 0.3);
 }
 
-/* Right Section: Printer Ready & Clear Ticket */
+/* Header Right: Printer Pill & Clear Ticket Button */
 .header-right {
   flex: 1;
   display: flex;
   justify-content: flex-end;
   align-items: center;
-  gap: 0.85rem;
+  gap: 0.75rem;
 }
 
 .printer-status-pill {
   display: inline-flex;
   align-items: center;
   gap: 0.55rem;
-  height: 42px;
-  padding: 0 0.95rem;
-  background-color: var(--color-gray-50);
-  border: 2px solid var(--color-gray-200);
+  height: 38px;
+  padding: 0 0.85rem;
+  background: rgba(19, 27, 42, 0.7);
+  border: 1px solid var(--border-subtle);
   border-radius: 8px;
   font-family: var(--font-sans);
-  font-size: 0.9rem;
-  font-weight: 700;
-  color: var(--color-gray-800);
+  font-size: 0.84rem;
+  font-weight: 600;
+  color: var(--text-secondary);
   cursor: pointer;
   transition: all 0.15s ease;
 }
 
 .printer-status-pill:hover {
-  background-color: var(--color-gray-100);
-  border-color: var(--color-gray-300);
+  background: rgba(26, 36, 56, 0.85);
+  border-color: var(--border-medium);
+  color: var(--text-primary);
 }
 
 .printer-status-pill.connected,
 .printer-status-pill.ready {
-  background-color: #f0fdf4;
-  border-color: #86efac;
-  color: #15803d;
+  background: rgba(34, 197, 94, 0.08);
+  border-color: rgba(34, 197, 94, 0.3);
+  color: #86EFAC;
 }
 
 .printer-status-pill.reconnecting,
 .printer-status-pill.printing {
-  background-color: #fefce8;
-  border-color: #fde047;
-  color: #854d0e;
+  background: rgba(234, 179, 8, 0.08);
+  border-color: rgba(234, 179, 8, 0.3);
+  color: #FDE047;
 }
 
 .printer-status-pill.disconnected {
-  background-color: #fef2f2;
-  border-color: #fca5a5;
-  color: #b91c1c;
+  background: rgba(239, 68, 68, 0.08);
+  border-color: rgba(239, 68, 68, 0.3);
+  color: #FCA5A5;
 }
 
 .printer-ready-dot {
-  width: 10px;
-  height: 10px;
+  width: 8px;
+  height: 8px;
   border-radius: 50%;
-  background-color: #94a3b8;
-  box-shadow: 0 0 0 2px rgba(148, 163, 184, 0.25);
+  background-color: var(--text-muted);
   flex-shrink: 0;
-  animation: none;
+  transition: all 0.2s ease;
 }
 
 .printer-ready-dot.connected,
 .printer-ready-dot.ready {
   background-color: var(--status-green);
-  box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.35);
-  animation: none;
+  box-shadow: 0 0 8px rgba(34, 197, 94, 0.6);
 }
 
 .printer-ready-dot.reconnecting,
 .printer-ready-dot.printing {
-  background-color: #eab308;
-  box-shadow: 0 0 0 3px rgba(234, 179, 8, 0.35);
+  background-color: var(--status-yellow);
+  box-shadow: 0 0 8px rgba(234, 179, 8, 0.6);
   animation: pulseDot 0.8s infinite ease-in-out;
 }
 
 .printer-ready-dot.disconnected {
-  background-color: #ef4444;
-  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.35);
-  animation: none;
+  background-color: var(--danger-red);
+  box-shadow: 0 0 8px rgba(239, 68, 68, 0.6);
 }
 
 @keyframes pulseDot {
-  0% { transform: scale(0.95); box-shadow: 0 0 0 2px rgba(34, 197, 94, 0.35); }
-  50% { transform: scale(1.15); box-shadow: 0 0 0 5px rgba(34, 197, 94, 0.15); }
-  100% { transform: scale(0.95); box-shadow: 0 0 0 2px rgba(34, 197, 94, 0.35); }
+  0% { transform: scale(0.9); opacity: 0.6; }
+  50% { transform: scale(1.2); opacity: 1; }
+  100% { transform: scale(0.9); opacity: 0.6; }
 }
 
 .btn-clear-ticket {
-  height: 42px;
-  padding: 0 1.15rem;
-  background-color: var(--color-white);
-  border: 2px solid var(--color-gray-300);
+  height: 38px;
+  padding: 0 0.95rem;
+  background: rgba(19, 27, 42, 0.6);
+  border: 1px solid var(--border-subtle);
   border-radius: 8px;
-  color: var(--color-gray-700);
+  color: var(--text-secondary);
   font-family: var(--font-sans);
-  font-size: 0.9rem;
-  font-weight: 800;
+  font-size: 0.84rem;
+  font-weight: 600;
   cursor: pointer;
   transition: all 0.15s ease;
 }
 
 .btn-clear-ticket:hover {
-  background-color: #fef2f2;
-  border-color: #fca5a5;
-  color: var(--danger-red);
+  background: rgba(239, 68, 68, 0.12);
+  border-color: rgba(239, 68, 68, 0.35);
+  color: #F87171;
 }
 
 .btn-clear-ticket:active {
-  transform: scale(0.96);
+  transform: scale(0.97);
 }
 
 /* ==========================================================================
-   MAIN WORKSPACE: 65% / 35% SPLIT
+   2. MAIN WORKSPACE (Desktop Split: 62% Speed-Pad / 38% Ticket Panel)
    ========================================================================== */
 .pos-workspace {
   display: flex;
   flex: 1;
-  height: calc(100vh - 64px);
+  height: calc(100vh - 60px);
+  height: calc(100dvh - 60px);
   overflow: hidden;
+  background-color: var(--bg-base);
 }
 
 /* ==========================================================================
-   1. FIXED SPEED-DIAL GRID (65% Width)
-   - Zero scrolling, zero tabs, zero search
-   - Fixed 4x3 Speed Pad occupying 100% of left space
-   - Solid color coding:
-     * Red/Orange for Burgers
-     * Yellow for Fries & Sides
-     * Blue/Green for Drinks
+   3. SPEED-PAD PANEL & TILES (Clutter-Free Minimalist Redesign)
    ========================================================================== */
 .speed-pad-panel {
-  width: 65%;
-  flex: 0 0 65%;
+  width: 62%;
+  flex: 0 0 62%;
   height: 100%;
-  padding: 10px;
-  background-color: #0f172a; /* Deep contrasting background */
-  overflow: hidden;
+  padding: 12px;
+  background-color: var(--bg-base);
+  overflow-y: auto;
+  overflow-x: hidden;
   display: flex;
   flex-direction: column;
 }
@@ -277,33 +303,47 @@ html, body {
 .speed-dial-grid {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
-  grid-template-rows: repeat(3, 1fr);
-  gap: 10px;
+  gap: 12px;
   width: 100%;
   height: 100%;
-  overflow: hidden;
+  align-content: stretch;
 }
 
-/* Massive Speed Tile (Hybrid Visual: Top 60% Image, Bottom 40% Text/Price) */
+/* Responsive Grid columns for wide vs normal screens */
+@media (max-width: 1180px) and (min-width: 769px) {
+  .speed-dial-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+/* Speed Tile Structure */
 .speed-tile {
   position: relative;
   display: flex;
   flex-direction: column;
-  padding: 6px;
+  padding: 7px;
   border-radius: 12px;
   cursor: pointer;
   overflow: hidden;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.28);
-  border: 2px solid rgba(255, 255, 255, 0.15);
-  transition: transform 0.08s ease, filter 0.08s ease, box-shadow 0.08s ease;
+  background: var(--bg-card);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid var(--border-subtle);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.28);
+  transition: transform 0.1s ease, border-color 0.15s ease, box-shadow 0.15s ease;
   touch-action: manipulation;
+  min-height: 130px;
   height: 100%;
 }
 
-/* Tap visual feedback pulse */
+.speed-tile:hover {
+  background: var(--bg-card-hover);
+  border-color: var(--border-medium);
+  transform: translateY(-2px);
+}
+
 .speed-tile:active {
-  transform: scale(0.96);
-  filter: brightness(0.92);
+  transform: scale(0.97);
 }
 
 .speed-tile.pulse-active {
@@ -312,70 +352,51 @@ html, body {
 
 @keyframes tilePunch {
   0% { transform: scale(1); }
-  35% { transform: scale(0.94); filter: brightness(1.15); }
-  70% { transform: scale(1.02); }
+  40% { transform: scale(0.94); }
+  80% { transform: scale(1.02); }
   100% { transform: scale(1); }
 }
 
-/* Category Row Theme Colors */
-/* 1. Burgers: Solid Vibrant Red / Vermilion */
+/* Category Accent Borders & Glows */
 .speed-tile.tile-burger {
-  background-color: #dc2626;
-  color: #ffffff;
-  border-color: rgba(255, 255, 255, 0.25);
+  border-left: 2.5px solid var(--cat-burger);
 }
 
-.speed-tile.tile-burger:hover {
-  background-color: #b91c1c;
-}
-
-.speed-tile.tile-burger .tile-name,
-.speed-tile.tile-burger .tile-price {
-  color: #ffffff;
-}
-
-/* 2. Fries & Sides: Solid Vibrant Yellow / Warm Gold */
 .speed-tile.tile-side {
-  background-color: #f59e0b;
-  color: #020617;
-  border-color: rgba(0, 0, 0, 0.2);
+  border-left: 2.5px solid var(--cat-side);
 }
 
-.speed-tile.tile-side:hover {
-  background-color: #d97706;
-}
-
-.speed-tile.tile-side .tile-name,
-.speed-tile.tile-side .tile-price {
-  color: #020617;
-}
-
-/* 3. Drinks: Solid Vibrant Cyan / Teal / Blue */
 .speed-tile.tile-drink {
-  background-color: #0284c7;
-  color: #ffffff;
-  border-color: rgba(255, 255, 255, 0.25);
+  border-left: 2.5px solid var(--cat-drink);
 }
 
-.speed-tile.tile-drink:hover {
-  background-color: #0369a1;
+/* Active State with Glowing Border when in Cart */
+.speed-tile.has-qty.tile-burger {
+  border-color: var(--cat-burger);
+  box-shadow: 0 0 0 1px var(--cat-burger), 0 0 16px var(--cat-burger-glow);
+  background: rgba(244, 63, 94, 0.08);
 }
 
-.speed-tile.tile-drink .tile-name,
-.speed-tile.tile-drink .tile-price {
-  color: #ffffff;
+.speed-tile.has-qty.tile-side {
+  border-color: var(--cat-side);
+  box-shadow: 0 0 0 1px var(--cat-side), 0 0 16px var(--cat-side-glow);
+  background: rgba(245, 158, 11, 0.08);
 }
 
-/* ==========================================================================
-   TOP 60%: CRISP APPETIZING FOOD THUMBNAIL
-   ========================================================================== */
+.speed-tile.has-qty.tile-drink {
+  border-color: var(--cat-drink);
+  box-shadow: 0 0 0 1px var(--cat-drink), 0 0 16px var(--cat-drink-glow);
+  background: rgba(6, 182, 212, 0.08);
+}
+
+/* TOP SECTION: Clean High-Res Food Thumbnail (Zero Overlay Clutter) */
 .tile-image-section {
   position: relative;
-  height: 60%;
+  height: 56%;
   width: 100%;
   border-radius: 8px;
   overflow: hidden;
-  background-color: rgba(0, 0, 0, 0.25);
+  background-color: rgba(0, 0, 0, 0.4);
   flex-shrink: 0;
 }
 
@@ -386,55 +407,73 @@ html, body {
   display: block;
   border-radius: 8px;
   pointer-events: none;
-  transition: transform 0.18s ease;
+  transition: transform 0.25s ease;
 }
 
 .speed-tile:hover .tile-thumbnail {
   transform: scale(1.05);
 }
 
-/* Top Corner Hotkey Tag: e.g. [1], [3] */
+/* Top-Left Crisp Hotkey Badge Pill */
 .tile-hotkey-tag {
   position: absolute;
-  top: 5px;
-  left: 5px;
-  background: rgba(15, 23, 42, 0.88);
-  color: #ffffff;
+  top: 6px;
+  left: 6px;
+  background: rgba(7, 9, 14, 0.78);
+  color: var(--text-secondary);
   font-family: var(--font-mono);
-  font-size: 0.78rem;
-  font-weight: 800;
+  font-size: clamp(0.68rem, 0.85vw, 0.78rem);
+  font-weight: 700;
   padding: 2px 6px;
-  border-radius: 6px;
-  backdrop-filter: blur(4px);
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.4);
-  border: 1px solid rgba(255, 255, 255, 0.25);
+  border-radius: 5px;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.12);
   pointer-events: none;
   z-index: 2;
-  letter-spacing: 0.02em;
+  line-height: 1.1;
 }
 
-/* Live Quantity Badge in Top-Right Corner (Displays x1, x2 when in ticket) */
+/* Top-Right Prominent Quantity Badge */
 .tile-qty-badge {
   display: none;
   position: absolute;
-  top: 5px;
-  right: 5px;
+  top: 6px;
+  right: 6px;
   align-items: center;
   justify-content: center;
-  min-width: 28px;
-  height: 26px;
+  min-width: 26px;
+  height: 24px;
   padding: 0 6px;
   border-radius: 999px;
-  background-color: #020617;
-  color: #ffffff;
-  font-family: var(--font-sans);
-  font-size: 0.86rem;
-  font-weight: 900;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.5);
-  border: 2px solid #ffffff;
+  background-color: var(--bg-base);
+  color: #FFFFFF;
+  font-family: var(--font-mono);
+  font-size: clamp(0.72rem, 0.9vw, 0.82rem);
+  font-weight: 800;
   pointer-events: none;
   z-index: 2;
-  animation: badgePop 0.15s ease-out;
+  animation: badgePop 0.15s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.6);
+  border: 1.5px solid var(--text-primary);
+}
+
+.speed-tile.tile-burger .tile-qty-badge {
+  border-color: var(--cat-burger);
+  color: #FFFFFF;
+  box-shadow: 0 0 10px var(--cat-burger-glow);
+}
+
+.speed-tile.tile-side .tile-qty-badge {
+  border-color: var(--cat-side);
+  color: #FFFFFF;
+  box-shadow: 0 0 10px var(--cat-side-glow);
+}
+
+.speed-tile.tile-drink .tile-qty-badge {
+  border-color: var(--cat-drink);
+  color: #FFFFFF;
+  box-shadow: 0 0 10px var(--cat-drink-glow);
 }
 
 .speed-tile.has-qty .tile-qty-badge {
@@ -447,11 +486,9 @@ html, body {
   100% { transform: scale(1); }
 }
 
-/* ==========================================================================
-   BOTTOM 40%: SHORT NAME + HIGH-CONTRAST BOLD PRICE (ZERO FLUFF)
-   ========================================================================== */
+/* BOTTOM SECTION: Clear, Non-Overlapping Typography */
 .tile-info-section {
-  height: 40%;
+  height: 44%;
   width: 100%;
   display: flex;
   flex-direction: column;
@@ -460,46 +497,66 @@ html, body {
   pointer-events: none;
 }
 
-/* Common short name in bold uppercase (Inter/sans-serif) */
-.tile-name {
-  font-family: var(--font-sans);
-  font-size: clamp(0.78rem, 1.05vw, 0.95rem);
-  font-weight: 800;
-  line-height: 1.15;
-  letter-spacing: -0.01em;
-  text-transform: uppercase;
-  white-space: normal;
-  overflow: hidden;
-  text-overflow: clip;
-  word-break: break-word;
+.tile-title-group {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
 }
 
-/* High-contrast bold price (e.g. Rs. 1,190) */
+/* English Product Name (Bold Uppercase Sans-Serif) */
+.tile-english-name {
+  font-family: var(--font-sans);
+  font-size: clamp(0.76rem, 0.95vw, 0.88rem);
+  font-weight: 800;
+  color: var(--text-primary);
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  line-height: 1.2;
+}
+
+/* Elegant Urdu Subtitle Line Below English */
+.tile-urdu-name {
+  font-family: var(--font-urdu);
+  font-size: clamp(0.72rem, 0.88vw, 0.82rem);
+  font-weight: 500;
+  color: var(--text-secondary);
+  line-height: 1.35;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Price Highlighted in Bold Crisp White */
 .tile-price {
   font-family: var(--font-mono);
-  font-size: clamp(0.98rem, 1.35vw, 1.25rem);
-  font-weight: 900;
+  font-size: clamp(0.92rem, 1.2vw, 1.12rem);
+  font-weight: 700;
+  color: #FFFFFF;
   letter-spacing: -0.02em;
+  line-height: 1.1;
+  margin-top: 2px;
 }
 
 /* ==========================================================================
-   2. TICKET PANEL (35% Width)
-   - Paper-white ticket background with clean itemized list
-   - Bottom Section: Massive TOTAL + "PRINT & NEXT (Enter)"
+   4. TICKET PANEL (Vercel/Linear Elevated Dark Glass Surface)
    ========================================================================== */
 .ticket-panel {
-  width: 35%;
-  flex: 0 0 35%;
+  width: 38%;
+  flex: 0 0 38%;
   display: flex;
   flex-direction: column;
-  background-color: var(--color-paper);
+  background-color: var(--bg-surface);
   height: 100%;
   overflow: hidden;
-  box-shadow: -4px 0 16px rgba(0, 0, 0, 0.08);
-  border-left: 2px solid var(--color-gray-200);
+  border-left: 1px solid var(--border-subtle);
+  box-shadow: -4px 0 24px rgba(0, 0, 0, 0.35);
 }
 
-/* Mobile Drawer Controls (Hidden on Desktop by default) */
+/* Mobile Toggle Bar (Hidden on Desktop) */
 .mobile-ticket-bar {
   display: none;
 }
@@ -512,65 +569,65 @@ html, body {
   display: none;
 }
 
-.ticket-header-actions {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-}
-
 /* Ticket Header Banner */
 .ticket-header-banner {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0.95rem 1.25rem;
-  background-color: var(--color-white);
-  border-bottom: 2px solid var(--color-gray-200);
+  padding: 0.85rem 1.15rem;
+  background: var(--bg-surface-elevated);
+  border-bottom: 1px solid var(--border-subtle);
   flex-shrink: 0;
 }
 
-.ticket-header-title {
-  font-size: 1.05rem;
-  font-weight: 900;
-  letter-spacing: 0.05em;
-  color: var(--color-heavy-black);
-  text-transform: uppercase;
-}
-
-.ticket-badge-count {
-  font-size: 0.85rem;
-  font-weight: 800;
-  padding: 0.25rem 0.65rem;
-  background-color: var(--color-gray-100);
-  border: 1px solid var(--color-gray-300);
-  border-radius: 6px;
-  color: var(--color-gray-700);
-}
-
-/* Ticket Header Info & Token Badge */
 .ticket-header-info {
   display: flex;
   align-items: center;
   gap: 0.65rem;
 }
 
+.ticket-header-title {
+  font-size: 0.85rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+}
+
 .ticket-token-pill {
-  font-family: var(--font-sans);
-  font-size: 0.88rem;
-  font-weight: 900;
-  color: var(--color-heavy-black);
-  background-color: var(--color-gray-100);
-  border: 1.5px solid var(--color-gray-300);
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid var(--border-subtle);
   padding: 0.15rem 0.55rem;
   border-radius: 6px;
   letter-spacing: 0.02em;
 }
 
-/* Streamlined Customer Name Bar (Directly below Token #043) */
+.ticket-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.ticket-badge-count {
+  font-family: var(--font-mono);
+  font-size: 0.76rem;
+  font-weight: 700;
+  padding: 0.2rem 0.55rem;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid var(--border-subtle);
+  border-radius: 6px;
+  color: var(--text-secondary);
+}
+
+/* Streamlined Customer Name Bar */
 .ticket-customer-bar {
   padding: 0.65rem 1.15rem;
-  background-color: var(--color-white);
-  border-bottom: 1px solid #E5E7EB;
+  background-color: var(--bg-surface);
+  border-bottom: 1px solid var(--border-subtle);
   flex-shrink: 0;
 }
 
@@ -584,8 +641,8 @@ html, body {
 .customer-input-icon {
   position: absolute;
   left: 0.75rem;
-  font-size: 0.95rem;
-  color: var(--color-gray-400);
+  font-size: 0.9rem;
+  color: var(--text-muted);
   pointer-events: none;
   user-select: none;
   line-height: 1;
@@ -595,27 +652,27 @@ html, body {
   width: 100%;
   height: 38px;
   padding: 0 2rem 0 2.25rem;
-  background-color: #f9fafb;
-  border: 1px solid #E5E7EB;
+  background-color: var(--bg-surface-elevated);
+  border: 1px solid var(--border-subtle);
   border-radius: 8px;
   font-family: var(--font-sans);
-  font-size: 0.9rem;
+  font-size: 0.88rem;
   font-weight: 600;
-  color: var(--color-heavy-black);
+  color: var(--text-primary);
   outline: none;
   transition: all 0.15s ease-in-out;
 }
 
 .customer-name-input::placeholder {
-  color: #94a3b8;
+  color: var(--text-muted);
   font-weight: 400;
-  font-size: 0.85rem;
+  font-size: 0.84rem;
 }
 
 .customer-name-input:focus {
-  background-color: #ffffff;
-  border-color: #cbd5e1;
-  box-shadow: 0 0 0 3px rgba(249, 115, 22, 0.12), 0 1px 2px rgba(0, 0, 0, 0.05);
+  border-color: var(--border-focus);
+  box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.06);
+  background-color: #162032;
 }
 
 .customer-clear-btn {
@@ -625,8 +682,8 @@ html, body {
   height: 22px;
   border-radius: 50%;
   border: none;
-  background-color: #e2e8f0;
-  color: #64748b;
+  background-color: rgba(255, 255, 255, 0.1);
+  color: var(--text-secondary);
   font-size: 0.75rem;
   font-weight: 700;
   display: flex;
@@ -638,11 +695,11 @@ html, body {
 }
 
 .customer-clear-btn:hover {
-  background-color: #cbd5e1;
-  color: #1e293b;
+  background-color: rgba(255, 255, 255, 0.2);
+  color: #FFFFFF;
 }
 
-/* Itemized List Container */
+/* Ticket Items Scroll Area */
 .ticket-items-scroll {
   flex: 1;
   overflow-y: auto;
@@ -650,7 +707,7 @@ html, body {
   display: flex;
   flex-direction: column;
   gap: 0.65rem;
-  background-color: var(--color-paper);
+  background-color: var(--bg-surface);
 }
 
 /* Empty State */
@@ -658,39 +715,41 @@ html, body {
   margin: auto;
   text-align: center;
   padding: 2.5rem 1rem;
-  color: var(--color-gray-400);
+  color: var(--text-muted);
 }
 
 .ticket-empty-state .empty-icon {
-  font-size: 3rem;
+  font-size: 2.8rem;
   margin-bottom: 0.5rem;
-  opacity: 0.6;
+  opacity: 0.45;
 }
 
 .ticket-empty-state .empty-title {
-  font-size: 1.15rem;
-  font-weight: 800;
-  color: var(--color-gray-700);
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--text-secondary);
   margin-bottom: 0.25rem;
 }
 
 .ticket-empty-state .empty-sub {
-  font-size: 0.88rem;
-  font-weight: 500;
-  color: var(--color-gray-400);
+  font-size: 0.82rem;
+  font-weight: 400;
+  color: var(--text-muted);
 }
 
-/* Clean High-Contrast Ticket Item Row */
+/* Ticket Item Row (Frosted Glass Card) */
 .ticket-item-row {
   display: flex;
   align-items: center;
   justify-content: space-between;
   padding: 0.75rem 0.85rem;
-  background-color: var(--color-white);
-  border: 1.5px solid var(--color-gray-200);
+  background: var(--bg-card);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid var(--border-subtle);
   border-radius: 10px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
-  gap: 0.6rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  gap: 0.65rem;
 }
 
 .ticket-item-left {
@@ -701,25 +760,52 @@ html, body {
   gap: 0.2rem;
 }
 
+.ticket-item-title-row {
+  display: flex;
+  align-items: baseline;
+  gap: 0.45rem;
+  min-width: 0;
+}
+
 .ticket-item-name {
-  font-size: 0.95rem;
-  font-weight: 800;
-  color: var(--color-heavy-black);
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: var(--text-primary);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
   letter-spacing: -0.01em;
 }
 
-.ticket-item-subtotal {
-  font-size: 1.02rem;
-  font-weight: 900;
-  color: var(--color-heavy-black);
-  font-family: var(--font-mono);
-  letter-spacing: -0.01em;
+.ticket-item-urdu {
+  font-family: var(--font-urdu);
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
-/* Right side of row: Stepper + Small Red (x) Trash Icon */
+.ticket-item-pricing {
+  display: flex;
+  align-items: baseline;
+  gap: 0.55rem;
+}
+
+.ticket-item-unit-price {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+
+.ticket-item-subtotal {
+  font-family: var(--font-mono);
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #FFFFFF;
+}
+
+/* Right Side: Stepper & Delete */
 .ticket-item-right {
   display: flex;
   align-items: center;
@@ -727,92 +813,85 @@ html, body {
   flex-shrink: 0;
 }
 
-/* Compact, easy-to-tap [ - ] [ QTY ] [ + ] stepper */
 .touch-stepper {
   display: flex;
   align-items: center;
-  background-color: var(--color-gray-100);
-  border: 1.5px solid var(--color-gray-300);
+  background: var(--bg-surface-elevated);
+  border: 1px solid var(--border-subtle);
   border-radius: 8px;
   overflow: hidden;
 }
 
 .touch-step-btn {
-  width: 34px;
-  height: 34px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background-color: var(--color-white);
-  border: none;
-  font-size: 1.25rem;
-  font-weight: 900;
-  color: var(--color-heavy-black);
-  cursor: pointer;
-  transition: all 0.1s ease;
-}
-
-.touch-step-btn:hover {
-  background-color: var(--color-gray-200);
-}
-
-.touch-step-btn:active {
-  background-color: var(--action-orange);
-  color: var(--color-white);
-}
-
-.touch-step-val {
-  min-width: 28px;
-  text-align: center;
-  font-size: 1.05rem;
-  font-weight: 900;
-  color: var(--color-heavy-black);
-  font-family: var(--font-mono);
-}
-
-/* Small Red (x) Trash Icon */
-.ticket-item-del-btn {
   width: 32px;
   height: 32px;
   display: flex;
   align-items: center;
   justify-content: center;
-  background-color: #fee2e2;
-  border: 1.5px solid #fca5a5;
+  background: rgba(255, 255, 255, 0.04);
+  border: none;
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  cursor: pointer;
+  transition: all 0.1s ease;
+}
+
+.touch-step-btn:hover {
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.touch-step-btn:active {
+  background: var(--action-orange);
+  color: #FFFFFF;
+}
+
+.touch-step-val {
+  min-width: 26px;
+  text-align: center;
+  font-family: var(--font-mono);
+  font-size: 0.92rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.ticket-item-del-btn {
+  width: 30px;
+  height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(239, 68, 68, 0.1);
+  border: 1px solid rgba(239, 68, 68, 0.25);
   border-radius: 8px;
-  color: var(--danger-red);
-  font-size: 0.95rem;
-  font-weight: 900;
+  color: #F87171;
+  font-size: 0.88rem;
+  font-weight: 700;
   cursor: pointer;
   transition: all 0.12s ease;
   flex-shrink: 0;
 }
 
 .ticket-item-del-btn:hover {
-  background-color: #ef4444;
-  color: #ffffff;
-  border-color: #ef4444;
+  background: var(--danger-red);
+  color: #FFFFFF;
+  border-color: var(--danger-red);
 }
 
 .ticket-item-del-btn:active {
-  transform: scale(0.9);
+  transform: scale(0.92);
 }
 
-/* ==========================================================================
-   TICKET BOTTOM SECTION:
-   - Massive "TOTAL: Rs. X,XXX" in heavy black text
-   - Secondary Outline Button: "Print Customer Bill [Space]" (Height: 44px)
-   - Primary Giant Action Button: "PRINT KOT (KITCHEN) ⚡ [Enter]" (Height: 56px, Solid Orange #F97316)
-   ========================================================================== */
+/* Bottom Section: Total & Giant Action Button */
 .ticket-bottom-section {
   padding: 1rem 1.25rem 1.25rem;
-  background-color: var(--color-white);
-  border-top: 2px dashed var(--color-gray-300);
+  background: var(--bg-surface-elevated);
+  border-top: 1px solid var(--border-subtle);
   display: flex;
   flex-direction: column;
   gap: 0.85rem;
   flex-shrink: 0;
-  box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.04);
+  box-shadow: 0 -4px 16px rgba(0, 0, 0, 0.35);
 }
 
 .ticket-total-row {
@@ -823,18 +902,17 @@ html, body {
 }
 
 .total-heading {
-  font-size: 1.35rem;
-  font-weight: 900;
-  letter-spacing: 0.04em;
-  color: var(--color-heavy-black);
+  font-size: 0.95rem;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  color: var(--text-secondary);
   text-transform: uppercase;
 }
 
-/* Massive TOTAL in heavy black text */
 .total-value {
-  font-size: 2.35rem;
-  font-weight: 900;
-  color: var(--color-heavy-black);
+  font-size: clamp(1.6rem, 2.4vw, 2.1rem);
+  font-weight: 800;
+  color: #FFFFFF;
   font-family: var(--font-mono);
   letter-spacing: -0.02em;
 }
@@ -846,98 +924,60 @@ html, body {
   width: 100%;
 }
 
-/* Secondary Outline Button: Height 44px, Clean Border, Full Width */
 .secondary-bill-btn {
-  width: 100%;
-  height: 44px;
-  min-height: 44px;
-  border: 1.5px solid var(--color-gray-300);
-  border-radius: 10px;
-  background-color: var(--color-white);
-  color: var(--color-gray-700);
-  font-family: var(--font-sans);
-  font-size: 0.95rem;
-  font-weight: 800;
-  letter-spacing: 0.02em;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.45rem;
-  cursor: pointer;
-  transition: all 0.12s ease;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
+  display: none !important;
 }
 
-.secondary-bill-btn:not(:disabled):hover {
-  background-color: var(--color-gray-100);
-  border-color: var(--color-gray-400);
-  color: var(--color-heavy-black);
-}
-
-.secondary-bill-btn:not(:disabled):active {
-  transform: scale(0.98);
-  background-color: var(--color-gray-200);
-}
-
-.secondary-bill-btn:disabled {
-  background-color: var(--color-gray-50);
-  color: var(--color-gray-400);
-  border-color: var(--color-gray-200);
-  cursor: not-allowed;
-  opacity: 0.65;
-  box-shadow: none;
-}
-
-/* Primary Giant Button: Height 56px, Solid Orange #F97316, Bold White Text */
+/* Primary Giant Action Button: PRINT KOT (KITCHEN) ⚡ */
 .giant-punch-btn {
   width: 100%;
-  height: 56px;
-  min-height: 56px;
+  height: 54px;
+  min-height: 54px;
   border: none;
-  border-radius: 12px;
+  border-radius: 10px;
   font-family: var(--font-sans);
-  font-size: 1.15rem;
-  font-weight: 900;
-  letter-spacing: 0.04em;
+  font-size: 1.05rem;
+  font-weight: 800;
+  letter-spacing: 0.03em;
   text-transform: uppercase;
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: all 0.12s ease;
+  transition: all 0.15s ease;
 }
 
-/* When Total == 0: Disabled state */
 .giant-punch-btn:disabled {
-  background-color: #e2e8f0;
-  color: #94a3b8;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid var(--border-subtle);
+  color: var(--text-muted);
   cursor: not-allowed;
   box-shadow: none;
-  opacity: 0.85;
 }
 
-/* When Total > 0: Bright, Vibrant Solid Orange (#F97316) with Bold White Text */
 .giant-punch-btn:not(:disabled),
 .giant-punch-btn.active-ready {
-  background-color: #f97316 !important;
-  color: #ffffff !important;
+  background: var(--action-orange) !important;
+  color: #FFFFFF !important;
   cursor: pointer;
-  box-shadow: 0 4px 16px rgba(249, 115, 22, 0.45);
+  box-shadow: 0 0 24px var(--action-orange-glow), 0 4px 12px rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.2);
 }
 
 .giant-punch-btn:not(:disabled):hover,
 .giant-punch-btn.active-ready:hover {
-  background-color: #ea580c !important;
-  box-shadow: 0 6px 20px rgba(234, 88, 12, 0.55);
+  background: var(--action-orange-hover) !important;
+  box-shadow: 0 0 30px rgba(249, 115, 22, 0.6);
+  transform: translateY(-1px);
 }
 
 .giant-punch-btn:not(:disabled):active,
 .giant-punch-btn.active-ready:active {
   transform: scale(0.98);
-  background-color: #c2410c !important;
+  background: var(--action-orange-active) !important;
 }
 
 /* ==========================================================================
-   TOAST NOTIFICATIONS
+   5. TOAST NOTIFICATIONS (Vercel Style)
    ========================================================================== */
 .toast-container {
   position: fixed;
@@ -951,190 +991,652 @@ html, body {
 }
 
 .pos-toast {
-  padding: 0.85rem 1.35rem;
-  background-color: var(--color-heavy-black);
-  color: var(--color-white);
+  padding: 0.75rem 1.25rem;
+  background: rgba(14, 20, 32, 0.95);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  color: var(--text-primary);
+  border: 1px solid var(--border-medium);
   border-radius: 8px;
-  font-size: 0.95rem;
-  font-weight: 700;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-  animation: slideInToast 0.2s ease-out;
+  font-size: 0.88rem;
+  font-weight: 600;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+  animation: slideInToast 0.2s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 @keyframes slideInToast {
-  from { transform: translateY(12px); opacity: 0; }
+  from { transform: translateY(10px); opacity: 0; }
   to { transform: translateY(0); opacity: 1; }
 }
 
 /* ==========================================================================
-   THERMAL RECEIPT ESC/POS EMULATION (58mm)
+   6. RESPONSIVE DESIGN (Mobile < 768px & Tablet 768px-1024px)
    ========================================================================== */
-.thermal-paper {
-  width: 300px;
-  background: var(--color-white);
-  color: var(--color-black);
-  font-family: var(--font-mono);
-  font-size: 11px;
-  line-height: 1.35;
-  padding: 14px 12px;
-  border: 1px solid var(--color-gray-300);
+
+/* Tablet Landscape (769px - 1024px) */
+@media (max-width: 1024px) and (min-width: 769px) {
+  .pos-header {
+    height: 54px;
+    min-height: 54px;
+    padding: 0 1rem;
+  }
+  .brand-title {
+    font-size: 0.95rem;
+  }
+  .top-token-display {
+    font-size: 1.35rem;
+    padding: 0.2rem 0.9rem;
+  }
+  .pos-workspace {
+    height: calc(100vh - 54px);
+    height: calc(100dvh - 54px);
+  }
+  .speed-pad-panel {
+    width: 60%;
+    flex: 0 0 60%;
+    padding: 8px;
+  }
+  .ticket-panel {
+    width: 40%;
+    flex: 0 0 40%;
+  }
+  .speed-dial-grid {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+  }
+  .speed-tile {
+    padding: 6px;
+    min-height: 110px;
+  }
 }
 
-.kot-badge {
-  text-align: center;
-  font-weight: 900;
-  font-size: 12px;
-  background: var(--color-heavy-black);
-  color: var(--color-white);
-  padding: 3px 0;
-  margin-bottom: 4px;
-}
+/* Mobile Screens (<= 768px): Vertical Stack & Slide-Up Drawer */
+@media (max-width: 768px) {
+  .pos-header {
+    height: 50px;
+    min-height: 50px;
+    padding: 0 0.75rem;
+    gap: 0.5rem;
+  }
+  .brand-badge {
+    display: none;
+  }
+  .brand-title {
+    font-size: clamp(0.78rem, 2.5vw, 0.92rem);
+    max-width: 140px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .top-token-display {
+    font-size: clamp(0.95rem, 3.2vw, 1.25rem);
+    padding: 0.15rem 0.65rem;
+  }
+  .printer-status-pill {
+    height: 34px;
+    padding: 0 0.55rem;
+    font-size: 0.78rem;
+    gap: 0.35rem;
+  }
+  .printer-status-pill::before {
+    content: "🖨️";
+    font-size: 0.85rem;
+    line-height: 1;
+  }
+  .printer-ready-text {
+    display: none;
+  }
+  .btn-clear-ticket {
+    height: 34px;
+    padding: 0 0.65rem;
+    font-size: 0.78rem;
+  }
 
-.receipt-dashed-line {
-  color: var(--color-gray-500);
-  margin: 3px 0;
-  overflow: hidden;
-  white-space: nowrap;
-}
+  /* Workspace Stack */
+  .pos-workspace {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    height: calc(100vh - 50px);
+    height: calc(100dvh - 50px);
+    overflow: hidden;
+  }
 
-.receipt-double-line {
-  color: var(--color-heavy-black);
-  margin: 2px 0;
-  overflow: hidden;
-  white-space: nowrap;
-  font-weight: 900;
-}
+  /* Speed-pad Panel: Scrollable upper area */
+  .speed-pad-panel {
+    width: 100%;
+    flex: 1 1 auto;
+    height: 100%;
+    padding: 8px 8px calc(146px + env(safe-area-inset-bottom));
+    overflow-y: auto;
+    overflow-x: hidden;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: thin;
+  }
 
-.receipt-meta-grid-large {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin: 4px 0;
-}
+  /* Clean 2-Column Touch Grid on Mobile */
+  .speed-dial-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    grid-auto-rows: minmax(130px, auto);
+    gap: 10px;
+    min-height: auto;
+    height: auto;
+  }
 
-.kot-token-text {
-  font-size: 16px;
-  font-weight: 900;
-  color: var(--color-heavy-black);
-}
+  .speed-tile {
+    min-height: 130px;
+    height: auto;
+    padding: 6px;
+    border-radius: 12px;
+  }
 
-.kot-type-pill {
-  font-size: 11px;
-  font-weight: 800;
-  padding: 1px 6px;
-  background: var(--color-heavy-black);
-  color: var(--color-white);
-  border-radius: 2px;
-}
+  .tile-image-section {
+    height: 72px;
+    border-radius: 7px;
+  }
 
-.kot-customer-name-row {
-  text-align: center;
-  font-size: 13px;
-  font-weight: 900;
-  letter-spacing: 0.03em;
-  padding: 3px 0;
-  margin: 2px 0 4px;
-  color: var(--color-heavy-black);
-  border-bottom: 1px dashed var(--color-gray-400);
-}
+  .tile-info-section {
+    padding: 4px 2px 2px;
+    gap: 2px;
+  }
 
-.kot-header-cols {
-  display: flex;
-  gap: 1.5rem;
-  font-weight: 800;
-  font-size: 10px;
-  margin: 2px 0;
-}
+  .tile-english-name {
+    font-size: clamp(0.74rem, 2.4vw, 0.84rem);
+  }
 
-.kot-item-entry {
-  font-size: 11px;
-  font-weight: 900;
-  margin: 2px 0;
-}
+  .tile-urdu-name {
+    font-size: clamp(0.7rem, 2.2vw, 0.78rem);
+  }
 
-.receipt-feed-space {
-  height: 8px;
-}
+  .tile-price {
+    font-size: clamp(0.92rem, 3.2vw, 1.05rem);
+  }
 
-.receipt-tear-line {
-  text-align: center;
-  font-size: 9.5px;
-  font-weight: 800;
-  color: var(--color-heavy-black);
-  margin: 6px 0;
-}
+  .tile-hotkey-tag {
+    font-size: 0.65rem;
+    padding: 1.5px 5px;
+    top: 4px;
+    left: 4px;
+  }
 
-.receipt-header-center {
-  text-align: center;
-  font-size: 9.5px;
-}
+  .tile-qty-badge {
+    min-width: 24px;
+    height: 22px;
+    font-size: 0.74rem;
+    padding: 0 4px;
+    top: 4px;
+    right: 4px;
+  }
 
-.receipt-logo-ascii {
-  font-size: 12.5px;
-  font-weight: 900;
-  margin-bottom: 2px;
-}
+  /* Mobile Drawer Backdrop */
+  .mobile-drawer-backdrop {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    height: 100dvh;
+    background: rgba(7, 9, 14, 0.75);
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+    z-index: 800;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.25s ease;
+  }
 
-.receipt-address {
-  font-size: 9px;
-  color: var(--color-gray-700);
-}
+  .mobile-drawer-backdrop.active {
+    display: block;
+    opacity: 1;
+    pointer-events: auto;
+  }
 
-.receipt-meta-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  font-size: 9.5px;
-  margin: 4px 0;
-}
+  /* Docked Bottom Bar & Slide-Up Drawer */
+  .ticket-panel {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    flex: 0 0 auto;
+    z-index: 900;
+    background: var(--bg-surface-glass);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border-left: none;
+    border-top: 1px solid var(--border-medium);
+    border-radius: 18px 18px 0 0;
+    box-shadow: 0 -8px 32px rgba(0, 0, 0, 0.6);
+    transition: height 0.28s cubic-bezier(0.16, 1, 0.3, 1), transform 0.28s cubic-bezier(0.16, 1, 0.3, 1);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
 
-.receipt-meta-line {
-  font-size: 9.5px;
-  font-weight: 700;
-  margin: 2px 0;
-  color: var(--color-heavy-black);
-}
+  /* Mobile Bar (Always visible at top of docked sheet) */
+  .mobile-ticket-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: 38px;
+    min-height: 38px;
+    padding: 0 0.85rem;
+    background: rgba(255, 255, 255, 0.03);
+    border-bottom: 1px solid var(--border-subtle);
+    cursor: pointer;
+    user-select: none;
+  }
 
-.receipt-items-list {
-  display: flex;
-  flex-direction: column;
-  gap: 3px;
-  font-size: 10px;
-}
+  .mobile-bar-summary {
+    display: flex;
+    align-items: center;
+    gap: 0.65rem;
+  }
 
-.receipt-item-line {
-  display: flex;
-  justify-content: space-between;
-}
+  .mobile-badge {
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    font-weight: 700;
+    padding: 2px 7px;
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid var(--border-subtle);
+    color: var(--text-primary);
+    border-radius: 999px;
+  }
 
-.receipt-totals-table {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  font-size: 10px;
-  margin: 4px 0;
-}
+  .mobile-total {
+    font-size: clamp(0.95rem, 3.2vw, 1.15rem);
+    font-weight: 800;
+    color: #FFFFFF;
+    font-family: var(--font-mono);
+    cursor: pointer;
+  }
 
-.rt-row {
-  display: flex;
-  justify-content: space-between;
-}
+  .mobile-toggle-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    background: none;
+    border: none;
+    font-family: var(--font-sans);
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: var(--action-orange);
+    cursor: pointer;
+    padding: 4px;
+  }
 
-.rt-grand {
-  font-weight: 900;
-  font-size: 12px;
-  border-top: 1px dashed var(--color-black);
-  padding-top: 3px;
-}
+  .toggle-arrow {
+    font-size: 0.75rem;
+    transition: transform 0.22s ease;
+  }
 
-.receipt-footer-msg {
-  text-align: center;
-  font-size: 8.5px;
-  color: var(--color-gray-700);
-  margin-top: 6px;
+  /* Collapsed state (Default Docked Bar) */
+  .ticket-panel:not(.drawer-open) {
+    height: auto;
+    max-height: 148px;
+    padding-bottom: max(6px, env(safe-area-inset-bottom));
+  }
+
+  .ticket-panel:not(.drawer-open) .ticket-header-banner,
+  .ticket-panel:not(.drawer-open) .ticket-items-scroll,
+  .ticket-panel:not(.drawer-open) .ticket-total-row {
+    display: none !important;
+  }
+
+  .ticket-panel:not(.drawer-open) .ticket-customer-bar {
+    padding: 4px 0.75rem;
+    background-color: transparent;
+    border-bottom: none;
+  }
+
+  .ticket-panel:not(.drawer-open) .customer-name-input {
+    height: 34px;
+    font-size: 0.82rem;
+    padding-left: 2rem;
+    padding-right: 1.75rem;
+    border-radius: 7px;
+  }
+
+  .ticket-panel:not(.drawer-open) .ticket-bottom-section {
+    padding: 4px 0.75rem 6px;
+    gap: 0;
+    border-top: none;
+    box-shadow: none;
+    background: transparent;
+  }
+
+  .ticket-panel:not(.drawer-open) .giant-punch-btn {
+    height: 48px;
+    min-height: 48px;
+    font-size: 0.96rem;
+    border-radius: 10px;
+  }
+
+  /* Expanded State (Slide-Up Drawer) */
+  .ticket-panel.drawer-open {
+    height: 85vh;
+    height: 85dvh;
+    max-height: 88dvh;
+    border-radius: 20px 20px 0 0;
+  }
+
+  .ticket-panel.drawer-open .toggle-arrow {
+    transform: rotate(180deg);
+  }
+
+  .ticket-panel.drawer-open .ticket-header-banner {
+    display: flex;
+    padding: 0.65rem 0.85rem;
+  }
+
+  .ticket-panel.drawer-open .mobile-drawer-close-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 30px;
+    height: 30px;
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid var(--border-subtle);
+    border-radius: 8px;
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: var(--text-secondary);
+    cursor: pointer;
+  }
+
+  .ticket-panel.drawer-open .ticket-customer-bar {
+    padding: 0.5rem 0.85rem;
+  }
+
+  .ticket-panel.drawer-open .customer-name-input {
+    height: 36px;
+    font-size: 0.86rem;
+  }
+
+  .ticket-panel.drawer-open .ticket-items-scroll {
+    display: flex;
+    flex: 1;
+    overflow-y: auto;
+    padding: 0.65rem 0.85rem;
+    gap: 0.5rem;
+  }
+
+  .ticket-panel.drawer-open .ticket-item-row {
+    padding: 0.6rem 0.75rem;
+  }
+
+  .ticket-panel.drawer-open .ticket-bottom-section {
+    padding: 0.65rem 0.85rem max(8px, env(safe-area-inset-bottom));
+    gap: 0.5rem;
+  }
+
+  .ticket-panel.drawer-open .ticket-total-row {
+    display: flex;
+  }
+
+  .ticket-panel.drawer-open .giant-punch-btn {
+    height: 50px;
+    min-height: 50px;
+    font-size: 1.02rem;
+  }
 }
 
 /* ==========================================================================
-   PHYSICAL THERMAL PRINTER MEDIA QUERY (58mm ESC/POS)
+   7. PRINTER SETUP MODAL (Vercel Glassmorphism Dialog)
+   ========================================================================== */
+.printer-modal-backdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background-color: rgba(7, 9, 14, 0.8);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  z-index: 2000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  animation: modalFadeIn 0.15s ease-out;
+}
+
+@keyframes modalFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.printer-modal-card {
+  width: 100%;
+  max-width: 460px;
+  background: var(--bg-surface);
+  border-radius: 16px;
+  box-shadow: 0 25px 60px -12px rgba(0, 0, 0, 0.7);
+  overflow: hidden;
+  border: 1px solid var(--border-medium);
+  animation: modalSlideUp 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes modalSlideUp {
+  from { transform: translateY(14px) scale(0.98); opacity: 0; }
+  to { transform: translateY(0) scale(1); opacity: 1; }
+}
+
+.printer-modal-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  padding: 1.15rem 1.4rem 0.95rem;
+  border-bottom: 1px solid var(--border-subtle);
+  background: var(--bg-surface-elevated);
+}
+
+.printer-modal-title-group {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.printer-modal-icon {
+  font-size: 1.8rem;
+  line-height: 1;
+}
+
+.printer-modal-title {
+  font-size: 1.1rem;
+  font-weight: 800;
+  color: var(--text-primary);
+}
+
+.printer-modal-subtitle {
+  font-size: 0.78rem;
+  color: var(--text-secondary);
+  margin-top: 2px;
+  line-height: 1.3;
+}
+
+.printer-modal-close {
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid var(--border-subtle);
+  font-size: 1.1rem;
+  color: var(--text-secondary);
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 6px;
+  transition: all 0.12s;
+  line-height: 1;
+}
+
+.printer-modal-close:hover {
+  background: rgba(255, 255, 255, 0.15);
+  color: #FFFFFF;
+}
+
+.printer-modal-body {
+  padding: 1.25rem 1.4rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.95rem;
+}
+
+.printer-status-box {
+  background: var(--bg-surface-elevated);
+  border: 1px solid var(--border-subtle);
+  border-radius: 12px;
+  padding: 0.95rem 1.1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.ps-indicator-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.ps-dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background-color: var(--text-muted);
+}
+
+.ps-dot.connected,
+.ps-dot.ready {
+  background-color: var(--status-green);
+  box-shadow: 0 0 8px rgba(34, 197, 94, 0.6);
+}
+
+.ps-dot.reconnecting {
+  background-color: var(--status-yellow);
+  box-shadow: 0 0 8px rgba(234, 179, 8, 0.6);
+  animation: pulseDot 0.8s infinite ease-in-out;
+}
+
+.ps-dot.disconnected {
+  background-color: var(--danger-red);
+  box-shadow: 0 0 8px rgba(239, 68, 68, 0.6);
+}
+
+.ps-status-text {
+  font-weight: 700;
+  font-size: 0.88rem;
+  color: var(--text-primary);
+}
+
+.ps-device-name {
+  font-size: 1rem;
+  font-weight: 800;
+  color: var(--text-primary);
+}
+
+.ps-device-id {
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  word-break: break-all;
+}
+
+.printer-guide-box {
+  background: rgba(6, 182, 212, 0.06);
+  border: 1px solid rgba(6, 182, 212, 0.2);
+  border-radius: 10px;
+  padding: 0.75rem 0.95rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+  font-size: 0.78rem;
+  color: #67E8F9;
+  line-height: 1.35;
+}
+
+.guide-item {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+}
+
+.guide-badge {
+  background: rgba(6, 182, 212, 0.18);
+  color: #A5F3FC;
+  font-size: 0.65rem;
+  font-weight: 800;
+  padding: 2px 6px;
+  border-radius: 4px;
+  letter-spacing: 0.02em;
+}
+
+.printer-modal-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+  margin-top: 0.25rem;
+}
+
+.btn-primary-pair {
+  height: 44px;
+  background: var(--text-primary);
+  color: #07090E;
+  border: none;
+  border-radius: 8px;
+  font-family: var(--font-sans);
+  font-size: 0.92rem;
+  font-weight: 800;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+}
+
+.btn-primary-pair:hover {
+  background: #E2E8F0;
+  transform: translateY(-1px);
+}
+
+.btn-primary-pair:active {
+  transform: translateY(0);
+}
+
+.btn-test-print {
+  height: 40px;
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--text-primary);
+  border: 1px solid var(--border-subtle);
+  border-radius: 8px;
+  font-family: var(--font-sans);
+  font-size: 0.86rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.btn-test-print:hover {
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.btn-forget-printer {
+  height: 36px;
+  background: none;
+  color: #F87171;
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  border-radius: 8px;
+  font-family: var(--font-sans);
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.btn-forget-printer:hover {
+  background: rgba(239, 68, 68, 0.12);
+}
+
+/* ==========================================================================
+   8. PHYSICAL THERMAL PRINTER MEDIA QUERY (58mm ESC/POS EMULATION)
    ========================================================================== */
 @media print {
   body * {
@@ -1168,7 +1670,7 @@ html, body {
     margin: 0 !important;
     border: none !important;
     box-shadow: none !important;
-    background: #ffffff !important;
+    background: #FFFFFF !important;
     color: #000000 !important;
     font-family: 'Space Mono', 'Courier New', Courier, monospace !important;
     font-size: 11px !important;
@@ -1179,993 +1681,4 @@ html, body {
     margin: 0;
     size: 58mm auto;
   }
-}
-
-/* ==========================================================================
-   RESPONSIVE LAYOUT ENGINE (ALL DEVICES & RESOLUTIONS)
-   - Large Displays & Standard POS (1025px - 1440px+)
-   - Tablets in Landscape & Compact POS (769px - 1024px)
-   - Tablets in Portrait & Mobile Devices (<= 768px)
-   - Handheld Small Devices (<= 480px)
-   ========================================================================== */
-
-/* 1. Standard 15" POS Terminals & Compact Widescreen (1025px - 1280px) */
-@media (max-width: 1280px) and (min-width: 1025px) {
-  .speed-pad-panel {
-    width: 62%;
-    flex: 0 0 62%;
-    padding: 8px;
-  }
-  .ticket-panel {
-    width: 38%;
-    flex: 0 0 38%;
-  }
-  .speed-dial-grid {
-    gap: 8px;
-  }
-  .speed-tile {
-    padding: 0.65rem 0.75rem;
-  }
-  .tile-name {
-    font-size: 0.95rem;
-  }
-  .tile-price {
-    font-size: 1.1rem;
-  }
-  .total-value {
-    font-size: 2.1rem;
-  }
-  .giant-punch-btn {
-    font-size: 1.15rem;
-  }
-}
-
-/* 2. Small Landscape Monitors & Tablets (769px - 1024px) */
-@media (max-width: 1024px) and (min-width: 769px) {
-  .pos-header {
-    height: 58px;
-    min-height: 58px;
-    padding: 0 1rem;
-  }
-  .brand-title {
-    font-size: 1.05rem;
-  }
-  .top-token-display {
-    font-size: 1.6rem;
-    padding: 0.15rem 0.9rem;
-  }
-  .printer-status-pill {
-    height: 38px;
-    padding: 0 0.75rem;
-    font-size: 0.85rem;
-  }
-  .btn-clear-ticket {
-    height: 38px;
-    padding: 0 0.85rem;
-    font-size: 0.85rem;
-  }
-  .pos-workspace {
-    height: calc(100vh - 58px);
-  }
-  .speed-pad-panel {
-    width: 58%;
-    flex: 0 0 58%;
-    padding: 6px;
-  }
-  .ticket-panel {
-    width: 42%;
-    flex: 0 0 42%;
-  }
-  .speed-dial-grid {
-    gap: 6px;
-  }
-  .speed-tile {
-    padding: 0.55rem 0.65rem;
-  }
-  .tile-name {
-    font-size: 0.88rem;
-    line-height: 1.1;
-  }
-  .tile-price {
-    font-size: 1.05rem;
-  }
-  .tile-code-tag {
-    font-size: 0.72rem;
-  }
-  .total-heading {
-    font-size: 1.25rem;
-  }
-  .total-value {
-    font-size: 1.85rem;
-  }
-  .giant-punch-btn {
-    height: 60px;
-    min-height: 60px;
-    font-size: 1.1rem;
-  }
-}
-
-/* 3. Mobile Screens, Handheld Terminals & Portrait Tablets (<= 768px) */
-@media (max-width: 768px) {
-  /* Header Adjustments */
-  .pos-header {
-    height: 50px;
-    min-height: 50px;
-    padding: 0 0.65rem;
-    gap: 0.5rem;
-  }
-  .brand-title {
-    font-size: 0.85rem;
-    max-width: 120px;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
-  .top-token-display {
-    font-size: 1.15rem;
-    padding: 0.12rem 0.55rem;
-    border-radius: 6px;
-    border-width: 1.5px;
-  }
-  .printer-status-pill {
-    height: 34px;
-    padding: 0 0.55rem;
-    font-size: 0.8rem;
-    gap: 0.35rem;
-  }
-  .printer-status-pill::before {
-    content: "🖨️";
-    font-size: 0.85rem;
-    line-height: 1;
-  }
-  .printer-ready-text {
-    display: none; /* Icon and status dot only on mobile */
-  }
-  .btn-clear-ticket {
-    height: 34px;
-    padding: 0 0.65rem;
-    font-size: 0.8rem;
-    font-weight: 800;
-  }
-
-  /* Workspace Layout: Vertical Stack with Docked Bottom Drawer */
-  .pos-workspace {
-    position: relative;
-    display: flex;
-    flex-direction: column;
-    height: calc(100vh - 50px);
-    height: calc(100dvh - 50px);
-    overflow: hidden;
-  }
-
-  /* Speed Pad: Scrollable upper area with bottom padding so all items scroll clear of the dock */
-  .speed-pad-panel {
-    width: 100%;
-    flex: 1 1 auto;
-    height: 100%;
-    padding: 6px 6px 155px; /* Ensures items 11 and 12 can scroll completely into view */
-    overflow-y: auto;
-    overflow-x: hidden;
-    -webkit-overflow-scrolling: touch;
-    scrollbar-width: thin;
-  }
-
-  /* 3 columns on tablet portrait, 2 columns on phones */
-  .speed-dial-grid {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    grid-auto-rows: minmax(84px, auto);
-    gap: 6px;
-    min-height: auto;
-    height: auto;
-  }
-
-  .speed-tile {
-    height: 86px;
-    padding: 3px;
-    border-radius: 10px;
-    position: relative;
-    display: flex;
-    flex-direction: column;
-    overflow: hidden;
-    user-select: none;
-    -webkit-tap-highlight-color: transparent;
-    touch-action: manipulation;
-  }
-
-  .speed-tile:active {
-    transform: scale(0.96);
-    transition: transform 0.08s ease;
-  }
-
-  .tile-image-section {
-    height: 52%;
-    width: 100%;
-    border-radius: 6px;
-    overflow: hidden;
-  }
-
-  .tile-info-section {
-    height: 48%;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    padding: 2px 4px 1px;
-  }
-
-  .tile-name {
-    font-size: 0.76rem;
-    font-weight: 800;
-    line-height: 1.15;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
-
-  .tile-price {
-    font-size: 0.95rem;
-    font-weight: 900;
-    font-family: var(--font-mono);
-    line-height: 1.1;
-  }
-
-  .tile-hotkey-tag {
-    font-size: 0.65rem;
-    padding: 1px 4px;
-    top: 3px;
-    left: 3px;
-  }
-
-  .tile-qty-badge {
-    min-width: 22px;
-    height: 20px;
-    font-size: 0.75rem;
-    padding: 0 4px;
-    top: 3px;
-    right: 3px;
-  }
-
-  .tile-hint {
-    display: none;
-  }
-
-  /* Mobile Drawer Backdrop */
-  .mobile-drawer-backdrop {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100vw;
-    height: 100vh;
-    background: rgba(15, 23, 42, 0.65);
-    backdrop-filter: blur(2px);
-    z-index: 800;
-    opacity: 0;
-    pointer-events: none;
-    transition: opacity 0.25s ease;
-  }
-
-  .mobile-drawer-backdrop.active {
-    display: block;
-    opacity: 1;
-    pointer-events: auto;
-  }
-
-  /* Ticket Panel: Docked Bottom Sheet */
-  .ticket-panel {
-    position: absolute;
-    bottom: 0;
-    left: 0;
-    width: 100%;
-    flex: 0 0 auto;
-    z-index: 900;
-    background-color: var(--color-paper);
-    border-left: none;
-    border-top: 2px solid var(--color-gray-300);
-    border-radius: 18px 18px 0 0;
-    box-shadow: 0 -8px 28px rgba(0, 0, 0, 0.16);
-    transition: height 0.28s cubic-bezier(0.16, 1, 0.3, 1), transform 0.28s cubic-bezier(0.16, 1, 0.3, 1);
-    display: flex;
-    flex-direction: column;
-    overflow: hidden;
-  }
-
-  /* Mobile Bar (Always visible at top of docked sheet) */
-  .mobile-ticket-bar {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    height: 36px;
-    min-height: 36px;
-    padding: 0 0.85rem;
-    background-color: var(--color-gray-100);
-    border-bottom: 1px solid var(--color-gray-200);
-    cursor: pointer;
-    user-select: none;
-  }
-
-  .mobile-bar-summary {
-    display: flex;
-    align-items: center;
-    gap: 0.55rem;
-  }
-
-  .mobile-badge {
-    font-size: 0.76rem;
-    font-weight: 900;
-    padding: 2px 7px;
-    background-color: var(--color-heavy-black);
-    color: #ffffff;
-    border-radius: 999px;
-    letter-spacing: 0.04em;
-  }
-
-  .mobile-total {
-    font-size: 1.05rem;
-    font-weight: 900;
-    color: var(--color-heavy-black);
-    font-family: var(--font-mono);
-  }
-
-  .mobile-toggle-btn {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.35rem;
-    background: none;
-    border: none;
-    font-family: var(--font-sans);
-    font-size: 0.8rem;
-    font-weight: 800;
-    color: var(--action-orange);
-    cursor: pointer;
-    padding: 4px;
-  }
-
-  .toggle-arrow {
-    font-size: 0.75rem;
-    transition: transform 0.22s ease;
-  }
-
-  /* Collapsed state (Default): Compact docked bar with customer input and full-height PRINT KOT button */
-  .ticket-panel:not(.drawer-open) {
-    height: auto;
-    max-height: 142px;
-    padding-bottom: max(6px, env(safe-area-inset-bottom));
-  }
-
-  .ticket-panel:not(.drawer-open) .ticket-header-banner,
-  .ticket-panel:not(.drawer-open) .ticket-items-scroll,
-  .ticket-panel:not(.drawer-open) .ticket-total-row,
-  .ticket-panel:not(.drawer-open) .secondary-bill-btn {
-    display: none !important;
-  }
-
-  .ticket-panel:not(.drawer-open) .ticket-customer-bar {
-    padding: 4px 0.75rem;
-    background-color: transparent;
-    border-bottom: none;
-  }
-
-  .ticket-panel:not(.drawer-open) .customer-name-input {
-    height: 32px;
-    font-size: 0.82rem;
-    padding-left: 2rem;
-    padding-right: 1.75rem;
-    border-radius: 7px;
-  }
-
-  .ticket-panel:not(.drawer-open) .customer-input-icon {
-    left: 0.65rem;
-    font-size: 0.85rem;
-  }
-
-  .ticket-panel:not(.drawer-open) .customer-clear-btn {
-    width: 22px;
-    height: 22px;
-    font-size: 0.72rem;
-    right: 0.45rem;
-  }
-
-  .ticket-panel:not(.drawer-open) .ticket-bottom-section {
-    padding: 3px 0.75rem 6px;
-    gap: 0;
-    border-top: none;
-    box-shadow: none;
-    background: transparent;
-  }
-
-  .ticket-panel:not(.drawer-open) .giant-punch-btn {
-    height: 44px;
-    min-height: 44px;
-    font-size: 0.98rem;
-    font-weight: 900;
-    border-radius: 10px;
-    letter-spacing: 0.02em;
-  }
-
-  /* Expanded State (Drawer Open) */
-  .ticket-panel.drawer-open {
-    height: 82vh;
-    max-height: 85vh;
-    border-radius: 20px 20px 0 0;
-  }
-
-  .ticket-panel.drawer-open .toggle-arrow {
-    transform: rotate(180deg);
-  }
-
-  .ticket-panel.drawer-open .mobile-ticket-bar {
-    height: 36px;
-    min-height: 36px;
-    background-color: var(--color-gray-100);
-    border-bottom: 1px solid var(--color-gray-200);
-  }
-
-  .ticket-panel.drawer-open .ticket-header-banner {
-    display: flex;
-    padding: 0.65rem 0.85rem;
-    background-color: var(--color-white);
-    border-bottom: 1px solid var(--color-gray-200);
-  }
-
-  .ticket-panel.drawer-open .mobile-drawer-close-btn {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 32px;
-    height: 32px;
-    background-color: var(--color-gray-100);
-    border: 1px solid var(--color-gray-300);
-    border-radius: 8px;
-    font-size: 0.95rem;
-    font-weight: 900;
-    color: var(--color-gray-700);
-    cursor: pointer;
-  }
-
-  .ticket-panel.drawer-open .ticket-customer-bar {
-    padding: 0.5rem 0.85rem;
-    background-color: var(--color-white);
-    border-bottom: 1px solid #E5E7EB;
-  }
-
-  .ticket-panel.drawer-open .customer-name-input {
-    height: 36px;
-    font-size: 0.88rem;
-  }
-
-  .ticket-panel.drawer-open .ticket-items-scroll {
-    display: flex;
-    flex: 1;
-    overflow-y: auto;
-    padding: 0.65rem 0.85rem;
-    gap: 0.5rem;
-    background-color: var(--color-paper);
-  }
-
-  .ticket-panel.drawer-open .ticket-item-row {
-    padding: 0.6rem 0.75rem;
-    border-radius: 8px;
-  }
-
-  .ticket-panel.drawer-open .ticket-item-name {
-    font-size: 0.88rem;
-  }
-
-  .ticket-panel.drawer-open .ticket-item-subtotal {
-    font-size: 0.92rem;
-  }
-
-  .ticket-panel.drawer-open .touch-step-btn {
-    width: 32px;
-    height: 32px;
-    font-size: 1.1rem;
-  }
-
-  .ticket-panel.drawer-open .touch-step-val {
-    min-width: 24px;
-    font-size: 0.88rem;
-  }
-
-  .ticket-panel.drawer-open .btn-trash-item {
-    width: 32px;
-    height: 32px;
-    font-size: 0.9rem;
-  }
-
-  .ticket-panel.drawer-open .ticket-bottom-section {
-    padding: 0.65rem 0.85rem max(8px, env(safe-area-inset-bottom));
-    gap: 0.5rem;
-    border-top: 2px dashed var(--color-gray-300);
-    background-color: var(--color-white);
-  }
-
-  .ticket-panel.drawer-open .ticket-total-row {
-    display: flex;
-  }
-
-  .ticket-panel.drawer-open .total-heading {
-    font-size: 1.15rem;
-  }
-
-  .ticket-panel.drawer-open .total-value {
-    font-size: 1.65rem;
-  }
-
-  .ticket-panel.drawer-open .secondary-bill-btn {
-    display: flex;
-    height: 40px;
-    min-height: 40px;
-    font-size: 0.88rem;
-  }
-
-  .ticket-panel.drawer-open .giant-punch-btn {
-    height: 50px;
-    min-height: 50px;
-    font-size: 1.05rem;
-  }
-}
-
-/* 4. Ultra-Compact Mobile Phones (<= 480px, e.g. iPhone SE, Galaxy, Pixel) */
-@media (max-width: 480px) {
-  .pos-header {
-    height: 48px;
-    min-height: 48px;
-    padding: 0 0.5rem;
-    gap: 0.35rem;
-  }
-
-  .header-left {
-    min-width: 0;
-    flex: 0 1 auto;
-  }
-
-  .brand-title {
-    font-size: 0.78rem;
-    max-width: 95px;
-    letter-spacing: -0.01em;
-  }
-
-  .top-token-display {
-    font-size: 0.95rem;
-    padding: 0.12rem 0.45rem;
-  }
-
-  .header-right {
-    display: flex;
-    align-items: center;
-    gap: 0.3rem;
-    margin-left: auto;
-  }
-
-  .printer-status-pill {
-    height: 32px;
-    padding: 0 0.45rem;
-    gap: 0.3rem;
-    border-radius: 7px;
-  }
-
-  .btn-clear-ticket {
-    height: 32px;
-    padding: 0 0.5rem;
-    font-size: 0.75rem;
-    border-radius: 7px;
-  }
-
-  .pos-workspace {
-    height: calc(100vh - 48px);
-    height: calc(100dvh - 48px);
-  }
-
-  .speed-pad-panel {
-    padding: 4px 4px 150px;
-  }
-
-  /* 2 columns x auto rows for maximum thumb reach on phones */
-  .speed-dial-grid {
-    grid-template-columns: repeat(2, 1fr);
-    grid-auto-rows: minmax(80px, auto);
-    gap: 5px;
-  }
-
-  .speed-tile {
-    height: 82px;
-    padding: 3px;
-    border-radius: 10px;
-  }
-
-  .tile-image-section {
-    height: 50%;
-    border-radius: 6px;
-  }
-
-  .tile-info-section {
-    height: 50%;
-    padding: 2px 3px 1px;
-  }
-
-  .tile-name {
-    font-size: 0.72rem;
-    line-height: 1.12;
-  }
-
-  .tile-price {
-    font-size: 0.9rem;
-  }
-
-  .tile-hotkey-tag {
-    font-size: 0.62rem;
-    padding: 1px 3.5px;
-    top: 2px;
-    left: 2px;
-  }
-
-  .tile-qty-badge {
-    min-width: 20px;
-    height: 18px;
-    font-size: 0.7rem;
-    padding: 0 3px;
-    top: 2px;
-    right: 2px;
-  }
-
-  /* Modal Dialog for small screens */
-  .printer-modal-card {
-    max-width: calc(100vw - 1rem);
-    border-radius: 14px;
-  }
-
-  .printer-modal-header {
-    padding: 0.85rem 1rem 0.75rem;
-  }
-
-  .printer-modal-title {
-    font-size: 1.02rem;
-  }
-
-  .printer-modal-subtitle {
-    font-size: 0.76rem;
-  }
-
-  .printer-modal-body {
-    padding: 0.85rem 1rem;
-    gap: 0.75rem;
-  }
-
-  .btn-primary-pair {
-    height: 44px;
-    font-size: 0.88rem;
-  }
-
-  .btn-test-print {
-    height: 40px;
-    font-size: 0.85rem;
-  }
-
-  .btn-forget-printer {
-    height: 36px;
-    font-size: 0.82rem;
-  }
-}
-
-/* 5. Landscape Phones & Short Displays (max-height: 520px and landscape) */
-@media (max-height: 520px) and (orientation: landscape) {
-  .pos-header {
-    height: 44px;
-    min-height: 44px;
-    padding: 0 0.75rem;
-  }
-  .pos-workspace {
-    height: calc(100vh - 44px);
-    flex-direction: row !important;
-  }
-  .speed-pad-panel {
-    width: 60% !important;
-    height: 100% !important;
-    padding: 4px;
-  }
-  .speed-dial-grid {
-    grid-template-columns: repeat(4, 1fr) !important;
-    grid-template-rows: repeat(3, 1fr) !important;
-    gap: 4px;
-    height: 100%;
-  }
-  .speed-tile {
-    padding: 3px;
-  }
-  .tile-image-section {
-    height: 50%;
-  }
-  .tile-info-section {
-    height: 50%;
-    padding: 2px 2px 1px;
-  }
-  .tile-name {
-    font-size: 0.7rem;
-    line-height: 1.05;
-  }
-  .tile-price {
-    font-size: 0.84rem;
-  }
-  .tile-hotkey-tag {
-    font-size: 0.6rem;
-    padding: 1px 3px;
-  }
-  .ticket-panel {
-    width: 40% !important;
-    position: static !important;
-    height: 100% !important;
-    border-radius: 0 !important;
-    border-left: 2px solid var(--color-gray-200) !important;
-  }
-  .mobile-ticket-bar {
-    display: none !important;
-  }
-  .ticket-header-banner,
-  .ticket-items-scroll,
-  .ticket-total-row {
-    display: flex !important;
-  }
-  .giant-punch-btn {
-    height: 46px !important;
-    min-height: 46px !important;
-    font-size: 0.98rem !important;
-  }
-  .total-value {
-    font-size: 1.45rem !important;
-  }
-}
-
-/* ==========================================================================
-   PRINTER SETUP MODAL (ADMIN / ONE-TIME SETUP)
-   ========================================================================== */
-.printer-modal-backdrop {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100vw;
-  height: 100vh;
-  background-color: rgba(15, 23, 42, 0.75);
-  backdrop-filter: blur(4px);
-  z-index: 2000;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 1rem;
-  animation: modalFadeIn 0.15s ease-out;
-}
-
-@keyframes modalFadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
-}
-
-.printer-modal-card {
-  width: 100%;
-  max-width: 480px;
-  background-color: #ffffff;
-  border-radius: 16px;
-  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.35);
-  overflow: hidden;
-  border: 1px solid #e2e8f0;
-  animation: modalSlideUp 0.18s ease-out;
-}
-
-@keyframes modalSlideUp {
-  from { transform: translateY(14px) scale(0.98); }
-  to { transform: translateY(0) scale(1); }
-}
-
-.printer-modal-header {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  padding: 1.25rem 1.5rem 1rem;
-  border-bottom: 1px solid #e2e8f0;
-  background-color: #f8fafc;
-}
-
-.printer-modal-title-group {
-  display: flex;
-  align-items: center;
-  gap: 0.85rem;
-}
-
-.printer-modal-icon {
-  font-size: 2rem;
-  line-height: 1;
-}
-
-.printer-modal-title {
-  font-size: 1.15rem;
-  font-weight: 800;
-  color: #0f172a;
-}
-
-.printer-modal-subtitle {
-  font-size: 0.82rem;
-  color: #64748b;
-  margin-top: 3px;
-  line-height: 1.3;
-}
-
-.printer-modal-close {
-  background: none;
-  border: none;
-  font-size: 1.3rem;
-  color: #64748b;
-  cursor: pointer;
-  padding: 4px 8px;
-  border-radius: 6px;
-  transition: all 0.12s;
-  line-height: 1;
-}
-
-.printer-modal-close:hover {
-  background-color: #e2e8f0;
-  color: #0f172a;
-}
-
-.printer-modal-body {
-  padding: 1.25rem 1.5rem;
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-}
-
-.printer-status-box {
-  background-color: #f8fafc;
-  border: 1.5px solid #e2e8f0;
-  border-radius: 12px;
-  padding: 1rem 1.15rem;
-  display: flex;
-  flex-direction: column;
-  gap: 0.35rem;
-}
-
-.ps-indicator-row {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-}
-
-.ps-dot {
-  width: 10px;
-  height: 10px;
-  border-radius: 50%;
-  background-color: #94a3b8;
-}
-
-.ps-dot.connected,
-.ps-dot.ready {
-  background-color: #22c55e;
-  box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.25);
-}
-
-.ps-dot.reconnecting {
-  background-color: #eab308;
-  box-shadow: 0 0 0 3px rgba(234, 179, 8, 0.25);
-  animation: pulseDot 0.8s infinite ease-in-out;
-}
-
-.ps-dot.disconnected {
-  background-color: #ef4444;
-  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.25);
-  animation: none;
-}
-
-.ps-status-text {
-  font-weight: 700;
-  font-size: 0.92rem;
-  color: #1e293b;
-}
-
-.ps-device-name {
-  font-size: 1.05rem;
-  font-weight: 800;
-  color: #0f172a;
-}
-
-.ps-device-id {
-  font-family: var(--font-mono);
-  font-size: 0.75rem;
-  color: #94a3b8;
-  word-break: break-all;
-}
-
-.printer-guide-box {
-  background-color: #eff6ff;
-  border: 1px solid #bfdbfe;
-  border-radius: 10px;
-  padding: 0.85rem 1rem;
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-  font-size: 0.82rem;
-  color: #1e40af;
-  line-height: 1.35;
-}
-
-.guide-item {
-  display: flex;
-  align-items: center;
-  gap: 0.6rem;
-}
-
-.guide-badge {
-  background-color: #dbeafe;
-  color: #1d4ed8;
-  font-size: 0.68rem;
-  font-weight: 800;
-  padding: 2px 6px;
-  border-radius: 4px;
-  letter-spacing: 0.02em;
-}
-
-.printer-modal-actions {
-  display: flex;
-  flex-direction: column;
-  gap: 0.65rem;
-  margin-top: 0.25rem;
-}
-
-.btn-primary-pair {
-  height: 46px;
-  background-color: #0f172a;
-  color: #ffffff;
-  border: none;
-  border-radius: 10px;
-  font-family: var(--font-sans);
-  font-size: 0.95rem;
-  font-weight: 800;
-  cursor: pointer;
-  transition: all 0.15s ease;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.5rem;
-}
-
-.btn-primary-pair:hover {
-  background-color: #1e293b;
-  transform: translateY(-1px);
-}
-
-.btn-primary-pair:active {
-  transform: translateY(0);
-}
-
-.btn-test-print {
-  height: 42px;
-  background-color: #f1f5f9;
-  color: #334155;
-  border: 1.5px solid #cbd5e1;
-  border-radius: 10px;
-  font-family: var(--font-sans);
-  font-size: 0.9rem;
-  font-weight: 700;
-  cursor: pointer;
-  transition: all 0.15s ease;
-}
-
-.btn-test-print:hover {
-  background-color: #e2e8f0;
-  color: #0f172a;
-}
-
-.btn-forget-printer {
-  height: 38px;
-  background: none;
-  color: #ef4444;
-  border: 1.5px solid #fecaca;
-  border-radius: 10px;
-  font-family: var(--font-sans);
-  font-size: 0.85rem;
-  font-weight: 700;
-  cursor: pointer;
-  transition: all 0.15s ease;
-}
-
-.btn-forget-printer:hover {
-  background-color: #fef2f2;
-  border-color: #f87171;
 }
