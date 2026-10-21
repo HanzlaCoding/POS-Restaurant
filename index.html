@@ -4,13 +4,22 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-  <title>The Artisan Grill &amp; Co. • Speed-Pad POS</title>
+  <title>BiteDash • Mobile Food Cart POS</title>
+
+  <!-- PWA Configuration & Mobile Web App Meta -->
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#FFFFFF">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="BiteDash POS">
+  <link rel="icon" type="image/svg+xml" href="assets/icons/icon.svg">
+  <link rel="apple-touch-icon" href="assets/icons/icon.svg">
 
   <!-- Inter, Noto Naskh Arabic & Space Mono Google Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link
-    href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Noto+Naskh+Arabic:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap"
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Noto+Naskh+Arabic:wght@500;600;700;800&family=Space+Mono:wght@400;700;800&display=swap"
     rel="stylesheet">
 
   <link rel="stylesheet" href="style.css">
@@ -19,120 +28,112 @@
 <body>
   <div class="pos-app-wrapper">
 
-    <!-- 1. TOP BAR -->
+    <!-- 1. COMPACT TOP STATUS BAR -->
     <header class="pos-header">
-      <!-- Left: Restaurant Title in sleek minimalist dark typography -->
+      <!-- Left: BiteDash Food Cart Branding -->
       <div class="header-left">
-        <span class="brand-badge">POS</span>
-        <h1 class="brand-title">THE ARTISAN GRILL &amp; CO.</h1>
+        <span class="brand-logo-icon">🍔</span>
+        <div class="brand-text-col">
+          <h1 class="brand-title">BiteDash</h1>
+          <span class="brand-subtitle">CART POS</span>
+        </div>
       </div>
 
-      <!-- Center: Current Token ("TOKEN #043") in double-size bold text -->
+      <!-- Center: Current Token Number ("TOKEN #043") -->
       <div class="header-center">
         <div class="top-token-display" id="topTokenDisplay">TOKEN #043</div>
       </div>
 
-      <!-- Right: "🖨️ Printer Ready" status dot and single "Clear Ticket" button -->
+      <!-- Right: Bluetooth Status Pill & Reset Button -->
       <div class="header-right">
         <button class="printer-status-pill" id="connectBtBtn"
           title="Thermal Printer • Click to pair or configure Bluetooth printer">
           <span class="printer-ready-dot" id="printerStatusDot"></span>
-          <span class="printer-ready-text" id="printerBtnText">🔴 Connect Printer</span>
+          <span class="printer-ready-text" id="printerBtnText">🔴 Connect</span>
         </button>
         <button class="btn-clear-ticket" id="clearCartBtn" title="Clear current ticket (Esc)">
-          Clear Ticket
+          ✕ Reset
         </button>
       </div>
     </header>
 
-    <!-- MAIN WORKSPACE: 65% / 35% SPLIT -->
+    <!-- 2. STICKY HORIZONTAL CATEGORY BAR (One-Thumb Fast Category Filter) -->
+    <nav class="category-pills-bar" id="categoryPillsBar">
+      <button type="button" class="cat-pill active" data-category="all">
+        <span class="pill-ur" lang="ur">تمام</span>
+        <span class="pill-en">ALL</span>
+      </button>
+      <button type="button" class="cat-pill" data-category="burger">
+        <span class="pill-dot"></span>
+        <span class="pill-ur" lang="ur">برگر</span>
+        <span class="pill-en">BURGERS</span>
+      </button>
+      <button type="button" class="cat-pill" data-category="side">
+        <span class="pill-dot"></span>
+        <span class="pill-ur" lang="ur">فرائز اور سائیڈز</span>
+        <span class="pill-en">SIDES</span>
+      </button>
+      <button type="button" class="cat-pill" data-category="drink">
+        <span class="pill-dot"></span>
+        <span class="pill-ur" lang="ur">مشروبات</span>
+        <span class="pill-en">DRINKS</span>
+      </button>
+    </nav>
+
+    <!-- 3. MOBILE-FIRST SINGLE-SCREEN SPEED GRID -->
     <main class="pos-workspace">
-
-      <!-- 1. FIXED SPEED-DIAL GRID (65% Width, NO SCROLL, NO TABS) -->
-      <section class="speed-pad-panel">
+      <section class="speed-pad-panel" id="speedPadPanel">
         <div class="speed-dial-grid" id="speedDialGrid">
-          <!-- Populated with 12 fixed touch blocks via app.js -->
+          <!-- Populated dynamically via app.js -->
         </div>
       </section>
-
-      <!-- 2. TICKET PANEL (35% Width on Desktop, Responsive Drawer on Mobile) -->
-      <section class="ticket-panel" id="ticketPanel">
-
-        <!-- Mobile Toggle Bar (Visible only on screens <= 768px) -->
-        <div class="mobile-ticket-bar" id="mobileTicketBar">
-          <div class="mobile-bar-summary">
-            <span class="mobile-badge" id="mobileTicketBadge">0 ITEMS</span>
-            <span class="mobile-total" id="mobileTotalDisplay">Rs. 0</span>
-          </div>
-          <button class="mobile-toggle-btn" id="mobileToggleBtn" type="button" aria-label="Toggle ticket details">
-            <span class="toggle-text" id="mobileToggleText">VIEW TICKET</span>
-            <span class="toggle-arrow" id="mobileToggleArrow">▲</span>
-          </button>
-        </div>
-
-        <!-- Ticket Header Banner -->
-        <div class="ticket-header-banner">
-          <div class="ticket-header-info">
-            <span class="ticket-header-title">CURRENT TICKET</span>
-            <span class="ticket-token-pill" id="ticketPanelToken">TOKEN #043</span>
-          </div>
-          <div class="ticket-header-actions">
-            <span class="ticket-badge-count" id="ticketCountBadge">0 ITEMS</span>
-            <button class="mobile-drawer-close-btn" id="closeMobileDrawerBtn" type="button"
-              aria-label="Close ticket drawer">✕</button>
-          </div>
-        </div>
-
-        <!-- Customer Name Input (Directly below TOKEN #043) -->
-        <div class="ticket-customer-bar">
-          <div class="customer-input-wrapper">
-            <span class="customer-input-icon">👤</span>
-            <input 
-              type="text" 
-              id="customerNameInput" 
-              class="customer-name-input" 
-              placeholder="Customer Name (e.g. Ali) [Optional]" 
-              autocomplete="off" 
-              spellcheck="false"
-              maxlength="32"
-            />
-            <button type="button" class="customer-clear-btn" id="clearCustomerNameBtn" title="Clear customer name" style="display: none;">✕</button>
-          </div>
-        </div>
-
-        <!-- Paper-white ticket background with clean itemized list -->
-        <div class="ticket-items-scroll" id="ticketItemsContainer">
-          <div class="ticket-empty-state" id="ticketEmptyState">
-            <div class="empty-icon">🧾</div>
-            <p class="empty-title">Ticket is Empty</p>
-            <p class="empty-hint">Tap any Speed-Pad tile on the left to punch items</p>
-          </div>
-        </div>
-
-        <!-- Bottom Section:  q
-             * Massive "TOTAL: Rs. X,XXX" in heavy black text.
-             * Secondary Outline Button: "🖨️ Print Customer Bill [Space]" (Height: 44px)
-             * Primary Giant Action Button: "PRINT KOT (KITCHEN) ⚡ [Enter]" (Height: 56px, Solid Orange #F97316)
-        -->
-        <div class="ticket-bottom-section">
-          <div class="ticket-total-row">
-            <span class="total-heading">TOTAL:</span>
-            <span class="total-value" id="summaryGrandTotal">Rs. 0</span>
-          </div>
-
-          <div class="ticket-actions-group">
-            <button class="giant-punch-btn primary-kot-btn" id="checkoutBtn" disabled title="Send KOT to Kitchen & Next Customer [Enter]">
-              PRINT KOT (KITCHEN) ⚡ [Enter]
-            </button>
-          </div>
-        </div>
-
-      </section>
-
     </main>
 
-    <!-- Mobile Drawer Backdrop Overlay -->
-    <div class="mobile-drawer-backdrop" id="mobileDrawerBackdrop"></div>
+    <!-- 4. STICKY BOTTOM CHECKOUT BAR (Zero Friction Checkout & Print) -->
+    <footer class="mobile-action-bar" id="mobileActionBar">
+      <!-- Row 1: Optional Customer Name Input -->
+      <div class="m-customer-row">
+        <div class="m-customer-wrap">
+          <span class="m-cust-icon">👤</span>
+          <input 
+            type="text" 
+            id="mobileCustomerInput" 
+            class="m-customer-input" 
+            placeholder="گاہک کا نام (Optional Customer Name)..." 
+            autocomplete="off" 
+            spellcheck="false"
+            maxlength="32"
+          />
+          <button type="button" id="mobileClearCustBtn" class="m-clear-cust-btn" style="display: none;" title="Clear">✕</button>
+        </div>
+      </div>
+
+      <!-- Row 2: Live Summary Meta & Grand Total -->
+      <div class="m-action-summary-row">
+        <div class="m-action-meta">
+          <span class="m-badge-count" id="mobileCountBadge">0 ITEMS</span>
+          <span class="m-summary-label">Total:</span>
+        </div>
+        <div class="m-total-val" id="mobileTotalDisplay">Rs. 0</div>
+      </div>
+
+      <!-- Row 3: Massive High-Contrast Amber PRINT KOT Button -->
+      <button type="button" class="m-print-kot-btn" id="mobileCheckoutBtn" disabled title="Send KOT to Kitchen & Next Customer [Enter]">
+        PRINT KOT ⚡ [ENTER]
+      </button>
+    </footer>
+
+    <!-- HIDDEN COMPATIBILITY HOOKS FOR DESKTOP ELEMENT HANDLERS -->
+    <div style="display: none !important;">
+      <input type="text" id="customerNameInput" />
+      <button id="clearCustomerNameBtn"></button>
+      <button id="checkoutBtn"></button>
+      <span id="summaryGrandTotal"></span>
+      <span id="ticketPanelToken"></span>
+      <span id="ticketCountBadge"></span>
+      <div id="ticketItemsContainer"></div>
+      <div id="ticketEmptyState"></div>
+    </div>
 
     <!-- TOAST NOTIFICATION CONTAINER -->
     <div class="toast-container" id="toastContainer"></div>
@@ -284,6 +285,7 @@
 
   </div>
 
+  <script src="android-bridge.js"></script>
   <script src="app.js"></script>
 </body>
 

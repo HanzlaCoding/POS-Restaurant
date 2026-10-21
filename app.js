@@ -14,18 +14,17 @@ window.printerChar = null;
 let keepAliveTimer = null;
 
 // ============================================================================
-// 1. TOP 12 MOST-SOLD ITEMS (FIXED SPEED-DIAL COORDINATES)
-// ============================================================================
-// ============================================================================
-// 1. SPEED PAD ITEMS (Sirf Urdu Bold Naamo ke sath)
+// 1. TOP 12 MOST-SOLD ITEMS (FOOD CART SPEED-PAD CATEGORIZED COORDINATES)
 // ============================================================================
 const SPEED_ITEMS = [
+  // --- ROW 1: BURGERS ("برگر - Burgers") ---
   {
     id: 'sp-01',
     code: 'B1',
     hotkey: '1',
-    name: 'Wagyu Smash Burger',
-    shortName: 'واگیو برگر', // Sirf Urdu bold name
+    name: 'واگیو برگر',
+    urduName: 'واگیو برگر',
+    englishName: 'Wagyu Smash Burger',
     category: 'burger',
     image: 'assets/images/wagyu_smash.jpg',
     price: 1490
@@ -34,8 +33,9 @@ const SPEED_ITEMS = [
     id: 'sp-02',
     code: 'B2',
     hotkey: '2',
-    name: 'Smoked Truffle Burger',
-    shortName: 'ٹرفل برگر',
+    name: 'ٹرفل برگر',
+    urduName: 'ٹرفل برگر',
+    englishName: 'Smoked Truffle Burger',
     category: 'burger',
     image: 'assets/images/truffle_burger.jpg',
     price: 1350
@@ -44,8 +44,9 @@ const SPEED_ITEMS = [
     id: 'sp-03',
     code: 'B3',
     hotkey: '3',
-    name: 'Crispy Jalapeno Burger',
-    shortName: 'جلابینو برگر',
+    name: 'ہلاپینو برگر',
+    urduName: 'ہلاپینو برگر',
+    englishName: 'Crispy Jalapeno Burger',
     category: 'burger',
     image: 'assets/images/jalapeno_burger.jpg',
     price: 1190
@@ -54,18 +55,22 @@ const SPEED_ITEMS = [
     id: 'sp-04',
     code: 'B4',
     hotkey: '4',
-    name: 'Double Cheese Burger',
-    shortName: 'ڈبل چیز برگر',
+    name: 'ڈبل چیز برگر',
+    urduName: 'ڈبل چیز برگر',
+    englishName: 'Double Cheese Burger',
     category: 'burger',
     image: 'assets/images/double_cheese.jpg',
     price: 1090
   },
+
+  // --- ROW 2: FRIES & SIDES ("فرائز اور سائیڈز - Sides") ---
   {
     id: 'sp-05',
     code: 'S1',
     hotkey: '5',
-    name: 'Loaded Truffle Fries',
-    shortName: 'لوڈڈ فرائز',
+    name: 'لوڈڈ فرائز',
+    urduName: 'لوڈڈ فرائز',
+    englishName: 'Loaded Truffle Fries',
     category: 'side',
     image: 'assets/images/loaded_fries.jpg',
     price: 690
@@ -74,8 +79,9 @@ const SPEED_ITEMS = [
     id: 'sp-06',
     code: 'S2',
     hotkey: '6',
-    name: 'Peri Peri Crispy Fries',
-    shortName: 'پیری پیری فرائز',
+    name: 'پیری پیری فرائز',
+    urduName: 'پیری پیری فرائز',
+    englishName: 'Peri Peri Crispy Fries',
     category: 'side',
     image: 'assets/images/peri_fries.jpg',
     price: 490
@@ -84,8 +90,9 @@ const SPEED_ITEMS = [
     id: 'sp-07',
     code: 'S3',
     hotkey: '7',
-    name: 'Gourmet Onion Rings',
-    shortName: 'اونین رنگز',
+    name: 'انین رنگز',
+    urduName: 'انین رنگز',
+    englishName: 'Gourmet Onion Rings',
     category: 'side',
     image: 'assets/images/onion_rings.jpg',
     price: 550
@@ -94,18 +101,22 @@ const SPEED_ITEMS = [
     id: 'sp-08',
     code: 'S4',
     hotkey: '8',
-    name: 'Buffalo Wings (6 Pcs)',
-    shortName: 'بفیلو ونگز',
+    name: 'بفیلو ونگز',
+    urduName: 'بفیلو ونگز',
+    englishName: 'Buffalo Wings (6 Pcs)',
     category: 'side',
     image: 'assets/images/buffalo_wings.jpg',
     price: 850
   },
+
+  // --- ROW 3: DRINKS ("مشروبات - Drinks") ---
   {
     id: 'sp-09',
     code: 'D1',
     hotkey: '9',
-    name: 'Mint Lemonade Cooler',
-    shortName: 'منٹ کولر',
+    name: 'منٹ لیمونیڈ',
+    urduName: 'منٹ لیمونیڈ',
+    englishName: 'Mint Lemonade Cooler',
     category: 'drink',
     image: 'assets/images/mint_cooler.jpg',
     price: 390
@@ -114,8 +125,9 @@ const SPEED_ITEMS = [
     id: 'sp-10',
     code: 'D2',
     hotkey: '0',
-    name: 'Artisan Peach Iced Tea',
-    shortName: 'پیچ آئس ٹی',
+    name: 'پیچ آئس ٹی',
+    urduName: 'پیچ آئس ٹی',
+    englishName: 'Artisan Peach Iced Tea',
     category: 'drink',
     image: 'assets/images/peach_tea.jpg',
     price: 420
@@ -124,8 +136,9 @@ const SPEED_ITEMS = [
     id: 'sp-11',
     code: 'D3',
     hotkey: '-',
-    name: 'Classic Coca-Cola Can',
-    shortName: 'کوک کین',
+    name: 'کوکا کولا کین',
+    urduName: 'کوکا کولا کین',
+    englishName: 'Classic Coca-Cola Can',
     category: 'drink',
     image: 'assets/images/cola_can.jpg',
     price: 180
@@ -134,68 +147,14 @@ const SPEED_ITEMS = [
     id: 'sp-12',
     code: 'D4',
     hotkey: '=',
-    name: 'Caramel Thick Shake',
-    shortName: 'کیرامেল شیک',
+    name: 'کیریمل شیک',
+    urduName: 'کیریمل شیک',
+    englishName: 'Caramel Thick Shake',
     category: 'drink',
     image: 'assets/images/caramel_shake.jpg',
     price: 650
   }
 ];
-
-// ============================================================================
-// 2. KITCHEN KOT BUILDER (Customer ka naam aur item bold & prominent)
-// ============================================================================
-function buildKitchenKotEscPos(order) {
-  const b = new EscPosBuilder();
-  b.init();
-
-  b.cmd(ESCPOS.ALIGN_CENTER)
-    .doubleDivider()
-    .cmd(ESCPOS.BOLD_ON)
-    .line('*** KITCHEN KOT ***')
-    .cmd(ESCPOS.BOLD_OFF)
-    .doubleDivider();
-
-  // Token Number (Bohot Bara aur Bold)
-  const tokenVal = order.token || String(order.tokenNumber || '000').padStart(3, '0');
-  b.cmd(ESCPOS.ALIGN_CENTER)
-    .cmd(ESCPOS.TEXT_DOUBLE_SIZE)
-    .cmd(ESCPOS.BOLD_ON)
-    .line(`TOKEN #${sanitizeAscii(tokenVal)}`)
-    .cmd(ESCPOS.TEXT_NORMAL)
-    .cmd(ESCPOS.BOLD_OFF);
-
-  // Customer ka Naam (Extra Bold aur Double Height taake chef ko saaf dikhe)
-  const rawCustomerName = (order.customerName || 'Counter').trim();
-  const customerNameClean = sanitizeAscii(rawCustomerName || 'Counter').toUpperCase();
-
-  b.cmd(ESCPOS.ALIGN_CENTER)
-    .cmd(ESCPOS.TEXT_DOUBLE_HEIGHT) // Double height for high visibility
-    .cmd(ESCPOS.BOLD_ON)
-    .line(`GAHAK: ${customerNameClean}`) // Customer name label
-    .cmd(ESCPOS.TEXT_NORMAL)
-    .cmd(ESCPOS.BOLD_OFF);
-
-  b.divider()
-    .cmd(ESCPOS.BOLD_ON)
-    .line('TADAD  ITEM')
-    .cmd(ESCPOS.BOLD_OFF)
-    .divider();
-
-  // Item List
-  (order.items || []).forEach(it => {
-    b.cmd(ESCPOS.BOLD_ON)
-      .line(`[ ${it.qty} ] ${sanitizeAscii(it.shortName || it.name)}`)
-      .cmd(ESCPOS.BOLD_OFF);
-  });
-
-  b.divider()
-    .line(`KUL ITEMS: ${(order.items || []).reduce((s, i) => s + i.qty, 0)}`)
-    .doubleDivider();
-
-  b.feed(3).cut();
-  return b.getBytes();
-}
 
 // ============================================================================
 // 2. STATE MANAGEMENT
@@ -204,6 +163,7 @@ const state = {
   cart: [], // Array of { id, name, price, qty }
   tokenNumber: 43, // Starts at TOKEN #043
   customerName: '', // Streamlined customer name for active ticket
+  activeCategory: 'all', // Active filter: 'all' | 'burger' | 'roll' | 'side' | 'drink'
   printerConnected: false,
   printerStatus: 'idle',
   bluetoothDevice: null,
@@ -319,71 +279,152 @@ function showToast(message) {
   }, 2000);
 }
 
+function setCustomerName(val) {
+  state.customerName = val;
+  const desktopInput = document.getElementById('customerNameInput');
+  const mobileInput = document.getElementById('mobileCustomerInput');
+  if (desktopInput && desktopInput.value !== val) desktopInput.value = val;
+  if (mobileInput && mobileInput.value !== val) mobileInput.value = val;
+
+  const desktopClear = document.getElementById('clearCustomerNameBtn');
+  const mobileClear = document.getElementById('mobileClearCustBtn');
+  if (desktopClear) desktopClear.style.display = val.trim() ? 'flex' : 'none';
+  if (mobileClear) mobileClear.style.display = val.trim() ? 'flex' : 'none';
+}
+
 function getCustomerNameValue() {
-  const input = document.getElementById('customerNameInput');
-  const val = input ? input.value.trim() : (state.customerName || '').trim();
+  const val = (state.customerName || '').trim();
   return val || 'Counter';
 }
 
 function clearCustomerName() {
-  state.customerName = '';
-  const input = document.getElementById('customerNameInput');
-  const clearBtn = document.getElementById('clearCustomerNameBtn');
-  if (input) input.value = '';
-  if (clearBtn) clearBtn.style.display = 'none';
+  setCustomerName('');
 }
 
 // ============================================================================
-// 5. RENDERING FIXED 4x3 SPEED-DIAL GRID
-// - 12 fixed blocks (Row 1 Burgers, Row 2 Sides, Row 3 Drinks)
+// 5. RENDERING CATEGORIZED SPEED-DIAL GRID
+// - 3 visual sections: "برگر - Burgers", "فرائز اور سائیڈز - Sides", "مشروبات - Drinks"
+// - Instant One-Thumb Category Filtering
+// - Sunlight-Readable Naskh Urdu typography + crisp price
 // - Live Quantity Badges on tiles
-// - One-touch tap increments; Long-press removes
 // ============================================================================
+const SPEED_CATEGORIES = [
+  {
+    key: 'burger',
+    titleUrdu: 'برگر',
+    titleEn: 'Burgers',
+    accent: 'burger',
+    dotColor: '#F59E0B'
+  },
+  {
+    key: 'side',
+    titleUrdu: 'فرائز اور سائیڈز',
+    titleEn: 'Sides',
+    accent: 'side',
+    dotColor: '#F59E0B'
+  },
+  {
+    key: 'drink',
+    titleUrdu: 'مشروبات',
+    titleEn: 'Drinks',
+    accent: 'drink',
+    dotColor: '#F59E0B'
+  }
+];
+
 function renderSpeedGrid() {
   const grid = document.getElementById('speedDialGrid');
   if (!grid) return;
 
-  grid.innerHTML = SPEED_ITEMS.map(item => {
-    const cartEntry = state.cart.find(c => c.id === item.id);
-    const qty = cartEntry ? cartEntry.qty : 0;
-    const hasQtyClass = qty > 0 ? 'has-qty' : '';
-    const categoryClass = `tile-${item.category}`;
+  const activeCat = state.activeCategory || 'all';
+  const categoriesToRender = activeCat === 'all'
+    ? SPEED_CATEGORIES
+    : SPEED_CATEGORIES.filter(c => c.key === activeCat);
 
-    return `
-      <div 
-        class="speed-tile ${categoryClass} ${hasQtyClass}" 
-        data-id="${item.id}"
-        id="tile-${item.id}"
-        role="button"
-        tabindex="0"
-        title="${item.englishName} - ${formatPKR(item.price)}"
-      >
-        <!-- Top Section: Clean High-Res Food Thumbnail, Zero Text Overlay Clutter -->
-        <div class="tile-image-section">
-          <img 
-            src="${item.image}" 
-            alt="${item.name}" 
-            class="tile-thumbnail" 
-            loading="eager" 
-            draggable="false"
-          />
-          <span class="tile-hotkey-tag">[${item.hotkey}]</span>
-          <span class="tile-qty-badge" id="badge-${item.id}">x${qty}</span>
-        </div>
+  grid.innerHTML = `
+    <div class="speed-categories-container">
+      ${categoriesToRender.map(cat => {
+        const catItems = SPEED_ITEMS.filter(it => it.category === cat.key);
+        if (catItems.length === 0) return '';
 
-        <!-- Bottom Section: Clear, Non-Overlapping Typography -->
-        <div class="tile-info-section">
-          <div class="tile-title-group">
-            <div class="tile-english-name">${item.name}</div>
-            <div class="tile-urdu-name">${item.urduName}</div>
+        return `
+          <div class="speed-category-group" data-category="${cat.key}" id="cat-group-${cat.key}">
+            <div class="category-header-bar">
+              <div class="category-tag">
+                <span class="cat-pill-dot" style="background-color: ${cat.dotColor};"></span>
+                <span class="cat-title-ur" lang="ur">${cat.titleUrdu}</span>
+                <span class="cat-title-sep">—</span>
+                <span class="cat-title-en">${cat.titleEn}</span>
+              </div>
+              <span class="cat-count-badge">${catItems.length} ITEMS</span>
+            </div>
+            <div class="category-tiles-grid">
+              ${catItems.map(item => {
+                const cartEntry = state.cart.find(c => c.id === item.id);
+                const qty = cartEntry ? cartEntry.qty : 0;
+                const hasQtyClass = qty > 0 ? 'has-qty' : '';
+                const categoryClass = `tile-${item.category}`;
+
+                return `
+                  <div 
+                    class="speed-tile ${categoryClass} ${hasQtyClass}" 
+                    data-id="${item.id}"
+                    id="tile-${item.id}"
+                    role="button"
+                    tabindex="0"
+                    title="${item.urduName} (${item.englishName}) - ${formatPKR(item.price)}"
+                  >
+                    <!-- Top Section: Clean High-Res Food Thumbnail -->
+                    <div class="tile-image-section">
+                      <img 
+                        src="${item.image}" 
+                        alt="${item.englishName}" 
+                        class="tile-thumbnail" 
+                        loading="eager" 
+                        draggable="false"
+                      />
+                      <span class="tile-hotkey-tag">[${item.hotkey.toUpperCase()}]</span>
+                      <span class="tile-qty-badge" id="badge-${item.id}">x${qty}</span>
+                    </div>
+
+                    <!-- Bottom Section: ONLY single-line bold Urdu name + Clean price -->
+                    <div class="tile-info-section">
+                      <div class="tile-urdu-name" lang="ur">${item.urduName}</div>
+                      <div class="tile-price">${formatPKR(item.price)}</div>
+                    </div>
+                  </div>
+                `;
+              }).join('')}
+            </div>
           </div>
-          <div class="tile-price">${formatPKR(item.price)}</div>
-        </div>
-      </div>
-    `;
-  }).join('');
+        `;
+      }).join('')}
+    </div>
+  `;
 
   attachTileTouchListeners();
+}
+
+function setupCategoryPills() {
+  const bar = document.getElementById('categoryPillsBar');
+  if (!bar) return;
+
+  bar.addEventListener('click', (e) => {
+    const pill = e.target.closest('.cat-pill');
+    if (!pill) return;
+
+    const cat = pill.dataset.category;
+    if (!cat) return;
+
+    soundEngine.playBeep();
+    state.activeCategory = cat;
+
+    bar.querySelectorAll('.cat-pill').forEach(btn => {
+      btn.classList.toggle('active', btn.dataset.category === cat);
+    });
+
+    renderSpeedGrid();
+  });
 }
 
 function updateTileBadges() {
@@ -525,58 +566,52 @@ function calculateGrandTotal() {
 }
 
 // Delegated Touch/Pointer Stepper & Delete Handlers
+function handleStepperAction(container, e) {
+  const btn = e.target.closest('button');
+  if (!btn) return;
+  const action = btn.dataset.action;
+  const itemId = btn.dataset.id;
+  if (!itemId) return;
+
+  e.preventDefault();
+  if (action === 'increase') {
+    updateCartQty(itemId, 1);
+  } else if (action === 'decrease') {
+    updateCartQty(itemId, -1);
+  } else if (action === 'delete') {
+    removeItemCompletely(itemId);
+  }
+}
+
 let isTicketContainerDelegated = false;
 function setupTicketContainerDelegation() {
   if (isTicketContainerDelegated) return;
   const container = document.getElementById('ticketItemsContainer');
-  if (!container) return;
-
-  container.addEventListener('pointerdown', (e) => {
-    const btn = e.target.closest('button');
-    if (!btn) return;
-    const action = btn.dataset.action;
-    const itemId = btn.dataset.id;
-    if (!itemId) return;
-
-    e.preventDefault();
-    if (action === 'increase') {
-      updateCartQty(itemId, 1);
-    } else if (action === 'decrease') {
-      updateCartQty(itemId, -1);
-    } else if (action === 'delete') {
-      removeItemCompletely(itemId);
-    }
-  });
-
+  if (container) {
+    container.addEventListener('pointerdown', (e) => handleStepperAction(container, e));
+  }
   isTicketContainerDelegated = true;
 }
 
-// In-place DOM update without tearing down the container on every tap
-function renderTicketItems() {
-  const container = document.getElementById('ticketItemsContainer');
-  const badge = document.getElementById('ticketCountBadge');
+// In-place DOM update helper for desktop ticket items
+function updateTicketContainer(containerId, emptyId, emptyMsg = 'Tap any tile to add items') {
+  const container = document.getElementById(containerId);
   if (!container) return;
 
-  const totalQty = state.cart.reduce((sum, item) => sum + item.qty, 0);
-  const badgeStr = `${totalQty} ITEM${totalQty === 1 ? '' : 'S'}`;
-  if (badge && badge.textContent !== badgeStr) {
-    badge.textContent = badgeStr;
-  }
-
   if (state.cart.length === 0) {
-    if (!document.getElementById('ticketEmptyState')) {
+    if (!document.getElementById(emptyId)) {
       container.innerHTML = `
-        <div class="ticket-empty-state" id="ticketEmptyState">
+        <div class="ticket-empty-state" id="${emptyId}">
           <div class="empty-icon">🧾</div>
           <p class="empty-title">Ticket is Empty</p>
-          <p class="empty-sub">Tap any Speed-Pad tile on the left to punch items</p>
+          <p class="empty-sub">${emptyMsg}</p>
         </div>
       `;
     }
     return;
   }
 
-  const emptyState = document.getElementById('ticketEmptyState');
+  const emptyState = document.getElementById(emptyId);
   if (emptyState) {
     emptyState.remove();
   }
@@ -610,10 +645,7 @@ function renderTicketItems() {
       newRow.dataset.id = item.id;
       newRow.innerHTML = `
         <div class="ticket-item-left">
-          <div class="ticket-item-title-row">
-            <span class="ticket-item-name">${item.name}</span>
-            ${item.urduName ? `<span class="ticket-item-urdu">${item.urduName}</span>` : ''}
-          </div>
+          <div class="ticket-item-title" lang="ur" dir="rtl">${item.urduName || item.name}</div>
           <div class="ticket-item-pricing">
             <span class="ticket-item-unit-price">${formatPKR(item.price)} each</span>
             <span class="ticket-item-subtotal">${subtotalStr}</span>
@@ -631,33 +663,18 @@ function renderTicketItems() {
       container.appendChild(newRow);
     }
   });
-
-  setupTicketContainerDelegation();
 }
 
-function toggleMobileDrawer(open) {
-  const panel = document.getElementById('ticketPanel');
-  const backdrop = document.getElementById('mobileDrawerBackdrop');
-  const toggleText = document.getElementById('mobileToggleText');
-  const toggleArrow = document.getElementById('mobileToggleArrow');
-  if (!panel) return;
-
-  const shouldOpen = typeof open === 'boolean' ? open : !panel.classList.contains('drawer-open');
-  if (shouldOpen) {
-    panel.classList.add('drawer-open');
-    if (backdrop) backdrop.classList.add('active');
-    if (toggleText) toggleText.textContent = 'HIDE TICKET';
-    if (toggleArrow) toggleArrow.textContent = '▼';
-  } else {
-    panel.classList.remove('drawer-open');
-    if (backdrop) backdrop.classList.remove('active');
-    if (toggleText) toggleText.textContent = 'VIEW TICKET';
-    if (toggleArrow) toggleArrow.textContent = '▲';
+function renderTicketItems() {
+  const badge = document.getElementById('ticketCountBadge');
+  const totalQty = state.cart.reduce((sum, item) => sum + item.qty, 0);
+  const badgeStr = `${totalQty} ITEM${totalQty === 1 ? '' : 'S'}`;
+  if (badge && badge.textContent !== badgeStr) {
+    badge.textContent = badgeStr;
   }
-}
 
-function closeMobileDrawer() {
-  toggleMobileDrawer(false);
+  updateTicketContainer('ticketItemsContainer', 'ticketEmptyState', 'Tap any tile on the left to add items');
+  setupTicketContainerDelegation();
 }
 
 function updatePOS() {
@@ -665,32 +682,33 @@ function updatePOS() {
   updateTileBadges();
 
   const grandTotal = calculateGrandTotal();
-  const totEl = document.getElementById('summaryGrandTotal');
-  if (totEl) {
-    totEl.textContent = formatPKR(grandTotal);
-  }
-
-  // Update mobile summary bar (<= 768px view)
   const totalQty = state.cart.reduce((sum, item) => sum + item.qty, 0);
-  const mobileBadge = document.getElementById('mobileTicketBadge');
-  if (mobileBadge) {
-    mobileBadge.textContent = `${totalQty} ITEM${totalQty === 1 ? '' : 'S'}`;
-  }
-
-  const mobileTotal = document.getElementById('mobileTotalDisplay');
-  if (mobileTotal) {
-    mobileTotal.textContent = formatPKR(grandTotal);
-  }
-
   const isKotReady = state.cart.length > 0 && grandTotal > 0;
+  const grandTotalFormatted = formatPKR(grandTotal);
+
+  // Desktop Elements
+  const totEl = document.getElementById('summaryGrandTotal');
+  if (totEl) totEl.textContent = grandTotalFormatted;
+
   const checkoutBtn = document.getElementById('checkoutBtn');
   if (checkoutBtn) {
     checkoutBtn.disabled = !isKotReady;
-    if (isKotReady) {
-      checkoutBtn.classList.add('active-ready');
-    } else {
-      checkoutBtn.classList.remove('active-ready');
-    }
+    if (isKotReady) checkoutBtn.classList.add('active-ready');
+    else checkoutBtn.classList.remove('active-ready');
+  }
+
+  // Mobile Fixed Bottom Action Bar Elements
+  const mobileTotal = document.getElementById('mobileTotalDisplay');
+  if (mobileTotal) mobileTotal.textContent = grandTotalFormatted;
+
+  const mobileBadge = document.getElementById('mobileCountBadge');
+  if (mobileBadge) mobileBadge.textContent = `${totalQty} ITEM${totalQty === 1 ? '' : 'S'}`;
+
+  const mobileCheckoutBtn = document.getElementById('mobileCheckoutBtn');
+  if (mobileCheckoutBtn) {
+    mobileCheckoutBtn.disabled = !isKotReady;
+    if (isKotReady) mobileCheckoutBtn.classList.add('active-ready');
+    else mobileCheckoutBtn.classList.remove('active-ready');
   }
 
   const billBtn = document.getElementById('printCustomerBillBtn');
@@ -913,6 +931,7 @@ function parseDateTime(timestampStr) {
 // 1. Kitchen KOT ESC/POS Generator (Strict Minimal Clutter-Free Payload)
 function buildKitchenKotEscPos(order) {
   const b = new EscPosBuilder();
+  const dt = parseDateTime(order.timestamp);
   b.init();
 
   b.cmd(ESCPOS.ALIGN_CENTER)
@@ -922,44 +941,62 @@ function buildKitchenKotEscPos(order) {
     .cmd(ESCPOS.BOLD_OFF)
     .doubleDivider();
 
-  // Token Number (Bohot Bara aur Bold)
+  // Double-Width + Double-Height Bold Token Header
   const tokenVal = order.token || String(order.tokenNumber || '000').padStart(3, '0');
   b.cmd(ESCPOS.ALIGN_CENTER)
-    .cmd(ESCPOS.TEXT_DOUBLE_SIZE)
-    .cmd(ESCPOS.BOLD_ON)
+    .cmd(ESCPOS.TEXT_DOUBLE_SIZE) // GS ! 0x11
+    .cmd(ESCPOS.BOLD_ON)          // ESC E 1
     .line(`TOKEN #${sanitizeAscii(tokenVal)}`)
-    .cmd(ESCPOS.TEXT_NORMAL)
+    .cmd(ESCPOS.TEXT_NORMAL)      // GS ! 0x00
     .cmd(ESCPOS.BOLD_OFF);
 
-  // Customer ka Naam (Extra Bold aur Double Height taake chef ko saaf dikhe)
+  // Directly below Double-Height Token: Customer Name in bold text
   const rawCustomerName = (order.customerName || 'Counter').trim();
   const customerNameClean = sanitizeAscii(rawCustomerName || 'Counter').toUpperCase();
-
   b.cmd(ESCPOS.ALIGN_CENTER)
-    .cmd(ESCPOS.TEXT_DOUBLE_HEIGHT) // Double height for high visibility
+    .cmd(ESCPOS.TEXT_DOUBLE_HEIGHT)
     .cmd(ESCPOS.BOLD_ON)
-    .line(`GAHAK: ${customerNameClean}`) // Customer name label
+    .line(`NAME: ${customerNameClean}`)
     .cmd(ESCPOS.TEXT_NORMAL)
     .cmd(ESCPOS.BOLD_OFF);
+
+  b.cmd(ESCPOS.ALIGN_LEFT);
+
+  // Date and Time only
+  if (dt.time) {
+    b.line(formatTwoColumns(`TIME: ${dt.time}`, `DATE: ${dt.date}`));
+  } else {
+    b.line(`DATE/TIME: ${sanitizeAscii(order.timestamp || '')}`);
+  }
 
   b.divider()
     .cmd(ESCPOS.BOLD_ON)
-    .line('TADAD  ITEM')
+    .line('QTY  ITEM')
     .cmd(ESCPOS.BOLD_OFF)
     .divider();
 
-  // Item List
+  // Item List (Qty + Clean ASCII Name ONLY, zero prices, zero bloat)
   (order.items || []).forEach(it => {
-    b.cmd(ESCPOS.BOLD_ON)
-      .line(`[ ${it.qty} ] ${sanitizeAscii(it.shortName || it.name)}`)
-      .cmd(ESCPOS.BOLD_OFF);
+    // Strip Urdu script in parentheses to guarantee clean single-byte ASCII
+    const rawName = it.englishName || it.name || '';
+    const cleanItemName = sanitizeAscii(rawName.replace(/\s*\([^)]*[\u0600-\u06FF]+[^)]*\)/g, '').trim()).toUpperCase();
+    const wrappedLines = formatKotItemWrapped(it.qty, cleanItemName, 32);
+    wrappedLines.forEach((l, idx) => {
+      if (idx === 0) b.cmd(ESCPOS.BOLD_ON);
+      b.line(l);
+      if (idx === 0) b.cmd(ESCPOS.BOLD_OFF);
+    });
   });
 
+  const totalItemCount = (order.items || []).reduce((sum, it) => sum + (Number(it.qty) || 1), 0);
   b.divider()
-    .line(`KUL ITEMS: ${(order.items || []).reduce((s, i) => s + i.qty, 0)}`)
+    .line(formatTwoColumns(`TOTAL ITEMS: ${totalItemCount}`, ''))
     .doubleDivider();
 
-  b.feed(3).cut();
+  // TEAR GAP: 3 empty line feeds so text fully clears the physical tear bar
+  b.feed(3)
+    .cut();
+
   return b.getBytes();
 }
 
@@ -1623,6 +1660,20 @@ async function dispatchPrintJob(escposBytes) {
 }
 
 async function executeOnDemandPrintJob(escposBytes) {
+  // 1. Native Android Bridge Fast Path (Capacitor / Cordova APK Mode)
+  if (window.AndroidPOSBridge && window.AndroidPOSBridge.isNative()) {
+    console.log('[Native Android Bridge] Sending ESC/POS bytes via native Android socket...');
+    showToast('Printing (Native Android)...');
+    updatePrinterStatusUI('printing');
+    try {
+      await window.AndroidPOSBridge.sendEscPosBytes(escposBytes);
+      console.log('[Native Android Bridge] Native print dispatched successfully.');
+      return true;
+    } catch (nativeErr) {
+      console.warn('[Native Android Bridge] Native print error:', nativeErr);
+    }
+  }
+
   // Step 1: Show a fast, subtle indicator: "Printing..."
   showToast('Printing...');
   updatePrinterStatusUI('printing');
@@ -1882,17 +1933,12 @@ function setupEventListeners() {
     clearBtn.addEventListener('click', clearCart);
   }
 
-  // Streamlined Customer Name Input and Clear Button
+  // Desktop Customer Name Input
   const customerInput = document.getElementById('customerNameInput');
   const clearCustBtn = document.getElementById('clearCustomerNameBtn');
 
   if (customerInput) {
-    customerInput.addEventListener('input', () => {
-      state.customerName = customerInput.value;
-      if (clearCustBtn) {
-        clearCustBtn.style.display = customerInput.value.trim() ? 'flex' : 'none';
-      }
-    });
+    customerInput.addEventListener('input', (e) => setCustomerName(e.target.value));
 
     customerInput.addEventListener('keydown', (e) => {
       if (e.key === 'Enter') {
@@ -1908,13 +1954,60 @@ function setupEventListeners() {
     });
   }
 
-  if (clearCustBtn && customerInput) {
+  if (clearCustBtn) {
     clearCustBtn.addEventListener('click', (e) => {
       e.preventDefault();
-      customerInput.value = '';
-      state.customerName = '';
-      clearCustBtn.style.display = 'none';
-      customerInput.focus();
+      clearCustomerName();
+      if (customerInput) customerInput.focus();
+    });
+  }
+
+  // Mobile Fixed Bottom Action Bar Customer Name Input
+  const mobileCustomerInput = document.getElementById('mobileCustomerInput');
+  const mobileClearCustBtn = document.getElementById('mobileClearCustBtn');
+
+  if (mobileCustomerInput) {
+    mobileCustomerInput.addEventListener('input', (e) => setCustomerName(e.target.value));
+
+    mobileCustomerInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        mobileCustomerInput.blur();
+        if (state.cart.length > 0) {
+          printKitchenKOT(null, getCustomerNameValue());
+        }
+      } else if (e.key === 'Escape') {
+        e.preventDefault();
+        mobileCustomerInput.blur();
+      }
+    });
+  }
+
+  if (mobileClearCustBtn) {
+    mobileClearCustBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+      clearCustomerName();
+      if (mobileCustomerInput) mobileCustomerInput.focus();
+    });
+  }
+
+  // Mobile Bottom Action Bar "PRINT KOT (KITCHEN) ⚡ [ENTER]" Button
+  const mobileCheckoutBtn = document.getElementById('mobileCheckoutBtn');
+  if (mobileCheckoutBtn) {
+    mobileCheckoutBtn.addEventListener('click', () => {
+      if (state.cart.length > 0) {
+        printKitchenKOT(null, getCustomerNameValue());
+      }
+    });
+  }
+
+  // Desktop Primary Giant "PRINT KOT (KITCHEN) ⚡ [Enter]" Button
+  const checkoutBtn = document.getElementById('checkoutBtn');
+  if (checkoutBtn) {
+    checkoutBtn.addEventListener('click', () => {
+      if (state.cart.length > 0) {
+        printKitchenKOT(null, getCustomerNameValue());
+      }
     });
   }
 
@@ -1958,43 +2051,10 @@ function setupEventListeners() {
     forgetBtn.addEventListener('click', forgetCurrentPrinter);
   }
 
-  // Primary Giant "PRINT KOT (KITCHEN) ⚡ [Enter]" Button
-  const checkoutBtn = document.getElementById('checkoutBtn');
-  if (checkoutBtn) {
-    checkoutBtn.addEventListener('click', () => printKitchenKOT(null, getCustomerNameValue()));
-  }
-
-  // Mobile Ticket Drawer toggles
-  const mobileBar = document.getElementById('mobileTicketBar');
-  if (mobileBar) {
-    mobileBar.addEventListener('click', () => toggleMobileDrawer());
-  }
-
-  const mobileTotal = document.getElementById('mobileTotalDisplay');
-  if (mobileTotal) {
-    mobileTotal.addEventListener('click', (e) => {
-      e.stopPropagation();
-      toggleMobileDrawer(true);
-    });
-  }
-
-  const closeDrawerBtn = document.getElementById('closeMobileDrawerBtn');
-  if (closeDrawerBtn) {
-    closeDrawerBtn.addEventListener('click', (e) => {
-      e.stopPropagation();
-      closeMobileDrawer();
-    });
-  }
-
-  const drawerBackdrop = document.getElementById('mobileDrawerBackdrop');
-  if (drawerBackdrop) {
-    drawerBackdrop.addEventListener('click', closeMobileDrawer);
-  }
-
   // Fast Keyboard Shortcuts
   document.addEventListener('keydown', (e) => {
-    // If user is focused on customerNameInput:
-    if (e.target && e.target.id === 'customerNameInput') {
+    // If user is focused on customer input fields:
+    if (e.target && (e.target.id === 'customerNameInput' || e.target.id === 'mobileCustomerInput')) {
       if (e.key === 'Enter') {
         e.preventDefault();
         e.target.blur();
@@ -2022,7 +2082,7 @@ function setupEventListeners() {
       return;
     }
 
-    // 3. Escape key clears ticket
+    // 2. Escape key clears ticket
     if (e.key === 'Escape') {
       if (state.cart.length > 0 || state.customerName) {
         clearCart();
@@ -2030,12 +2090,13 @@ function setupEventListeners() {
       return;
     }
 
-    // 4. Fast hotkey numbers & symbols (1-9, 0, -, =) for speed dialing
-    const key = e.key;
+    // 3. Fast hotkey numbers & symbols for rapid cashier speed dialing
+    const key = e.key.toLowerCase();
     const hotkeyMap = {
       '1': 0, '2': 1, '3': 2, '4': 3,
       '5': 4, '6': 5, '7': 6, '8': 7,
-      '9': 8, '0': 9, '-': 10, '=': 11, '+': 11
+      '9': 8, '0': 9, '-': 10, '=': 11, '+': 11,
+      'q': 12, 'w': 13, 'e': 14, 'r': 15
     };
     if (Object.prototype.hasOwnProperty.call(hotkeyMap, key)) {
       const targetItem = SPEED_ITEMS[hotkeyMap[key]];
@@ -2049,27 +2110,40 @@ function setupEventListeners() {
 }
 
 // ============================================================================
-// 12. INITIALIZATION
+// 12. INITIALIZATION & PWA SERVICE WORKER REGISTRATION
 // ============================================================================
 function initPOS() {
   renderSpeedGrid();
+  setupCategoryPills();
   updatePOS();
   setupEventListeners();
 
   const tokenStr = `TOKEN #${String(state.tokenNumber).padStart(3, '0')}`;
   const tokenDisplay = document.getElementById('topTokenDisplay');
-  if (tokenDisplay) {
-    tokenDisplay.textContent = tokenStr;
-  }
+  if (tokenDisplay) tokenDisplay.textContent = tokenStr;
+
   const ticketPanelToken = document.getElementById('ticketPanelToken');
-  if (ticketPanelToken) {
-    ticketPanelToken.textContent = tokenStr;
+  if (ticketPanelToken) ticketPanelToken.textContent = tokenStr;
+
+  // Standalone PWA Service Worker Registration
+  if ('serviceWorker' in navigator && (window.location.protocol === 'https:' || window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('./sw.js')
+        .then((reg) => console.log('Artisan POS PWA Service Worker registered:', reg.scope))
+        .catch((err) => console.debug('PWA Service Worker note:', err));
+    });
   }
 
-  // 1. KILL BACKGROUND PERSISTENT SOCKET ATTEMPTS:
-  // Render "🖨️ YD583 Ready" if paired, or "🔴 Connect Printer" if not paired,
-  // without invoking any background GATT connection on reload!
-  updatePrinterStatusUI();
+  // Native Android Bluetooth Bridge or Web Bluetooth Status Init
+  if (window.AndroidPOSBridge && window.AndroidPOSBridge.isNative()) {
+    console.log('[initPOS] Native Android environment detected. Auto-connecting Bluetooth printer...');
+    window.AndroidPOSBridge.autoConnectOnLaunch((status, label) => {
+      updatePrinterStatusUI(status, label);
+    });
+  } else {
+    // Web Bluetooth: Render "🖨️ YD583 Ready" if paired, or "🔴 Connect Printer" if not paired
+    updatePrinterStatusUI();
+  }
 }
 
 document.addEventListener('DOMContentLoaded', initPOS);

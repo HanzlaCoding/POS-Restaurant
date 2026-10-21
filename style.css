@@ -1,63 +1,53 @@
 /* ==========================================================================
-   THE ARTISAN GRILL & CO. • SPEED-PAD TOUCH POS
-   Vercel / Linear-Inspired Minimalist Dark Mode Aesthetic
-   Glassmorphism • High Throughput • Zero Layout Clutter • Bilingual Typography
+   BITEDASH • MOBILE FOOD CART TOUCH POS TERMINAL
+   Sunlight-Readable High-End Mobile-First Light Theme
+   Palette: Clean Paper Base (#FFFFFF to #F8FAFC) • Crisp Slate Borders (#E2E8F0)
+   High-Contrast Dark Charcoal Text (#0F172A) • Warm Amber Accent (#F59E0B)
+   Single-Screen Layout • High-Density 2-Column Mobile Grid • Zero Friction
    ========================================================================== */
 
 :root {
-  /* Base Palette: Deep Midnight Dark */
-  --bg-base: #07090E;
-  --bg-surface: #0E1420;
-  --bg-surface-elevated: #131B2A;
-  --bg-surface-glass: rgba(14, 20, 32, 0.85);
-  --bg-card: rgba(17, 24, 39, 0.72);
-  --bg-card-hover: rgba(24, 34, 53, 0.88);
+  /* Sunlight-Readable BiteDash Light Palette */
+  --bg-base: #F8FAFC;            /* Clean crisp slate canvas */
+  --bg-surface: #FFFFFF;         /* Solid paper-white */
+  --bg-surface-elevated: #F1F5F9;/* Subtle slate shelf */
+  --bg-card: #FFFFFF;            /* Pure white tile cards */
+  --bg-card-hover: #FFFDF7;
+  --bg-card-selected: #FFFBEB;   /* Warm amber tint for active tile */
 
-  /* 1px Subtle Borders */
-  --border-subtle: rgba(255, 255, 255, 0.08);
-  --border-medium: rgba(255, 255, 255, 0.14);
-  --border-focus: rgba(255, 255, 255, 0.28);
+  /* Crisp Subtle Borders */
+  --border-subtle: #E2E8F0;      /* Slate-200 */
+  --border-medium: #CBD5E1;      /* Slate-300 */
+  --border-dark: #0F172A;        /* Slate-900 */
 
-  /* Typography Colors */
-  --text-primary: #F8FAFC;
-  --text-secondary: #94A3B8;
-  --text-muted: #64748B;
-  --text-dim: #475569;
+  /* BiteDash Amber / Golden Accent System */
+  --accent-amber: #F59E0B;       /* Warm Amber-500 */
+  --accent-amber-hover: #D97706; /* Amber-600 */
+  --accent-amber-active: #B45309;/* Amber-700 */
+  --accent-amber-light: #FEF3C7; /* Amber-100 */
+  --accent-amber-subtle: #FFFBEB;/* Amber-50 */
+  --accent-amber-text: #92400E;  /* Amber-800 */
+  --accent-amber-shadow: rgba(245, 158, 11, 0.35);
 
-  /* Category Accents (Refined & Muted Tones) */
-  /* 1. Burgers: Deep Vermilion Accent */
-  --cat-burger: #F43F5E;
-  --cat-burger-rgb: 244, 63, 94;
-  --cat-burger-glow: rgba(244, 63, 94, 0.28);
-  --cat-burger-badge: rgba(244, 63, 94, 0.16);
-  --cat-burger-border: rgba(244, 63, 94, 0.42);
+  /* High-Contrast Typography */
+  --text-primary: #0F172A;       /* Slate-900: Maximum outdoor readability */
+  --text-secondary: #475569;     /* Slate-600: Crisp secondary */
+  --text-muted: #94A3B8;         /* Slate-400 */
 
-  /* 2. Sides: Warm Amber Accent */
-  --cat-side: #F59E0B;
-  --cat-side-rgb: 245, 158, 11;
-  --cat-side-glow: rgba(245, 158, 11, 0.28);
-  --cat-side-badge: rgba(245, 158, 11, 0.16);
-  --cat-side-border: rgba(245, 158, 11, 0.42);
+  /* Status Colors */
+  --status-green: #16A34A;
+  --status-yellow: #CA8A04;
+  --status-red: #DC2626;
 
-  /* 3. Drinks: Electric Cyan Accent */
-  --cat-drink: #06B6D4;
-  --cat-drink-rgb: 6, 182, 212;
-  --cat-drink-glow: rgba(6, 182, 212, 0.28);
-  --cat-drink-badge: rgba(6, 182, 212, 0.16);
-  --cat-drink-border: rgba(6, 182, 212, 0.42);
+  /* Modern Refined Radii */
+  --radius-card: 10px;
+  --radius-btn: 8px;
+  --radius-badge: 5px;
+  --radius-img: 7px;
 
-  /* Functional Accents */
-  --action-orange: #F97316;
-  --action-orange-hover: #EA580C;
-  --action-orange-active: #C2410C;
-  --action-orange-glow: rgba(249, 115, 22, 0.4);
-  --status-green: #22C55E;
-  --status-yellow: #EAB308;
-  --danger-red: #EF4444;
-
-  /* Fonts */
+  /* Font Families */
   --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  --font-urdu: 'Noto Naskh Arabic', -apple-system, sans-serif;
+  --font-urdu: 'Noto Naskh Arabic', -apple-system, 'Segoe UI', sans-serif;
   --font-mono: 'Space Mono', monospace;
 }
 
@@ -78,147 +68,164 @@ html, body {
   background-color: var(--bg-base);
   color: var(--text-primary);
   font-family: var(--font-sans);
-  font-size: 15px;
+  font-size: 14px;
   user-select: none;
   -webkit-user-select: none;
   touch-action: manipulation;
 }
 
+/* Mobile-First Centered Container for Clean Outdoor / Counter Terminals */
 .pos-app-wrapper {
   display: flex;
   flex-direction: column;
-  width: 100vw;
+  width: 100%;
+  max-width: 560px;
+  margin: 0 auto;
   height: 100vh;
   height: 100dvh;
   min-height: 100dvh;
   overflow: hidden;
   background-color: var(--bg-base);
+  position: relative;
+  box-shadow: 0 0 32px rgba(15, 23, 42, 0.05);
 }
 
 /* ==========================================================================
-   1. TOP BAR (Sleek Minimalist Glassmorphic Header)
+   1. COMPACT TOP STATUS BAR
    ========================================================================== */
 .pos-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  height: 60px;
-  min-height: 60px;
-  padding: 0 1.25rem;
-  background: var(--bg-surface-glass);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
+  height: 52px;
+  min-height: 52px;
+  padding: 0 12px;
+  background: var(--bg-surface);
   border-bottom: 1px solid var(--border-subtle);
   z-index: 100;
-  box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.4);
+  flex-shrink: 0;
+  gap: 8px;
 }
 
 .header-left {
   flex: 1;
   display: flex;
   align-items: center;
-  gap: 0.65rem;
+  gap: 8px;
+  min-width: 0;
 }
 
-.brand-badge {
-  font-family: var(--font-mono);
-  font-size: 0.72rem;
-  font-weight: 700;
-  letter-spacing: 0.05em;
-  padding: 2px 6px;
-  border-radius: 4px;
-  background: rgba(255, 255, 255, 0.06);
-  border: 1px solid var(--border-subtle);
-  color: var(--text-secondary);
+.brand-logo-icon {
+  font-size: 1.45rem;
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+.brand-text-col {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.1;
+  min-width: 0;
 }
 
 .brand-title {
-  font-size: 1.08rem;
-  font-weight: 800;
+  font-size: 1.05rem;
+  font-weight: 900;
   color: var(--text-primary);
-  letter-spacing: -0.01em;
-  text-transform: uppercase;
+  letter-spacing: -0.02em;
   white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
-/* Center Token Display */
+.brand-subtitle {
+  font-family: var(--font-mono);
+  font-size: 0.62rem;
+  font-weight: 800;
+  color: var(--accent-amber);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+/* Center Token Number Badge */
 .header-center {
-  flex: 1;
+  flex-shrink: 0;
   display: flex;
   justify-content: center;
   align-items: center;
 }
 
 .top-token-display {
-  font-size: clamp(1.15rem, 1.8vw, 1.6rem);
-  font-weight: 800;
-  letter-spacing: 0.04em;
-  color: var(--text-primary);
   font-family: var(--font-mono);
-  padding: 0.25rem 1.15rem;
-  background: rgba(19, 27, 42, 0.8);
-  border: 1px solid var(--border-medium);
-  border-radius: 8px;
+  font-size: 0.84rem;
+  font-weight: 800;
+  letter-spacing: 0.03em;
+  color: var(--accent-amber-text);
+  background: var(--accent-amber-light);
+  border: 1px solid #FDE68A;
+  padding: 3px 8px;
+  border-radius: 6px;
   text-align: center;
   line-height: 1.2;
-  box-shadow: inset 0 1px 0 0 rgba(255, 255, 255, 0.06), 0 2px 8px rgba(0, 0, 0, 0.3);
+  white-space: nowrap;
 }
 
-/* Header Right: Printer Pill & Clear Ticket Button */
+/* Header Right: Bluetooth Readiness Pill & Clear Button */
 .header-right {
   flex: 1;
   display: flex;
   justify-content: flex-end;
   align-items: center;
-  gap: 0.75rem;
+  gap: 6px;
 }
 
 .printer-status-pill {
   display: inline-flex;
   align-items: center;
-  gap: 0.55rem;
-  height: 38px;
-  padding: 0 0.85rem;
-  background: rgba(19, 27, 42, 0.7);
+  gap: 4px;
+  height: 32px;
+  padding: 0 8px;
+  background: var(--bg-surface);
   border: 1px solid var(--border-subtle);
-  border-radius: 8px;
+  border-radius: var(--radius-btn);
   font-family: var(--font-sans);
-  font-size: 0.84rem;
-  font-weight: 600;
+  font-size: 0.76rem;
+  font-weight: 700;
   color: var(--text-secondary);
   cursor: pointer;
-  transition: all 0.15s ease;
+  transition: all 0.12s ease;
+  white-space: nowrap;
 }
 
 .printer-status-pill:hover {
-  background: rgba(26, 36, 56, 0.85);
+  background: var(--bg-surface-elevated);
   border-color: var(--border-medium);
   color: var(--text-primary);
 }
 
 .printer-status-pill.connected,
 .printer-status-pill.ready {
-  background: rgba(34, 197, 94, 0.08);
-  border-color: rgba(34, 197, 94, 0.3);
-  color: #86EFAC;
+  background: #F0FDF4;
+  border-color: #86EFAC;
+  color: #166534;
 }
 
 .printer-status-pill.reconnecting,
 .printer-status-pill.printing {
-  background: rgba(234, 179, 8, 0.08);
-  border-color: rgba(234, 179, 8, 0.3);
-  color: #FDE047;
+  background: #FEFCE8;
+  border-color: #FDE047;
+  color: #A16207;
 }
 
 .printer-status-pill.disconnected {
-  background: rgba(239, 68, 68, 0.08);
-  border-color: rgba(239, 68, 68, 0.3);
-  color: #FCA5A5;
+  background: #FEF2F2;
+  border-color: #FCA5A5;
+  color: #B91C1C;
 }
 
 .printer-ready-dot {
-  width: 8px;
-  height: 8px;
+  width: 7px;
+  height: 7px;
   border-radius: 50%;
   background-color: var(--text-muted);
   flex-shrink: 0;
@@ -228,175 +235,296 @@ html, body {
 .printer-ready-dot.connected,
 .printer-ready-dot.ready {
   background-color: var(--status-green);
-  box-shadow: 0 0 8px rgba(34, 197, 94, 0.6);
 }
 
 .printer-ready-dot.reconnecting,
 .printer-ready-dot.printing {
   background-color: var(--status-yellow);
-  box-shadow: 0 0 8px rgba(234, 179, 8, 0.6);
   animation: pulseDot 0.8s infinite ease-in-out;
 }
 
 .printer-ready-dot.disconnected {
-  background-color: var(--danger-red);
-  box-shadow: 0 0 8px rgba(239, 68, 68, 0.6);
+  background-color: var(--status-red);
 }
 
 @keyframes pulseDot {
   0% { transform: scale(0.9); opacity: 0.6; }
-  50% { transform: scale(1.2); opacity: 1; }
+  50% { transform: scale(1.25); opacity: 1; }
   100% { transform: scale(0.9); opacity: 0.6; }
 }
 
 .btn-clear-ticket {
-  height: 38px;
-  padding: 0 0.95rem;
-  background: rgba(19, 27, 42, 0.6);
+  height: 32px;
+  padding: 0 8px;
+  background: var(--bg-surface);
   border: 1px solid var(--border-subtle);
-  border-radius: 8px;
+  border-radius: var(--radius-btn);
   color: var(--text-secondary);
   font-family: var(--font-sans);
-  font-size: 0.84rem;
-  font-weight: 600;
+  font-size: 0.76rem;
+  font-weight: 700;
   cursor: pointer;
-  transition: all 0.15s ease;
+  transition: all 0.12s ease;
+  white-space: nowrap;
 }
 
 .btn-clear-ticket:hover {
-  background: rgba(239, 68, 68, 0.12);
-  border-color: rgba(239, 68, 68, 0.35);
-  color: #F87171;
+  background: #FEF2F2;
+  border-color: #F87171;
+  color: #DC2626;
 }
 
 .btn-clear-ticket:active {
-  transform: scale(0.97);
+  transform: scale(0.96);
 }
 
 /* ==========================================================================
-   2. MAIN WORKSPACE (Desktop Split: 62% Speed-Pad / 38% Ticket Panel)
+   2. STICKY HORIZONTAL CATEGORY BAR (One-Thumb Fast Category Filter)
+   ========================================================================== */
+.category-pills-bar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  height: 44px;
+  min-height: 44px;
+  padding: 0 10px;
+  background: var(--bg-surface);
+  border-bottom: 1px solid var(--border-subtle);
+  overflow-x: auto;
+  white-space: nowrap;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+  z-index: 90;
+  flex-shrink: 0;
+}
+
+.category-pills-bar::-webkit-scrollbar {
+  display: none;
+}
+
+.cat-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  height: 30px;
+  padding: 0 10px;
+  background: var(--bg-base);
+  border: 1px solid var(--border-subtle);
+  border-radius: 20px;
+  color: var(--text-secondary);
+  font-family: var(--font-sans);
+  font-size: 0.78rem;
+  font-weight: 700;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: all 0.12s ease;
+}
+
+.cat-pill:hover {
+  border-color: var(--border-medium);
+  color: var(--text-primary);
+}
+
+.cat-pill:active {
+  transform: scale(0.96);
+}
+
+/* Active Warm Amber Pill */
+.cat-pill.active {
+  background: var(--accent-amber) !important;
+  color: #FFFFFF !important;
+  border-color: var(--accent-amber) !important;
+  box-shadow: 0 2px 6px var(--accent-amber-shadow);
+}
+
+.cat-pill .pill-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background-color: var(--accent-amber);
+  flex-shrink: 0;
+}
+
+.cat-pill.active .pill-dot {
+  background-color: #FFFFFF;
+}
+
+.cat-pill .pill-ur {
+  font-family: var(--font-urdu);
+  font-size: 0.88rem;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.cat-pill .pill-en {
+  font-size: 0.7rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+/* ==========================================================================
+   3. MOBILE-FIRST SINGLE-SCREEN SPEED GRID WORKSPACE
    ========================================================================== */
 .pos-workspace {
   display: flex;
   flex: 1;
-  height: calc(100vh - 60px);
-  height: calc(100dvh - 60px);
+  height: calc(100vh - 96px);
+  height: calc(100dvh - 96px);
   overflow: hidden;
   background-color: var(--bg-base);
+  position: relative;
 }
 
-/* ==========================================================================
-   3. SPEED-PAD PANEL & TILES (Clutter-Free Minimalist Redesign)
-   ========================================================================== */
 .speed-pad-panel {
-  width: 62%;
-  flex: 0 0 62%;
+  width: 100%;
   height: 100%;
-  padding: 12px;
-  background-color: var(--bg-base);
+  padding: 8px 10px calc(138px + env(safe-area-inset-bottom));
   overflow-y: auto;
   overflow-x: hidden;
   display: flex;
   flex-direction: column;
+  -webkit-overflow-scrolling: touch;
 }
 
 .speed-dial-grid {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  width: 100%;
+}
+
+.speed-categories-container {
+  display: flex;
+  flex-direction: column;
   gap: 12px;
   width: 100%;
-  height: 100%;
-  align-content: stretch;
 }
 
-/* Responsive Grid columns for wide vs normal screens */
-@media (max-width: 1180px) and (min-width: 769px) {
-  .speed-dial-grid {
-    grid-template-columns: repeat(3, 1fr);
-  }
+.speed-category-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
 }
 
-/* Speed Tile Structure */
+/* Sticky Category Group Header */
+.category-header-bar {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 4px;
+  background-color: var(--bg-base);
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.category-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.cat-pill-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background-color: var(--accent-amber);
+  flex-shrink: 0;
+}
+
+.cat-title-ur {
+  font-family: var(--font-urdu);
+  font-size: 0.98rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  line-height: 1.3;
+}
+
+.cat-title-sep {
+  color: var(--border-medium);
+  font-size: 0.75rem;
+}
+
+.cat-title-en {
+  font-family: var(--font-sans);
+  font-size: 0.74rem;
+  font-weight: 800;
+  color: var(--text-secondary);
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.cat-count-badge {
+  font-family: var(--font-mono);
+  font-size: 0.65rem;
+  font-weight: 800;
+  color: var(--text-secondary);
+  background: var(--bg-surface);
+  padding: 2px 6px;
+  border-radius: 4px;
+  border: 1px solid var(--border-subtle);
+}
+
+/* High-Density 2-Column Mobile Grid */
+.category-tiles-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px;
+  width: 100%;
+}
+
+/* ==========================================================================
+   4. SPEED TILE SPECIFICATION (CRISP WHITE CARDS WITH WARM AMBER SELECTION)
+   ========================================================================== */
 .speed-tile {
   position: relative;
   display: flex;
   flex-direction: column;
-  padding: 7px;
-  border-radius: 12px;
+  padding: 6px;
+  border-radius: var(--radius-card);
   cursor: pointer;
   overflow: hidden;
   background: var(--bg-card);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
   border: 1px solid var(--border-subtle);
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.28);
-  transition: transform 0.1s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+  transition: transform 0.08s ease, border-color 0.12s ease, background-color 0.12s ease, box-shadow 0.12s ease;
   touch-action: manipulation;
-  min-height: 130px;
-  height: 100%;
+  min-height: 124px;
 }
 
 .speed-tile:hover {
   background: var(--bg-card-hover);
   border-color: var(--border-medium);
-  transform: translateY(-2px);
 }
 
 .speed-tile:active {
-  transform: scale(0.97);
+  transform: scale(0.975);
 }
 
 .speed-tile.pulse-active {
-  animation: tilePunch 0.2s cubic-bezier(0.2, 0.8, 0.4, 1);
+  animation: tilePunch 0.16s cubic-bezier(0.2, 0.8, 0.4, 1);
 }
 
 @keyframes tilePunch {
   0% { transform: scale(1); }
-  40% { transform: scale(0.94); }
-  80% { transform: scale(1.02); }
+  50% { transform: scale(0.95); }
   100% { transform: scale(1); }
 }
 
-/* Category Accent Borders & Glows */
-.speed-tile.tile-burger {
-  border-left: 2.5px solid var(--cat-burger);
+/* Active State with Warm Amber Border & Light Tint */
+.speed-tile.has-qty {
+  border: 2px solid var(--accent-amber) !important;
+  background: var(--bg-card-selected) !important;
+  box-shadow: 0 3px 10px rgba(245, 158, 11, 0.15) !important;
 }
 
-.speed-tile.tile-side {
-  border-left: 2.5px solid var(--cat-side);
-}
-
-.speed-tile.tile-drink {
-  border-left: 2.5px solid var(--cat-drink);
-}
-
-/* Active State with Glowing Border when in Cart */
-.speed-tile.has-qty.tile-burger {
-  border-color: var(--cat-burger);
-  box-shadow: 0 0 0 1px var(--cat-burger), 0 0 16px var(--cat-burger-glow);
-  background: rgba(244, 63, 94, 0.08);
-}
-
-.speed-tile.has-qty.tile-side {
-  border-color: var(--cat-side);
-  box-shadow: 0 0 0 1px var(--cat-side), 0 0 16px var(--cat-side-glow);
-  background: rgba(245, 158, 11, 0.08);
-}
-
-.speed-tile.has-qty.tile-drink {
-  border-color: var(--cat-drink);
-  box-shadow: 0 0 0 1px var(--cat-drink), 0 0 16px var(--cat-drink-glow);
-  background: rgba(6, 182, 212, 0.08);
-}
-
-/* TOP SECTION: Clean High-Res Food Thumbnail (Zero Overlay Clutter) */
+/* TOP SECTION: Clean Food Thumbnail */
 .tile-image-section {
   position: relative;
-  height: 56%;
+  height: 80px;
   width: 100%;
-  border-radius: 8px;
+  border-radius: var(--radius-img);
   overflow: hidden;
-  background-color: rgba(0, 0, 0, 0.4);
+  background-color: var(--bg-surface-elevated);
   flex-shrink: 0;
 }
 
@@ -405,985 +533,267 @@ html, body {
   height: 100%;
   object-fit: cover;
   display: block;
-  border-radius: 8px;
+  border-radius: var(--radius-img);
   pointer-events: none;
-  transition: transform 0.25s ease;
 }
 
-.speed-tile:hover .tile-thumbnail {
-  transform: scale(1.05);
-}
-
-/* Top-Left Crisp Hotkey Badge Pill */
+/* Top-Left Pinned Hotkey Tag */
 .tile-hotkey-tag {
   position: absolute;
-  top: 6px;
-  left: 6px;
-  background: rgba(7, 9, 14, 0.78);
-  color: var(--text-secondary);
+  top: 4px;
+  left: 4px;
+  background: rgba(15, 23, 42, 0.78);
+  color: #FFFFFF;
   font-family: var(--font-mono);
-  font-size: clamp(0.68rem, 0.85vw, 0.78rem);
+  font-size: 0.68rem;
   font-weight: 700;
   padding: 2px 6px;
-  border-radius: 5px;
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
-  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 4px;
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
   pointer-events: none;
   z-index: 2;
-  line-height: 1.1;
+  line-height: 1;
 }
 
-/* Top-Right Prominent Quantity Badge */
+/* Top-Right Pinned Dynamic Quantity Badge (Vibrant Amber Pill) */
 .tile-qty-badge {
   display: none;
   position: absolute;
-  top: 6px;
-  right: 6px;
+  top: 4px;
+  right: 4px;
   align-items: center;
   justify-content: center;
-  min-width: 26px;
-  height: 24px;
+  min-width: 22px;
+  height: 20px;
   padding: 0 6px;
-  border-radius: 999px;
-  background-color: var(--bg-base);
+  border-radius: 6px;
+  background-color: var(--accent-amber);
   color: #FFFFFF;
   font-family: var(--font-mono);
-  font-size: clamp(0.72rem, 0.9vw, 0.82rem);
+  font-size: 0.74rem;
   font-weight: 800;
   pointer-events: none;
   z-index: 2;
-  animation: badgePop 0.15s cubic-bezier(0.16, 1, 0.3, 1);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.6);
-  border: 1.5px solid var(--text-primary);
-}
-
-.speed-tile.tile-burger .tile-qty-badge {
-  border-color: var(--cat-burger);
-  color: #FFFFFF;
-  box-shadow: 0 0 10px var(--cat-burger-glow);
-}
-
-.speed-tile.tile-side .tile-qty-badge {
-  border-color: var(--cat-side);
-  color: #FFFFFF;
-  box-shadow: 0 0 10px var(--cat-side-glow);
-}
-
-.speed-tile.tile-drink .tile-qty-badge {
-  border-color: var(--cat-drink);
-  color: #FFFFFF;
-  box-shadow: 0 0 10px var(--cat-drink-glow);
+  box-shadow: 0 2px 6px var(--accent-amber-shadow);
+  line-height: 1;
 }
 
 .speed-tile.has-qty .tile-qty-badge {
   display: flex;
 }
 
-@keyframes badgePop {
-  0% { transform: scale(0.6); }
-  60% { transform: scale(1.15); }
-  100% { transform: scale(1); }
-}
-
-/* BOTTOM SECTION: Clear, Non-Overlapping Typography */
+/* BOTTOM SECTION: Single-instance bold Naskh Urdu item name + Clean price */
 .tile-info-section {
-  height: 44%;
-  width: 100%;
   display: flex;
   flex-direction: column;
-  justify-content: space-between;
-  padding: 6px 4px 2px;
+  justify-content: center;
+  padding: 5px 2px 2px;
+  gap: 2px;
   pointer-events: none;
-}
-
-.tile-title-group {
-  display: flex;
-  flex-direction: column;
-  gap: 1px;
   min-width: 0;
 }
 
-/* English Product Name (Bold Uppercase Sans-Serif) */
-.tile-english-name {
-  font-family: var(--font-sans);
-  font-size: clamp(0.76rem, 0.95vw, 0.88rem);
-  font-weight: 800;
-  color: var(--text-primary);
-  letter-spacing: 0.02em;
-  text-transform: uppercase;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  line-height: 1.2;
-}
-
-/* Elegant Urdu Subtitle Line Below English */
 .tile-urdu-name {
   font-family: var(--font-urdu);
-  font-size: clamp(0.72rem, 0.88vw, 0.82rem);
-  font-weight: 500;
-  color: var(--text-secondary);
+  font-size: 1.02rem;
+  font-weight: 700;
+  color: var(--text-primary);
   line-height: 1.35;
+  text-align: right;
+  direction: rtl;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
-/* Price Highlighted in Bold Crisp White */
 .tile-price {
-  font-family: var(--font-mono);
-  font-size: clamp(0.92rem, 1.2vw, 1.12rem);
-  font-weight: 700;
-  color: #FFFFFF;
-  letter-spacing: -0.02em;
-  line-height: 1.1;
-  margin-top: 2px;
+  font-family: var(--font-sans);
+  font-size: 0.84rem;
+  font-weight: 800;
+  color: var(--accent-amber-hover);
+  letter-spacing: 0;
+  text-align: left;
+  direction: ltr;
 }
 
 /* ==========================================================================
-   4. TICKET PANEL (Vercel/Linear Elevated Dark Glass Surface)
+   5. STICKY BOTTOM CHECKOUT BAR (ZERO FRICTION OUTDOOR/COUNTER BAR)
    ========================================================================== */
-.ticket-panel {
-  width: 38%;
-  flex: 0 0 38%;
+.mobile-action-bar {
+  position: fixed;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 100%;
+  max-width: 560px;
+  z-index: 1000;
+  background: var(--bg-surface);
+  border-top: 1px solid var(--border-subtle);
+  padding: 8px 12px max(8px, env(safe-area-inset-bottom));
   display: flex;
   flex-direction: column;
-  background-color: var(--bg-surface);
-  height: 100%;
-  overflow: hidden;
-  border-left: 1px solid var(--border-subtle);
-  box-shadow: -4px 0 24px rgba(0, 0, 0, 0.35);
+  gap: 6px;
+  box-shadow: 0 -4px 20px rgba(15, 23, 42, 0.06);
 }
 
-/* Mobile Toggle Bar (Hidden on Desktop) */
-.mobile-ticket-bar {
-  display: none;
+/* Optional Customer Name Input Row */
+.m-customer-row {
+  width: 100%;
 }
 
-.mobile-drawer-close-btn {
-  display: none;
-}
-
-.mobile-drawer-backdrop {
-  display: none;
-}
-
-/* Ticket Header Banner */
-.ticket-header-banner {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 0.85rem 1.15rem;
-  background: var(--bg-surface-elevated);
-  border-bottom: 1px solid var(--border-subtle);
-  flex-shrink: 0;
-}
-
-.ticket-header-info {
-  display: flex;
-  align-items: center;
-  gap: 0.65rem;
-}
-
-.ticket-header-title {
-  font-size: 0.85rem;
-  font-weight: 800;
-  letter-spacing: 0.06em;
-  color: var(--text-secondary);
-  text-transform: uppercase;
-}
-
-.ticket-token-pill {
-  font-family: var(--font-mono);
-  font-size: 0.8rem;
-  font-weight: 700;
-  color: var(--text-primary);
-  background: rgba(255, 255, 255, 0.06);
-  border: 1px solid var(--border-subtle);
-  padding: 0.15rem 0.55rem;
-  border-radius: 6px;
-  letter-spacing: 0.02em;
-}
-
-.ticket-header-actions {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-}
-
-.ticket-badge-count {
-  font-family: var(--font-mono);
-  font-size: 0.76rem;
-  font-weight: 700;
-  padding: 0.2rem 0.55rem;
-  background: rgba(255, 255, 255, 0.06);
-  border: 1px solid var(--border-subtle);
-  border-radius: 6px;
-  color: var(--text-secondary);
-}
-
-/* Streamlined Customer Name Bar */
-.ticket-customer-bar {
-  padding: 0.65rem 1.15rem;
-  background-color: var(--bg-surface);
-  border-bottom: 1px solid var(--border-subtle);
-  flex-shrink: 0;
-}
-
-.customer-input-wrapper {
+.m-customer-wrap {
   position: relative;
   display: flex;
   align-items: center;
   width: 100%;
 }
 
-.customer-input-icon {
+.m-cust-icon {
   position: absolute;
-  left: 0.75rem;
-  font-size: 0.9rem;
+  left: 9px;
+  font-size: 0.85rem;
   color: var(--text-muted);
   pointer-events: none;
-  user-select: none;
   line-height: 1;
 }
 
-.customer-name-input {
+.m-customer-input {
   width: 100%;
-  height: 38px;
-  padding: 0 2rem 0 2.25rem;
-  background-color: var(--bg-surface-elevated);
+  height: 36px;
+  padding: 0 24px 0 28px;
+  background-color: var(--bg-base);
   border: 1px solid var(--border-subtle);
-  border-radius: 8px;
+  border-radius: var(--radius-btn);
   font-family: var(--font-sans);
-  font-size: 0.88rem;
+  font-size: 0.85rem;
   font-weight: 600;
   color: var(--text-primary);
   outline: none;
-  transition: all 0.15s ease-in-out;
+  transition: all 0.12s ease;
 }
 
-.customer-name-input::placeholder {
+.m-customer-input::placeholder {
   color: var(--text-muted);
   font-weight: 400;
-  font-size: 0.84rem;
+  font-size: 0.82rem;
 }
 
-.customer-name-input:focus {
-  border-color: var(--border-focus);
-  box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.06);
-  background-color: #162032;
+.m-customer-input:focus {
+  border-color: var(--accent-amber);
+  background-color: #FFFFFF;
+  box-shadow: 0 0 0 2px rgba(245, 158, 11, 0.18);
 }
 
-.customer-clear-btn {
+.m-clear-cust-btn {
   position: absolute;
-  right: 0.55rem;
-  width: 22px;
-  height: 22px;
+  right: 6px;
+  width: 20px;
+  height: 20px;
   border-radius: 50%;
   border: none;
-  background-color: rgba(255, 255, 255, 0.1);
+  background-color: var(--border-subtle);
   color: var(--text-secondary);
-  font-size: 0.75rem;
-  font-weight: 700;
+  font-size: 0.7rem;
+  font-weight: 800;
   display: flex;
   align-items: center;
   justify-content: center;
-  cursor: pointer;
-  transition: all 0.12s ease;
-  user-select: none;
-}
-
-.customer-clear-btn:hover {
-  background-color: rgba(255, 255, 255, 0.2);
-  color: #FFFFFF;
-}
-
-/* Ticket Items Scroll Area */
-.ticket-items-scroll {
-  flex: 1;
-  overflow-y: auto;
-  padding: 0.85rem 1.15rem;
-  display: flex;
-  flex-direction: column;
-  gap: 0.65rem;
-  background-color: var(--bg-surface);
-}
-
-/* Empty State */
-.ticket-empty-state {
-  margin: auto;
-  text-align: center;
-  padding: 2.5rem 1rem;
-  color: var(--text-muted);
-}
-
-.ticket-empty-state .empty-icon {
-  font-size: 2.8rem;
-  margin-bottom: 0.5rem;
-  opacity: 0.45;
-}
-
-.ticket-empty-state .empty-title {
-  font-size: 1.05rem;
-  font-weight: 700;
-  color: var(--text-secondary);
-  margin-bottom: 0.25rem;
-}
-
-.ticket-empty-state .empty-sub {
-  font-size: 0.82rem;
-  font-weight: 400;
-  color: var(--text-muted);
-}
-
-/* Ticket Item Row (Frosted Glass Card) */
-.ticket-item-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 0.75rem 0.85rem;
-  background: var(--bg-card);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
-  border: 1px solid var(--border-subtle);
-  border-radius: 10px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
-  gap: 0.65rem;
-}
-
-.ticket-item-left {
-  display: flex;
-  flex-direction: column;
-  flex: 1;
-  min-width: 0;
-  gap: 0.2rem;
-}
-
-.ticket-item-title-row {
-  display: flex;
-  align-items: baseline;
-  gap: 0.45rem;
-  min-width: 0;
-}
-
-.ticket-item-name {
-  font-size: 0.88rem;
-  font-weight: 700;
-  color: var(--text-primary);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  letter-spacing: -0.01em;
-}
-
-.ticket-item-urdu {
-  font-family: var(--font-urdu);
-  font-size: 0.75rem;
-  color: var(--text-secondary);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.ticket-item-pricing {
-  display: flex;
-  align-items: baseline;
-  gap: 0.55rem;
-}
-
-.ticket-item-unit-price {
-  font-family: var(--font-mono);
-  font-size: 0.75rem;
-  color: var(--text-muted);
-}
-
-.ticket-item-subtotal {
-  font-family: var(--font-mono);
-  font-size: 0.95rem;
-  font-weight: 700;
-  color: #FFFFFF;
-}
-
-/* Right Side: Stepper & Delete */
-.ticket-item-right {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  flex-shrink: 0;
-}
-
-.touch-stepper {
-  display: flex;
-  align-items: center;
-  background: var(--bg-surface-elevated);
-  border: 1px solid var(--border-subtle);
-  border-radius: 8px;
-  overflow: hidden;
-}
-
-.touch-step-btn {
-  width: 32px;
-  height: 32px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: rgba(255, 255, 255, 0.04);
-  border: none;
-  font-size: 1.15rem;
-  font-weight: 700;
-  color: var(--text-primary);
   cursor: pointer;
   transition: all 0.1s ease;
 }
 
-.touch-step-btn:hover {
-  background: rgba(255, 255, 255, 0.12);
-}
-
-.touch-step-btn:active {
-  background: var(--action-orange);
-  color: #FFFFFF;
-}
-
-.touch-step-val {
-  min-width: 26px;
-  text-align: center;
-  font-family: var(--font-mono);
-  font-size: 0.92rem;
-  font-weight: 700;
+.m-clear-cust-btn:hover {
+  background-color: var(--border-medium);
   color: var(--text-primary);
 }
 
-.ticket-item-del-btn {
-  width: 30px;
-  height: 30px;
+/* Action Bar Summary Row */
+.m-action-summary-row {
   display: flex;
   align-items: center;
-  justify-content: center;
-  background: rgba(239, 68, 68, 0.1);
-  border: 1px solid rgba(239, 68, 68, 0.25);
-  border-radius: 8px;
-  color: #F87171;
-  font-size: 0.88rem;
-  font-weight: 700;
-  cursor: pointer;
-  transition: all 0.12s ease;
-  flex-shrink: 0;
-}
-
-.ticket-item-del-btn:hover {
-  background: var(--danger-red);
-  color: #FFFFFF;
-  border-color: var(--danger-red);
-}
-
-.ticket-item-del-btn:active {
-  transform: scale(0.92);
-}
-
-/* Bottom Section: Total & Giant Action Button */
-.ticket-bottom-section {
-  padding: 1rem 1.25rem 1.25rem;
-  background: var(--bg-surface-elevated);
-  border-top: 1px solid var(--border-subtle);
-  display: flex;
-  flex-direction: column;
-  gap: 0.85rem;
-  flex-shrink: 0;
-  box-shadow: 0 -4px 16px rgba(0, 0, 0, 0.35);
-}
-
-.ticket-total-row {
-  display: flex;
-  align-items: baseline;
   justify-content: space-between;
-  padding: 0 0.25rem;
+  padding: 0 2px;
 }
 
-.total-heading {
-  font-size: 0.95rem;
+.m-action-meta {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.m-badge-count {
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
   font-weight: 800;
-  letter-spacing: 0.05em;
+  padding: 2px 7px;
+  background: var(--bg-surface-elevated);
+  border: 1px solid var(--border-subtle);
+  color: var(--text-primary);
+  border-radius: var(--radius-badge);
+  letter-spacing: 0.02em;
+}
+
+.m-summary-label {
+  font-family: var(--font-sans);
+  font-size: 0.8rem;
+  font-weight: 700;
   color: var(--text-secondary);
   text-transform: uppercase;
 }
 
-.total-value {
-  font-size: clamp(1.6rem, 2.4vw, 2.1rem);
-  font-weight: 800;
-  color: #FFFFFF;
+.m-total-val {
   font-family: var(--font-mono);
+  font-size: 1.35rem;
+  font-weight: 900;
+  color: var(--text-primary);
   letter-spacing: -0.02em;
 }
 
-.ticket-actions-group {
-  display: flex;
-  flex-direction: column;
-  gap: 0.55rem;
+/* Massive High-Contrast Amber PRINT KOT Button */
+.m-print-kot-btn {
   width: 100%;
-}
-
-.secondary-bill-btn {
-  display: none !important;
-}
-
-/* Primary Giant Action Button: PRINT KOT (KITCHEN) ⚡ */
-.giant-punch-btn {
-  width: 100%;
-  height: 54px;
-  min-height: 54px;
+  height: 50px;
+  min-height: 50px;
   border: none;
   border-radius: 10px;
   font-family: var(--font-sans);
-  font-size: 1.05rem;
-  font-weight: 800;
-  letter-spacing: 0.03em;
+  font-size: 1.02rem;
+  font-weight: 900;
+  letter-spacing: 0.04em;
   text-transform: uppercase;
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: all 0.15s ease;
+  transition: all 0.12s ease;
+  cursor: pointer;
 }
 
-.giant-punch-btn:disabled {
-  background: rgba(255, 255, 255, 0.06);
-  border: 1px solid var(--border-subtle);
-  color: var(--text-muted);
+.m-print-kot-btn:disabled {
+  background: var(--border-subtle) !important;
+  color: var(--text-muted) !important;
   cursor: not-allowed;
   box-shadow: none;
 }
 
-.giant-punch-btn:not(:disabled),
-.giant-punch-btn.active-ready {
-  background: var(--action-orange) !important;
+.m-print-kot-btn:not(:disabled) {
+  background: var(--accent-amber) !important;
   color: #FFFFFF !important;
   cursor: pointer;
-  box-shadow: 0 0 24px var(--action-orange-glow), 0 4px 12px rgba(0, 0, 0, 0.3);
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  box-shadow: 0 4px 14px var(--accent-amber-shadow);
 }
 
-.giant-punch-btn:not(:disabled):hover,
-.giant-punch-btn.active-ready:hover {
-  background: var(--action-orange-hover) !important;
-  box-shadow: 0 0 30px rgba(249, 115, 22, 0.6);
-  transform: translateY(-1px);
+.m-print-kot-btn:not(:disabled):hover {
+  background: var(--accent-amber-hover) !important;
 }
 
-.giant-punch-btn:not(:disabled):active,
-.giant-punch-btn.active-ready:active {
-  transform: scale(0.98);
-  background: var(--action-orange-active) !important;
+.m-print-kot-btn:not(:disabled):active {
+  transform: scale(0.985);
+  background: var(--accent-amber-active) !important;
 }
 
 /* ==========================================================================
-   5. TOAST NOTIFICATIONS (Vercel Style)
-   ========================================================================== */
-.toast-container {
-  position: fixed;
-  bottom: 24px;
-  left: 24px;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  z-index: 99999;
-  pointer-events: none;
-}
-
-.pos-toast {
-  padding: 0.75rem 1.25rem;
-  background: rgba(14, 20, 32, 0.95);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  color: var(--text-primary);
-  border: 1px solid var(--border-medium);
-  border-radius: 8px;
-  font-size: 0.88rem;
-  font-weight: 600;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
-  animation: slideInToast 0.2s cubic-bezier(0.16, 1, 0.3, 1);
-}
-
-@keyframes slideInToast {
-  from { transform: translateY(10px); opacity: 0; }
-  to { transform: translateY(0); opacity: 1; }
-}
-
-/* ==========================================================================
-   6. RESPONSIVE DESIGN (Mobile < 768px & Tablet 768px-1024px)
-   ========================================================================== */
-
-/* Tablet Landscape (769px - 1024px) */
-@media (max-width: 1024px) and (min-width: 769px) {
-  .pos-header {
-    height: 54px;
-    min-height: 54px;
-    padding: 0 1rem;
-  }
-  .brand-title {
-    font-size: 0.95rem;
-  }
-  .top-token-display {
-    font-size: 1.35rem;
-    padding: 0.2rem 0.9rem;
-  }
-  .pos-workspace {
-    height: calc(100vh - 54px);
-    height: calc(100dvh - 54px);
-  }
-  .speed-pad-panel {
-    width: 60%;
-    flex: 0 0 60%;
-    padding: 8px;
-  }
-  .ticket-panel {
-    width: 40%;
-    flex: 0 0 40%;
-  }
-  .speed-dial-grid {
-    grid-template-columns: repeat(3, 1fr);
-    gap: 8px;
-  }
-  .speed-tile {
-    padding: 6px;
-    min-height: 110px;
-  }
-}
-
-/* Mobile Screens (<= 768px): Vertical Stack & Slide-Up Drawer */
-@media (max-width: 768px) {
-  .pos-header {
-    height: 50px;
-    min-height: 50px;
-    padding: 0 0.75rem;
-    gap: 0.5rem;
-  }
-  .brand-badge {
-    display: none;
-  }
-  .brand-title {
-    font-size: clamp(0.78rem, 2.5vw, 0.92rem);
-    max-width: 140px;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
-  .top-token-display {
-    font-size: clamp(0.95rem, 3.2vw, 1.25rem);
-    padding: 0.15rem 0.65rem;
-  }
-  .printer-status-pill {
-    height: 34px;
-    padding: 0 0.55rem;
-    font-size: 0.78rem;
-    gap: 0.35rem;
-  }
-  .printer-status-pill::before {
-    content: "🖨️";
-    font-size: 0.85rem;
-    line-height: 1;
-  }
-  .printer-ready-text {
-    display: none;
-  }
-  .btn-clear-ticket {
-    height: 34px;
-    padding: 0 0.65rem;
-    font-size: 0.78rem;
-  }
-
-  /* Workspace Stack */
-  .pos-workspace {
-    position: relative;
-    display: flex;
-    flex-direction: column;
-    height: calc(100vh - 50px);
-    height: calc(100dvh - 50px);
-    overflow: hidden;
-  }
-
-  /* Speed-pad Panel: Scrollable upper area */
-  .speed-pad-panel {
-    width: 100%;
-    flex: 1 1 auto;
-    height: 100%;
-    padding: 8px 8px calc(146px + env(safe-area-inset-bottom));
-    overflow-y: auto;
-    overflow-x: hidden;
-    -webkit-overflow-scrolling: touch;
-    scrollbar-width: thin;
-  }
-
-  /* Clean 2-Column Touch Grid on Mobile */
-  .speed-dial-grid {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    grid-auto-rows: minmax(130px, auto);
-    gap: 10px;
-    min-height: auto;
-    height: auto;
-  }
-
-  .speed-tile {
-    min-height: 130px;
-    height: auto;
-    padding: 6px;
-    border-radius: 12px;
-  }
-
-  .tile-image-section {
-    height: 72px;
-    border-radius: 7px;
-  }
-
-  .tile-info-section {
-    padding: 4px 2px 2px;
-    gap: 2px;
-  }
-
-  .tile-english-name {
-    font-size: clamp(0.74rem, 2.4vw, 0.84rem);
-  }
-
-  .tile-urdu-name {
-    font-size: clamp(0.7rem, 2.2vw, 0.78rem);
-  }
-
-  .tile-price {
-    font-size: clamp(0.92rem, 3.2vw, 1.05rem);
-  }
-
-  .tile-hotkey-tag {
-    font-size: 0.65rem;
-    padding: 1.5px 5px;
-    top: 4px;
-    left: 4px;
-  }
-
-  .tile-qty-badge {
-    min-width: 24px;
-    height: 22px;
-    font-size: 0.74rem;
-    padding: 0 4px;
-    top: 4px;
-    right: 4px;
-  }
-
-  /* Mobile Drawer Backdrop */
-  .mobile-drawer-backdrop {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100vw;
-    height: 100vh;
-    height: 100dvh;
-    background: rgba(7, 9, 14, 0.75);
-    backdrop-filter: blur(4px);
-    -webkit-backdrop-filter: blur(4px);
-    z-index: 800;
-    opacity: 0;
-    pointer-events: none;
-    transition: opacity 0.25s ease;
-  }
-
-  .mobile-drawer-backdrop.active {
-    display: block;
-    opacity: 1;
-    pointer-events: auto;
-  }
-
-  /* Docked Bottom Bar & Slide-Up Drawer */
-  .ticket-panel {
-    position: fixed;
-    bottom: 0;
-    left: 0;
-    width: 100%;
-    flex: 0 0 auto;
-    z-index: 900;
-    background: var(--bg-surface-glass);
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
-    border-left: none;
-    border-top: 1px solid var(--border-medium);
-    border-radius: 18px 18px 0 0;
-    box-shadow: 0 -8px 32px rgba(0, 0, 0, 0.6);
-    transition: height 0.28s cubic-bezier(0.16, 1, 0.3, 1), transform 0.28s cubic-bezier(0.16, 1, 0.3, 1);
-    display: flex;
-    flex-direction: column;
-    overflow: hidden;
-  }
-
-  /* Mobile Bar (Always visible at top of docked sheet) */
-  .mobile-ticket-bar {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    height: 38px;
-    min-height: 38px;
-    padding: 0 0.85rem;
-    background: rgba(255, 255, 255, 0.03);
-    border-bottom: 1px solid var(--border-subtle);
-    cursor: pointer;
-    user-select: none;
-  }
-
-  .mobile-bar-summary {
-    display: flex;
-    align-items: center;
-    gap: 0.65rem;
-  }
-
-  .mobile-badge {
-    font-family: var(--font-mono);
-    font-size: 0.72rem;
-    font-weight: 700;
-    padding: 2px 7px;
-    background: rgba(255, 255, 255, 0.08);
-    border: 1px solid var(--border-subtle);
-    color: var(--text-primary);
-    border-radius: 999px;
-  }
-
-  .mobile-total {
-    font-size: clamp(0.95rem, 3.2vw, 1.15rem);
-    font-weight: 800;
-    color: #FFFFFF;
-    font-family: var(--font-mono);
-    cursor: pointer;
-  }
-
-  .mobile-toggle-btn {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.35rem;
-    background: none;
-    border: none;
-    font-family: var(--font-sans);
-    font-size: 0.8rem;
-    font-weight: 700;
-    color: var(--action-orange);
-    cursor: pointer;
-    padding: 4px;
-  }
-
-  .toggle-arrow {
-    font-size: 0.75rem;
-    transition: transform 0.22s ease;
-  }
-
-  /* Collapsed state (Default Docked Bar) */
-  .ticket-panel:not(.drawer-open) {
-    height: auto;
-    max-height: 148px;
-    padding-bottom: max(6px, env(safe-area-inset-bottom));
-  }
-
-  .ticket-panel:not(.drawer-open) .ticket-header-banner,
-  .ticket-panel:not(.drawer-open) .ticket-items-scroll,
-  .ticket-panel:not(.drawer-open) .ticket-total-row {
-    display: none !important;
-  }
-
-  .ticket-panel:not(.drawer-open) .ticket-customer-bar {
-    padding: 4px 0.75rem;
-    background-color: transparent;
-    border-bottom: none;
-  }
-
-  .ticket-panel:not(.drawer-open) .customer-name-input {
-    height: 34px;
-    font-size: 0.82rem;
-    padding-left: 2rem;
-    padding-right: 1.75rem;
-    border-radius: 7px;
-  }
-
-  .ticket-panel:not(.drawer-open) .ticket-bottom-section {
-    padding: 4px 0.75rem 6px;
-    gap: 0;
-    border-top: none;
-    box-shadow: none;
-    background: transparent;
-  }
-
-  .ticket-panel:not(.drawer-open) .giant-punch-btn {
-    height: 48px;
-    min-height: 48px;
-    font-size: 0.96rem;
-    border-radius: 10px;
-  }
-
-  /* Expanded State (Slide-Up Drawer) */
-  .ticket-panel.drawer-open {
-    height: 85vh;
-    height: 85dvh;
-    max-height: 88dvh;
-    border-radius: 20px 20px 0 0;
-  }
-
-  .ticket-panel.drawer-open .toggle-arrow {
-    transform: rotate(180deg);
-  }
-
-  .ticket-panel.drawer-open .ticket-header-banner {
-    display: flex;
-    padding: 0.65rem 0.85rem;
-  }
-
-  .ticket-panel.drawer-open .mobile-drawer-close-btn {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 30px;
-    height: 30px;
-    background: rgba(255, 255, 255, 0.08);
-    border: 1px solid var(--border-subtle);
-    border-radius: 8px;
-    font-size: 0.95rem;
-    font-weight: 700;
-    color: var(--text-secondary);
-    cursor: pointer;
-  }
-
-  .ticket-panel.drawer-open .ticket-customer-bar {
-    padding: 0.5rem 0.85rem;
-  }
-
-  .ticket-panel.drawer-open .customer-name-input {
-    height: 36px;
-    font-size: 0.86rem;
-  }
-
-  .ticket-panel.drawer-open .ticket-items-scroll {
-    display: flex;
-    flex: 1;
-    overflow-y: auto;
-    padding: 0.65rem 0.85rem;
-    gap: 0.5rem;
-  }
-
-  .ticket-panel.drawer-open .ticket-item-row {
-    padding: 0.6rem 0.75rem;
-  }
-
-  .ticket-panel.drawer-open .ticket-bottom-section {
-    padding: 0.65rem 0.85rem max(8px, env(safe-area-inset-bottom));
-    gap: 0.5rem;
-  }
-
-  .ticket-panel.drawer-open .ticket-total-row {
-    display: flex;
-  }
-
-  .ticket-panel.drawer-open .giant-punch-btn {
-    height: 50px;
-    min-height: 50px;
-    font-size: 1.02rem;
-  }
-}
-
-/* ==========================================================================
-   7. PRINTER SETUP MODAL (Vercel Glassmorphism Dialog)
+   6. PRINTER SETUP MODAL (BiteDash Clean Dialog)
    ========================================================================== */
 .printer-modal-backdrop {
   position: fixed;
@@ -1391,15 +801,15 @@ html, body {
   left: 0;
   width: 100vw;
   height: 100vh;
-  background-color: rgba(7, 9, 14, 0.8);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  z-index: 2000;
+  background-color: rgba(15, 23, 42, 0.55);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  z-index: 2500;
   display: flex;
   align-items: center;
   justify-content: center;
   padding: 1rem;
-  animation: modalFadeIn 0.15s ease-out;
+  animation: modalFadeIn 0.12s ease-out;
 }
 
 @keyframes modalFadeIn {
@@ -1409,25 +819,25 @@ html, body {
 
 .printer-modal-card {
   width: 100%;
-  max-width: 460px;
+  max-width: 420px;
   background: var(--bg-surface);
-  border-radius: 16px;
-  box-shadow: 0 25px 60px -12px rgba(0, 0, 0, 0.7);
+  border-radius: var(--radius-card);
+  box-shadow: 0 16px 36px rgba(15, 23, 42, 0.16);
   overflow: hidden;
-  border: 1px solid var(--border-medium);
-  animation: modalSlideUp 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+  border: 1px solid var(--border-subtle);
+  animation: modalSlideUp 0.14s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 @keyframes modalSlideUp {
-  from { transform: translateY(14px) scale(0.98); opacity: 0; }
-  to { transform: translateY(0) scale(1); opacity: 1; }
+  from { transform: translateY(8px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
 }
 
 .printer-modal-header {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
-  padding: 1.15rem 1.4rem 0.95rem;
+  padding: 1rem 1.25rem 0.85rem;
   border-bottom: 1px solid var(--border-subtle);
   background: var(--bg-surface-elevated);
 }
@@ -1435,59 +845,59 @@ html, body {
 .printer-modal-title-group {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
+  gap: 0.65rem;
 }
 
 .printer-modal-icon {
-  font-size: 1.8rem;
+  font-size: 1.6rem;
   line-height: 1;
 }
 
 .printer-modal-title {
-  font-size: 1.1rem;
+  font-size: 1.05rem;
   font-weight: 800;
   color: var(--text-primary);
 }
 
 .printer-modal-subtitle {
-  font-size: 0.78rem;
+  font-size: 0.76rem;
   color: var(--text-secondary);
   margin-top: 2px;
   line-height: 1.3;
 }
 
 .printer-modal-close {
-  background: rgba(255, 255, 255, 0.06);
+  background: var(--bg-surface);
   border: 1px solid var(--border-subtle);
-  font-size: 1.1rem;
+  font-size: 1rem;
   color: var(--text-secondary);
   cursor: pointer;
-  padding: 4px 8px;
-  border-radius: 6px;
-  transition: all 0.12s;
+  padding: 3px 7px;
+  border-radius: var(--radius-badge);
+  transition: all 0.1s;
   line-height: 1;
 }
 
 .printer-modal-close:hover {
-  background: rgba(255, 255, 255, 0.15);
-  color: #FFFFFF;
+  background: var(--border-subtle);
+  color: var(--text-primary);
 }
 
 .printer-modal-body {
-  padding: 1.25rem 1.4rem;
+  padding: 1.15rem 1.25rem;
   display: flex;
   flex-direction: column;
-  gap: 0.95rem;
+  gap: 0.85rem;
 }
 
 .printer-status-box {
-  background: var(--bg-surface-elevated);
+  background: var(--bg-base);
   border: 1px solid var(--border-subtle);
-  border-radius: 12px;
-  padding: 0.95rem 1.1rem;
+  border-radius: var(--radius-card);
+  padding: 0.85rem 1rem;
   display: flex;
   flex-direction: column;
-  gap: 0.35rem;
+  gap: 0.3rem;
 }
 
 .ps-indicator-row {
@@ -1497,8 +907,8 @@ html, body {
 }
 
 .ps-dot {
-  width: 9px;
-  height: 9px;
+  width: 8px;
+  height: 8px;
   border-radius: 50%;
   background-color: var(--text-muted);
 }
@@ -1506,137 +916,160 @@ html, body {
 .ps-dot.connected,
 .ps-dot.ready {
   background-color: var(--status-green);
-  box-shadow: 0 0 8px rgba(34, 197, 94, 0.6);
 }
 
 .ps-dot.reconnecting {
   background-color: var(--status-yellow);
-  box-shadow: 0 0 8px rgba(234, 179, 8, 0.6);
   animation: pulseDot 0.8s infinite ease-in-out;
 }
 
 .ps-dot.disconnected {
-  background-color: var(--danger-red);
-  box-shadow: 0 0 8px rgba(239, 68, 68, 0.6);
+  background-color: var(--status-red);
 }
 
 .ps-status-text {
   font-weight: 700;
-  font-size: 0.88rem;
+  font-size: 0.85rem;
   color: var(--text-primary);
 }
 
 .ps-device-name {
-  font-size: 1rem;
+  font-size: 0.95rem;
   font-weight: 800;
   color: var(--text-primary);
 }
 
 .ps-device-id {
   font-family: var(--font-mono);
-  font-size: 0.72rem;
+  font-size: 0.7rem;
   color: var(--text-muted);
   word-break: break-all;
 }
 
 .printer-guide-box {
-  background: rgba(6, 182, 212, 0.06);
-  border: 1px solid rgba(6, 182, 212, 0.2);
-  border-radius: 10px;
-  padding: 0.75rem 0.95rem;
+  background: #FEF3C7;
+  border: 1px solid #FDE68A;
+  border-radius: var(--radius-card);
+  padding: 0.7rem 0.85rem;
   display: flex;
   flex-direction: column;
-  gap: 0.45rem;
-  font-size: 0.78rem;
-  color: #67E8F9;
+  gap: 0.4rem;
+  font-size: 0.76rem;
+  color: #92400E;
   line-height: 1.35;
 }
 
 .guide-item {
   display: flex;
   align-items: center;
-  gap: 0.55rem;
+  gap: 0.5rem;
 }
 
 .guide-badge {
-  background: rgba(6, 182, 212, 0.18);
-  color: #A5F3FC;
-  font-size: 0.65rem;
+  background: #FDE68A;
+  color: #78350F;
+  font-size: 0.64rem;
   font-weight: 800;
-  padding: 2px 6px;
-  border-radius: 4px;
+  padding: 1px 5px;
+  border-radius: var(--radius-badge);
   letter-spacing: 0.02em;
 }
 
 .printer-modal-actions {
   display: flex;
   flex-direction: column;
-  gap: 0.65rem;
-  margin-top: 0.25rem;
+  gap: 0.55rem;
+  margin-top: 0.2rem;
 }
 
 .btn-primary-pair {
-  height: 44px;
-  background: var(--text-primary);
-  color: #07090E;
+  height: 42px;
+  background: var(--accent-amber);
+  color: #FFFFFF;
   border: none;
-  border-radius: 8px;
+  border-radius: var(--radius-btn);
   font-family: var(--font-sans);
-  font-size: 0.92rem;
+  font-size: 0.9rem;
   font-weight: 800;
   cursor: pointer;
-  transition: all 0.15s ease;
+  transition: all 0.1s ease;
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 0.5rem;
+  box-shadow: 0 2px 8px var(--accent-amber-shadow);
 }
 
 .btn-primary-pair:hover {
-  background: #E2E8F0;
-  transform: translateY(-1px);
-}
-
-.btn-primary-pair:active {
-  transform: translateY(0);
+  background: var(--accent-amber-hover);
 }
 
 .btn-test-print {
-  height: 40px;
-  background: rgba(255, 255, 255, 0.06);
+  height: 38px;
+  background: var(--bg-surface);
   color: var(--text-primary);
   border: 1px solid var(--border-subtle);
-  border-radius: 8px;
+  border-radius: var(--radius-btn);
   font-family: var(--font-sans);
-  font-size: 0.86rem;
-  font-weight: 600;
+  font-size: 0.84rem;
+  font-weight: 700;
   cursor: pointer;
-  transition: all 0.15s ease;
+  transition: all 0.1s ease;
 }
 
 .btn-test-print:hover {
-  background: rgba(255, 255, 255, 0.12);
+  background: var(--bg-surface-elevated);
 }
 
 .btn-forget-printer {
-  height: 36px;
+  height: 34px;
   background: none;
-  color: #F87171;
-  border: 1px solid rgba(239, 68, 68, 0.3);
-  border-radius: 8px;
+  color: var(--status-red);
+  border: 1px solid #FCA5A5;
+  border-radius: var(--radius-btn);
   font-family: var(--font-sans);
-  font-size: 0.82rem;
-  font-weight: 600;
+  font-size: 0.8rem;
+  font-weight: 700;
   cursor: pointer;
-  transition: all 0.15s ease;
+  transition: all 0.1s ease;
 }
 
 .btn-forget-printer:hover {
-  background: rgba(239, 68, 68, 0.12);
+  background: #FEF2F2;
 }
 
 /* ==========================================================================
-   8. PHYSICAL THERMAL PRINTER MEDIA QUERY (58mm ESC/POS EMULATION)
+   7. TOAST NOTIFICATIONS
+   ========================================================================== */
+.toast-container {
+  position: fixed;
+  bottom: 20px;
+  left: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  z-index: 99999;
+  pointer-events: none;
+}
+
+.pos-toast {
+  padding: 0.65rem 1rem;
+  background: var(--text-primary);
+  color: #FFFFFF;
+  border-radius: var(--radius-btn);
+  font-size: 0.84rem;
+  font-weight: 700;
+  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.25);
+  animation: slideInToast 0.16s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes slideInToast {
+  from { transform: translateY(8px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+/* ==========================================================================
+   8. PHYSICAL THERMAL RECEIPT (58mm ESC/POS EMULATION & WINDOW.PRINT)
    ========================================================================== */
 @media print {
   body * {
@@ -1645,8 +1078,10 @@ html, body {
 
   .pos-app-wrapper,
   .pos-header,
+  .category-pills-bar,
   .pos-workspace,
-  .toast-container {
+  .toast-container,
+  .mobile-action-bar {
     display: none !important;
   }
 
