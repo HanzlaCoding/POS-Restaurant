@@ -16,15 +16,16 @@ let keepAliveTimer = null;
 // ============================================================================
 // 1. TOP 12 MOST-SOLD ITEMS (FIXED SPEED-DIAL COORDINATES)
 // ============================================================================
+// ============================================================================
+// 1. SPEED PAD ITEMS (Sirf Urdu Bold Naamo ke sath)
+// ============================================================================
 const SPEED_ITEMS = [
-  // --- ROW 1: BURGERS (Red / Vermilion Accent) ---
   {
     id: 'sp-01',
     code: 'B1',
     hotkey: '1',
-    name: 'WAGYU SMASH',
-    urduName: 'واگیو برگر',
-    englishName: 'Wagyu Smash Burger',
+    name: 'Wagyu Smash Burger',
+    shortName: 'واگیو برگر', // Sirf Urdu bold name
     category: 'burger',
     image: 'assets/images/wagyu_smash.jpg',
     price: 1490
@@ -33,9 +34,8 @@ const SPEED_ITEMS = [
     id: 'sp-02',
     code: 'B2',
     hotkey: '2',
-    name: 'SMOKED TRUFFLE',
-    urduName: 'ٹرفل برگر',
-    englishName: 'Smoked Truffle Burger',
+    name: 'Smoked Truffle Burger',
+    shortName: 'ٹرفل برگر',
     category: 'burger',
     image: 'assets/images/truffle_burger.jpg',
     price: 1350
@@ -44,9 +44,8 @@ const SPEED_ITEMS = [
     id: 'sp-03',
     code: 'B3',
     hotkey: '3',
-    name: 'CRISPY JALAPENO',
-    urduName: 'ہلاپینو برگر',
-    englishName: 'Crispy Jalapeno Burger',
+    name: 'Crispy Jalapeno Burger',
+    shortName: 'جلابینو برگر',
     category: 'burger',
     image: 'assets/images/jalapeno_burger.jpg',
     price: 1190
@@ -55,22 +54,18 @@ const SPEED_ITEMS = [
     id: 'sp-04',
     code: 'B4',
     hotkey: '4',
-    name: 'DOUBLE CHEESE',
-    urduName: 'ڈبل چیز برگر',
-    englishName: 'Double Cheese Burger',
+    name: 'Double Cheese Burger',
+    shortName: 'ڈبل چیز برگر',
     category: 'burger',
     image: 'assets/images/double_cheese.jpg',
     price: 1090
   },
-
-  // --- ROW 2: FRIES & SIDES (Warm Amber Accent) ---
   {
     id: 'sp-05',
     code: 'S1',
     hotkey: '5',
-    name: 'LOADED FRIES',
-    urduName: 'لوڈڈ فرائز',
-    englishName: 'Loaded Truffle Fries',
+    name: 'Loaded Truffle Fries',
+    shortName: 'لوڈڈ فرائز',
     category: 'side',
     image: 'assets/images/loaded_fries.jpg',
     price: 690
@@ -79,9 +74,8 @@ const SPEED_ITEMS = [
     id: 'sp-06',
     code: 'S2',
     hotkey: '6',
-    name: 'PERI PERI FRIES',
-    urduName: 'پیری پیری فرائز',
-    englishName: 'Peri Peri Crispy Fries',
+    name: 'Peri Peri Crispy Fries',
+    shortName: 'پیری پیری فرائز',
     category: 'side',
     image: 'assets/images/peri_fries.jpg',
     price: 490
@@ -90,9 +84,8 @@ const SPEED_ITEMS = [
     id: 'sp-07',
     code: 'S3',
     hotkey: '7',
-    name: 'ONION RINGS',
-    urduName: 'انین رنگز',
-    englishName: 'Gourmet Onion Rings',
+    name: 'Gourmet Onion Rings',
+    shortName: 'اونین رنگز',
     category: 'side',
     image: 'assets/images/onion_rings.jpg',
     price: 550
@@ -101,22 +94,18 @@ const SPEED_ITEMS = [
     id: 'sp-08',
     code: 'S4',
     hotkey: '8',
-    name: 'BUFFALO WINGS',
-    urduName: 'بفیلو ونگز (6 عدد)',
-    englishName: 'Buffalo Wings (6 Pcs)',
+    name: 'Buffalo Wings (6 Pcs)',
+    shortName: 'بفیلو ونگز',
     category: 'side',
     image: 'assets/images/buffalo_wings.jpg',
     price: 850
   },
-
-  // --- ROW 3: DRINKS (Electric Cyan Accent) ---
   {
     id: 'sp-09',
     code: 'D1',
     hotkey: '9',
-    name: 'MINT COOLER',
-    urduName: 'منٹ لیمونیڈ',
-    englishName: 'Mint Lemonade Cooler',
+    name: 'Mint Lemonade Cooler',
+    shortName: 'منٹ کولر',
     category: 'drink',
     image: 'assets/images/mint_cooler.jpg',
     price: 390
@@ -125,9 +114,8 @@ const SPEED_ITEMS = [
     id: 'sp-10',
     code: 'D2',
     hotkey: '0',
-    name: 'PEACH ICED TEA',
-    urduName: 'پیچ آئس ٹی',
-    englishName: 'Artisan Peach Iced Tea',
+    name: 'Artisan Peach Iced Tea',
+    shortName: 'پیچ آئس ٹی',
     category: 'drink',
     image: 'assets/images/peach_tea.jpg',
     price: 420
@@ -136,9 +124,8 @@ const SPEED_ITEMS = [
     id: 'sp-11',
     code: 'D3',
     hotkey: '-',
-    name: 'COCA-COLA CAN',
-    urduName: 'کوک کین',
-    englishName: 'Classic Coca-Cola Can',
+    name: 'Classic Coca-Cola Can',
+    shortName: 'کوک کین',
     category: 'drink',
     image: 'assets/images/cola_can.jpg',
     price: 180
@@ -147,14 +134,68 @@ const SPEED_ITEMS = [
     id: 'sp-12',
     code: 'D4',
     hotkey: '=',
-    name: 'CARAMEL SHAKE',
-    urduName: 'کیریمل شیک',
-    englishName: 'Caramel Thick Shake',
+    name: 'Caramel Thick Shake',
+    shortName: 'کیرامেল شیک',
     category: 'drink',
     image: 'assets/images/caramel_shake.jpg',
     price: 650
   }
 ];
+
+// ============================================================================
+// 2. KITCHEN KOT BUILDER (Customer ka naam aur item bold & prominent)
+// ============================================================================
+function buildKitchenKotEscPos(order) {
+  const b = new EscPosBuilder();
+  b.init();
+
+  b.cmd(ESCPOS.ALIGN_CENTER)
+    .doubleDivider()
+    .cmd(ESCPOS.BOLD_ON)
+    .line('*** KITCHEN KOT ***')
+    .cmd(ESCPOS.BOLD_OFF)
+    .doubleDivider();
+
+  // Token Number (Bohot Bara aur Bold)
+  const tokenVal = order.token || String(order.tokenNumber || '000').padStart(3, '0');
+  b.cmd(ESCPOS.ALIGN_CENTER)
+    .cmd(ESCPOS.TEXT_DOUBLE_SIZE)
+    .cmd(ESCPOS.BOLD_ON)
+    .line(`TOKEN #${sanitizeAscii(tokenVal)}`)
+    .cmd(ESCPOS.TEXT_NORMAL)
+    .cmd(ESCPOS.BOLD_OFF);
+
+  // Customer ka Naam (Extra Bold aur Double Height taake chef ko saaf dikhe)
+  const rawCustomerName = (order.customerName || 'Counter').trim();
+  const customerNameClean = sanitizeAscii(rawCustomerName || 'Counter').toUpperCase();
+
+  b.cmd(ESCPOS.ALIGN_CENTER)
+    .cmd(ESCPOS.TEXT_DOUBLE_HEIGHT) // Double height for high visibility
+    .cmd(ESCPOS.BOLD_ON)
+    .line(`GAHAK: ${customerNameClean}`) // Customer name label
+    .cmd(ESCPOS.TEXT_NORMAL)
+    .cmd(ESCPOS.BOLD_OFF);
+
+  b.divider()
+    .cmd(ESCPOS.BOLD_ON)
+    .line('TADAD  ITEM')
+    .cmd(ESCPOS.BOLD_OFF)
+    .divider();
+
+  // Item List
+  (order.items || []).forEach(it => {
+    b.cmd(ESCPOS.BOLD_ON)
+      .line(`[ ${it.qty} ] ${sanitizeAscii(it.shortName || it.name)}`)
+      .cmd(ESCPOS.BOLD_OFF);
+  });
+
+  b.divider()
+    .line(`KUL ITEMS: ${(order.items || []).reduce((s, i) => s + i.qty, 0)}`)
+    .doubleDivider();
+
+  b.feed(3).cut();
+  return b.getBytes();
+}
 
 // ============================================================================
 // 2. STATE MANAGEMENT
@@ -872,7 +913,6 @@ function parseDateTime(timestampStr) {
 // 1. Kitchen KOT ESC/POS Generator (Strict Minimal Clutter-Free Payload)
 function buildKitchenKotEscPos(order) {
   const b = new EscPosBuilder();
-  const dt = parseDateTime(order.timestamp);
   b.init();
 
   b.cmd(ESCPOS.ALIGN_CENTER)
@@ -882,62 +922,44 @@ function buildKitchenKotEscPos(order) {
     .cmd(ESCPOS.BOLD_OFF)
     .doubleDivider();
 
-  // Double-Width + Double-Height Bold Token Header
+  // Token Number (Bohot Bara aur Bold)
   const tokenVal = order.token || String(order.tokenNumber || '000').padStart(3, '0');
   b.cmd(ESCPOS.ALIGN_CENTER)
-    .cmd(ESCPOS.TEXT_DOUBLE_SIZE) // GS ! 0x11
-    .cmd(ESCPOS.BOLD_ON)          // ESC E 1
-    .line(`TOKEN #${sanitizeAscii(tokenVal)}`)
-    .cmd(ESCPOS.TEXT_NORMAL)      // GS ! 0x00
-    .cmd(ESCPOS.BOLD_OFF);
-
-  // Directly below Double-Height Token: Customer Name in bold text
-  const rawCustomerName = (order.customerName || 'Counter').trim();
-  const customerNameClean = sanitizeAscii(rawCustomerName || 'Counter').toUpperCase();
-  b.cmd(ESCPOS.ALIGN_CENTER)
-    .cmd(ESCPOS.TEXT_DOUBLE_HEIGHT)
+    .cmd(ESCPOS.TEXT_DOUBLE_SIZE)
     .cmd(ESCPOS.BOLD_ON)
-    .line(`NAME: ${customerNameClean}`)
+    .line(`TOKEN #${sanitizeAscii(tokenVal)}`)
     .cmd(ESCPOS.TEXT_NORMAL)
     .cmd(ESCPOS.BOLD_OFF);
 
-  b.cmd(ESCPOS.ALIGN_LEFT);
+  // Customer ka Naam (Extra Bold aur Double Height taake chef ko saaf dikhe)
+  const rawCustomerName = (order.customerName || 'Counter').trim();
+  const customerNameClean = sanitizeAscii(rawCustomerName || 'Counter').toUpperCase();
 
-  // Date and Time only
-  if (dt.time) {
-    b.line(formatTwoColumns(`TIME: ${dt.time}`, `DATE: ${dt.date}`));
-  } else {
-    b.line(`DATE/TIME: ${sanitizeAscii(order.timestamp || '')}`);
-  }
+  b.cmd(ESCPOS.ALIGN_CENTER)
+    .cmd(ESCPOS.TEXT_DOUBLE_HEIGHT) // Double height for high visibility
+    .cmd(ESCPOS.BOLD_ON)
+    .line(`GAHAK: ${customerNameClean}`) // Customer name label
+    .cmd(ESCPOS.TEXT_NORMAL)
+    .cmd(ESCPOS.BOLD_OFF);
 
   b.divider()
     .cmd(ESCPOS.BOLD_ON)
-    .line('QTY  ITEM')
+    .line('TADAD  ITEM')
     .cmd(ESCPOS.BOLD_OFF)
     .divider();
 
-  // Item List (Qty + Clean ASCII Name ONLY, zero prices, zero bloat)
+  // Item List
   (order.items || []).forEach(it => {
-    // Strip Urdu script in parentheses to guarantee clean single-byte ASCII
-    const rawName = it.englishName || it.name || '';
-    const cleanItemName = sanitizeAscii(rawName.replace(/\s*\([^)]*[\u0600-\u06FF]+[^)]*\)/g, '').trim()).toUpperCase();
-    const wrappedLines = formatKotItemWrapped(it.qty, cleanItemName, 32);
-    wrappedLines.forEach((l, idx) => {
-      if (idx === 0) b.cmd(ESCPOS.BOLD_ON);
-      b.line(l);
-      if (idx === 0) b.cmd(ESCPOS.BOLD_OFF);
-    });
+    b.cmd(ESCPOS.BOLD_ON)
+      .line(`[ ${it.qty} ] ${sanitizeAscii(it.shortName || it.name)}`)
+      .cmd(ESCPOS.BOLD_OFF);
   });
 
-  const totalItemCount = (order.items || []).reduce((sum, it) => sum + (Number(it.qty) || 1), 0);
   b.divider()
-    .line(formatTwoColumns(`TOTAL ITEMS: ${totalItemCount}`, ''))
+    .line(`KUL ITEMS: ${(order.items || []).reduce((s, i) => s + i.qty, 0)}`)
     .doubleDivider();
 
-  // TEAR GAP: 3 empty line feeds so text fully clears the physical tear bar
-  b.feed(3)
-    .cut();
-
+  b.feed(3).cut();
   return b.getBytes();
 }
 
