@@ -1,0 +1,30 @@
+{
+  "name": "pos-restaurant",
+  "version": "1.0.0",
+  "description": "",
+  "main": "android-bridge.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node server.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/HanzlaCoding/POS-Restaurant.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/HanzlaCoding/POS-Restaurant/issues"
+  },
+  "homepage": "https://github.com/HanzlaCoding/POS-Restaurant#readme",
+  "dependencies": {
+    "@capacitor/android": "^6.0.0",
+    "@capacitor/core": "^6.0.0",
+    "cordova-plugin-bluetooth-serial": "^0.4.7"
+  },
+  "devDependencies": {
+    "@capacitor/cli": "^6.0.0"
+  }
+}
