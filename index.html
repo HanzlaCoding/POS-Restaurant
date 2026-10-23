@@ -4,51 +4,41 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-  <title>BiteDash • Food Cart POS</title>
+  <title>Student Burger • POS Terminal</title>
   <link rel="manifest" href="manifest.json">
-  <meta name="theme-color" content="#FFFFFF">
+  <meta name="theme-color" content="#111827">
   <link rel="icon" type="image/svg+xml" href="assets/icons/icon.svg">
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link
-    href="https://fonts.googleapis.com/css2?family=Inter:wght@500;600;700;800;900&family=Noto+Naskh+Arabic:wght@700;800&display=swap"
-    rel="stylesheet">
   <style>
     :root {
-      --bg-dark: #0B0F17;
-      --bg-surface: #FFFFFF;
-      --bg-app: #F8FAFC;
-      --bg-elevated: #F1F5F9;
-      --text-main: #0F172A;
-      --text-secondary: #334155;
-      --text-muted: #64748B;
-      --border: #CBD5E1;
-      --border-subtle: #E2E8F0;
+      --bg-outer: #030712;
+      --bg-app: #0F172A;
+      --bg-header: #111827;
+      --bg-register: #111827;
+      --bg-surface: #1E293B;
+      --text-light: #F8FAFC;
+      --text-dim: #94A3B8;
       --accent: #F59E0B;
       --accent-hover: #D97706;
-      --accent-dark: #78350F;
-      --accent-soft: #FEF3C7;
-      --danger: #DC2626;
-      --danger-soft: #FEF2F2;
-      --danger-border: #FECACA;
-      --success: #059669;
-      --success-soft: #ECFDF5;
-      --success-border: #A7F3D0;
+      --danger: #EF4444;
+      --success: #10B981;
+      --font-sans: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      --font-urdu: "Noto Naskh Arabic", "Geeza Pro", "Segoe UI", Tahoma, sans-serif;
     }
 
     * {
       box-sizing: border-box;
       margin: 0;
       padding: 0;
-      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      font-family: var(--font-sans);
       -webkit-tap-highlight-color: transparent;
       user-select: none;
       -webkit-user-select: none;
     }
 
-    html, body {
-      background-color: var(--bg-dark);
-      color: var(--text-main);
+    html,
+    body {
+      background-color: var(--bg-outer);
+      color: var(--text-light);
       width: 100%;
       height: 100%;
       height: 100dvh;
@@ -57,119 +47,149 @@
       align-items: center;
       overflow: hidden;
       touch-action: manipulation;
+      -webkit-font-smoothing: antialiased;
     }
 
-    /* Strict Mobile Container Wrapper (Optimized for 360-420px Android screens) */
+    /* Mobile POS Viewport Container (360px - 420px) */
     .pos-screen {
       width: 100%;
       max-width: 420px;
       height: 100vh;
       height: 100dvh;
-      background: var(--bg-app);
+      background: #F1F5F9;
       display: flex;
       flex-direction: column;
       position: relative;
       overflow: hidden;
-      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.55);
+      box-shadow: 0 25px 60px rgba(0, 0, 0, 0.85);
     }
 
-    /* 1. Header (Fixed Top) */
+    /* 1. Cohesive Dark Commercial Header (#111827) */
     header {
-      background: var(--bg-surface);
-      border-bottom: 1px solid var(--border-subtle);
+      background: var(--bg-header);
+      color: #FFFFFF;
       padding: 8px 12px;
+      height: 50px;
       display: flex;
       align-items: center;
       justify-content: space-between;
-      gap: 6px;
-      height: 52px;
+      gap: 8px;
       flex-shrink: 0;
-      z-index: 20;
+      z-index: 25;
     }
 
     .brand-group {
       display: flex;
       align-items: center;
-      gap: 6px;
+      gap: 8px;
       min-width: 0;
     }
 
     .brand {
-      font-size: 15px;
+      font-size: 14px;
       font-weight: 900;
-      letter-spacing: -0.03em;
-      color: var(--text-main);
+      letter-spacing: 0.02em;
+      color: #FFFFFF;
       white-space: nowrap;
+      text-transform: uppercase;
     }
 
+    /* Glowing Token Pill */
     .token-tag {
-      background: var(--accent-soft);
-      color: #92400E;
-      font-size: 11px;
-      font-weight: 800;
-      padding: 5px 8px;
-      border-radius: 6px;
-      border: 1px solid #FDE68A;
+      appearance: none;
+      border: 1.5px solid #FBBF24;
+      background: linear-gradient(135deg, #F59E0B 0%, #D97706 100%);
+      color: #111827;
+      font-size: 11.5px;
+      font-weight: 900;
+      padding: 4px 10px;
+      min-height: 28px;
+      border-radius: 999px;
       white-space: nowrap;
-      letter-spacing: 0.02em;
+      letter-spacing: 0.04em;
+      font-variant-numeric: tabular-nums;
+      flex-shrink: 0;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      box-shadow: 0 0 14px rgba(245, 158, 11, 0.45);
+      transition: transform 0.08s ease, box-shadow 0.12s ease;
+    }
+
+    .token-tag:active {
+      transform: scale(0.94);
     }
 
     .printer-status {
       appearance: none;
-      background: var(--danger-soft);
-      color: #991B1B;
-      border: 1px solid var(--danger-border);
+      background: #1F2937;
+      color: #CBD5E1;
+      border: 1px solid #374151;
       font-size: 11px;
-      font-weight: 700;
-      padding: 6px 10px;
-      min-height: 34px;
-      border-radius: 8px;
-      max-width: 148px;
+      font-weight: 800;
+      padding: 5px 10px;
+      min-height: 30px;
+      border-radius: 999px;
+      max-width: 142px;
       overflow: hidden;
       white-space: nowrap;
       text-overflow: ellipsis;
       cursor: pointer;
       display: inline-flex;
       align-items: center;
-      gap: 4px;
-      transition: transform 0.08s ease, background-color 0.15s ease;
+      gap: 6px;
+      flex-shrink: 0;
+      transition: transform 0.08s ease;
     }
 
     .printer-status:active {
-      transform: scale(0.96);
+      transform: scale(0.95);
+    }
+
+    .status-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #EF4444;
+      box-shadow: 0 0 6px #EF4444;
+      flex-shrink: 0;
     }
 
     .printer-status[data-state="ready"] {
-      background: var(--success-soft);
-      color: #065F46;
-      border-color: var(--success-border);
+      background: rgba(16, 185, 129, 0.15);
+      color: #A7F3D0;
+      border-color: rgba(16, 185, 129, 0.45);
+    }
+
+    .printer-status[data-state="ready"] .status-dot {
+      background: #10B981;
+      box-shadow: 0 0 8px #10B981;
     }
 
     .printer-status[data-state="connecting"],
     .printer-status[data-state="printing"] {
-      background: var(--accent-soft);
-      color: #92400E;
-      border-color: #FDE68A;
+      background: rgba(245, 158, 11, 0.18);
+      color: #FDE68A;
+      border-color: rgba(245, 158, 11, 0.5);
     }
 
-    .printer-status[data-state="error"],
-    .printer-status[data-state="disconnected"] {
-      background: var(--danger-soft);
-      color: #991B1B;
-      border-color: var(--danger-border);
+    .printer-status[data-state="connecting"] .status-dot,
+    .printer-status[data-state="printing"] .status-dot {
+      background: #F59E0B;
+      box-shadow: 0 0 8px #F59E0B;
     }
 
-    /* Quick Category Filter Strip */
+    /* 2. Modern Horizontal Pill Category Filter Bar */
     .category-bar {
-      background: var(--bg-surface);
-      border-bottom: 1px solid var(--border-subtle);
-      padding: 6px 12px;
+      background: var(--bg-header);
+      border-bottom: 1px solid #1F2937;
+      padding: 2px 12px 10px;
       display: flex;
       align-items: center;
-      gap: 6px;
+      gap: 8px;
       overflow-x: auto;
-      flex-shrink: 0;
       scrollbar-width: none;
+      flex-shrink: 0;
     }
 
     .category-bar::-webkit-scrollbar {
@@ -178,32 +198,41 @@
 
     .cat-chip {
       appearance: none;
-      border: 1px solid var(--border);
-      background: var(--bg-app);
-      color: var(--text-secondary);
-      font-size: 11px;
-      font-weight: 700;
-      padding: 5px 10px;
-      min-height: 30px;
+      border: 1.5px solid #374151;
+      background: #1F2937;
+      color: #9CA3AF;
+      font-family: var(--font-urdu);
+      font-size: 13px;
+      font-weight: 800;
+      padding: 6px 14px;
+      min-height: 34px;
       border-radius: 999px;
       cursor: pointer;
       white-space: nowrap;
-      transition: background-color 0.1s ease, color 0.1s ease;
+      flex: 1;
+      text-align: center;
+      transition: transform 0.06s ease, background-color 0.12s ease, color 0.12s ease, border-color 0.12s ease;
+    }
+
+    .cat-chip:active {
+      transform: scale(0.95);
     }
 
     .cat-chip.active {
-      background: var(--text-main);
-      color: #FFFFFF;
-      border-color: var(--text-main);
+      background: var(--accent);
+      color: #111827;
+      border-color: #FBBF24;
+      box-shadow: 0 2px 10px rgba(245, 158, 11, 0.35);
     }
 
-    /* 2. Menu Content Area (Scrollable Only Here) */
+    /* 3. Commercial POS Punch Grid */
     .menu-container {
       flex: 1;
       min-height: 0;
       overflow-y: auto;
       overflow-x: hidden;
-      padding: 10px 12px 14px;
+      padding: 10px 10px 14px;
+      background: #E2E8F0;
       -webkit-overflow-scrolling: touch;
       overscroll-behavior-y: contain;
       touch-action: pan-y;
@@ -219,183 +248,257 @@
 
     .section-title {
       font-size: 11px;
-      font-weight: 800;
+      font-weight: 900;
       text-transform: uppercase;
-      color: var(--text-secondary);
-      margin-bottom: 8px;
-      letter-spacing: 0.04em;
+      color: #334155;
+      margin-bottom: 7px;
+      padding: 0 4px;
+      letter-spacing: 0.06em;
       display: flex;
       align-items: center;
       justify-content: space-between;
+    }
+
+    .section-title-urdu {
+      font-family: var(--font-urdu);
+      font-size: 13px;
+      font-weight: 800;
+      color: #0F172A;
     }
 
     .grid-2col {
       display: grid;
       grid-template-columns: repeat(2, minmax(0, 1fr));
-      gap: 10px;
+      gap: 8px;
     }
 
-    /* Speed Tile */
+    /* Modern Tactile Rounded-XL Punch Tiles (Min 78px Height) */
     .tile {
-      background: var(--bg-surface);
-      border: 1.5px solid var(--border-subtle);
-      border-radius: 10px;
-      padding: 7px;
+      border-radius: 14px;
+      padding: 10px 8px;
+      min-height: 86px;
       display: flex;
       flex-direction: column;
-      justify-content: space-between;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      gap: 5px;
       cursor: pointer;
       position: relative;
-      transition: transform 0.06s ease, border-color 0.1s ease, background-color 0.1s ease;
+      overflow: hidden;
+      transition: transform 0.06s cubic-bezier(0.2, 0, 0, 1), box-shadow 0.1s ease, background 0.1s ease;
       touch-action: pan-y;
     }
 
+    /* Category Theme 1: Burgers — Warm Amber / Slate */
+    .tile[data-cat="burgers"] {
+      background: linear-gradient(145deg, #FFFBEB 0%, #FEF3C7 100%);
+      border: 1.5px solid #F59E0B;
+      border-bottom: 3.5px solid #D97706;
+      box-shadow: 0 3px 6px rgba(180, 83, 9, 0.12);
+    }
+
+    .tile[data-cat="burgers"] .item-name-urdu {
+      color: #451A03;
+    }
+
+    .tile[data-cat="burgers"] .item-name-en {
+      color: #92400E;
+    }
+
+    /* Category Theme 2: Shawarma — Clean Emerald / Teal */
+    .tile[data-cat="shawarma"] {
+      background: linear-gradient(145deg, #ECFDF5 0%, #D1FAE5 100%);
+      border: 1.5px solid #10B981;
+      border-bottom: 3.5px solid #059669;
+      box-shadow: 0 3px 6px rgba(6, 95, 70, 0.12);
+    }
+
+    .tile[data-cat="shawarma"] .item-name-urdu {
+      color: #064E3B;
+    }
+
+    .tile[data-cat="shawarma"] .item-name-en {
+      color: #047857;
+    }
+
+    /* Category Theme 3: Sandwiches & Fries — Royal Indigo / Blue */
+    .tile[data-cat="sandwiches"] {
+      background: linear-gradient(145deg, #EEF2FF 0%, #E0E7FF 100%);
+      border: 1.5px solid #6366F1;
+      border-bottom: 3.5px solid #4F46E5;
+      box-shadow: 0 3px 6px rgba(55, 48, 163, 0.12);
+    }
+
+    .tile[data-cat="sandwiches"] .item-name-urdu {
+      color: #1E1B4B;
+    }
+
+    .tile[data-cat="sandwiches"] .item-name-en {
+      color: #4338CA;
+    }
+
+    /* Tactile Press Down Effect */
     .tile.pressed {
-      transform: scale(0.97);
+      transform: scale(0.96);
     }
 
+    /* Active Glowing State when Qty > 0 */
     .tile.active {
-      border-color: var(--accent);
-      background: #FFFBEB;
-      box-shadow: 0 2px 8px rgba(245, 158, 11, 0.16);
+      background: #111827 !important;
+      border: 2px solid #F59E0B !important;
+      border-bottom: 3.5px solid #D97706 !important;
+      box-shadow: 0 0 0 2px rgba(245, 158, 11, 0.28), 0 8px 16px rgba(15, 23, 42, 0.35) !important;
     }
 
-    .tile-img {
-      position: relative;
-      width: 100%;
-      height: 76px;
-      border-radius: 7px;
-      overflow: hidden;
-      background: var(--bg-elevated);
+    .tile.active .item-name-urdu {
+      color: #FFFFFF !important;
+      font-size: 13px;
     }
 
-    .tile-img img {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-      display: block;
-      pointer-events: none;
-    }
-
-    .hotkey-badge {
-      position: absolute;
-      top: 4px;
-      left: 4px;
-      background: rgba(15, 23, 42, 0.85);
-      color: #FFFFFF;
-      font-size: 10px;
-      font-weight: 800;
-      padding: 2px 6px;
-      border-radius: 4px;
-      line-height: 1.2;
-    }
-
-    .qty-badge {
-      position: absolute;
-      top: 4px;
-      right: 4px;
-      background: var(--accent);
-      color: var(--accent-dark);
-      border: 1px solid #FDE68A;
-      font-size: 11px;
-      font-weight: 900;
-      padding: 2px 7px;
-      border-radius: 5px;
+    .tile.active .item-name-en {
       display: none;
-      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.18);
     }
 
-    .tile.active .qty-badge {
-      display: inline-block;
-    }
-
-    .tile-info {
-      margin-top: 6px;
+    .tile-header {
       display: flex;
       flex-direction: column;
-      gap: 3px;
-    }
-
-    .item-name-urdu {
-      font-family: 'Noto Naskh Arabic', serif;
-      font-size: 15px;
-      font-weight: 800;
-      color: var(--text-main);
-      direction: rtl;
-      text-align: right;
-      line-height: 1.25;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
-
-    .tile-bottom-row {
-      display: flex;
       align-items: center;
-      justify-content: space-between;
-      gap: 4px;
-      min-height: 26px;
-    }
-
-    .item-meta {
-      display: flex;
-      flex-direction: column;
+      justify-content: center;
+      text-align: center;
+      gap: 2px;
+      width: 100%;
       min-width: 0;
     }
 
+    /* Urdu Item Name FIRST in Centered Bold Sans Font */
+    .item-name-urdu {
+      font-family: var(--font-sans);
+      font-size: 15.5px;
+      font-weight: 800;
+      direction: rtl;
+      text-align: center;
+      line-height: 1.3;
+      width: 100%;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+
+    /* Subtle Centered English Name Underneath */
     .item-name-en {
-      font-size: 10px;
-      font-weight: 600;
-      color: var(--text-muted);
+      font-family: var(--font-sans);
+      font-size: 11.5px;
+      font-weight: 700;
+      text-align: center;
+      line-height: 1.2;
+      width: 100%;
+      opacity: 0.75;
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
     }
 
-    .item-price {
-      font-size: 12px;
-      font-weight: 800;
-      color: #B45309;
-    }
-
-    /* Practical Minus Button on Active Tile (Prevents accidental additions) */
-    .tile-minus-btn {
-      display: none;
-      appearance: none;
-      border: 1px solid var(--danger-border);
-      background: var(--danger-soft);
-      color: var(--danger);
-      font-size: 15px;
-      font-weight: 900;
-      width: 32px;
-      height: 26px;
-      border-radius: 6px;
-      cursor: pointer;
+    .tile-footer {
+      display: flex;
       align-items: center;
       justify-content: center;
-      flex-shrink: 0;
+      width: 100%;
+      margin-top: 2px;
+    }
+
+    /* Centered Compact Price Pill ("150/-") */
+    .item-price {
+      background: #111827;
+      color: #FBBF24;
+      font-size: 11.5px;
+      font-weight: 900;
+      padding: 2.5px 10px;
+      border-radius: 999px;
+      white-space: nowrap;
+      font-variant-numeric: tabular-nums;
+      letter-spacing: 0.02em;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.18);
+    }
+
+    .tile.active .tile-footer {
+      display: none;
+    }
+
+    /* 3-Part Circular Quantity Stepper Inside Active Tile */
+    .tile-stepper {
+      display: none;
+      align-items: center;
+      justify-content: space-between;
+      width: 100%;
+      margin-top: auto;
+      padding-top: 2px;
+    }
+
+    .tile.active .tile-stepper {
+      display: flex;
+    }
+
+    .step-btn {
+      appearance: none;
+      border: none;
+      width: 34px;
+      height: 34px;
+      border-radius: 50%;
+      font-size: 20px;
+      font-weight: 900;
       line-height: 1;
-    }
-
-    .tile.active .tile-minus-btn {
       display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      flex-shrink: 0;
+      transition: transform 0.06s ease;
     }
 
-    .tile-minus-btn:active {
-      background: #FEE2E2;
-      transform: scale(0.94);
+    .step-btn.minus {
+      background: #EF4444;
+      color: #FFFFFF;
+      box-shadow: 0 2px 8px rgba(239, 68, 68, 0.45);
+    }
+
+    .step-btn.minus:active {
+      transform: scale(0.9);
+      background: #DC2626;
+    }
+
+    .step-btn.plus {
+      background: #10B981;
+      color: #FFFFFF;
+      box-shadow: 0 2px 8px rgba(16, 185, 129, 0.45);
+    }
+
+    .step-btn.plus:active {
+      transform: scale(0.9);
+      background: #059669;
+    }
+
+    .qty-badge {
+      flex: 1;
+      text-align: center;
+      font-size: 20px;
+      font-weight: 900;
+      color: #FBBF24;
+      font-variant-numeric: tabular-nums;
+      line-height: 1;
     }
 
     /* Uncertain Print Recovery Banner */
     .uncertain-banner {
       display: none;
-      background: #FFFBEB;
+      background: #FEF3C7;
       border-top: 2px solid var(--accent);
       padding: 8px 12px;
       flex-direction: column;
       gap: 6px;
       flex-shrink: 0;
-      z-index: 30;
+      z-index: 35;
     }
 
     .uncertain-banner.show {
@@ -403,10 +506,10 @@
     }
 
     .uncertain-text {
-      font-size: 11px;
-      font-weight: 700;
+      font-size: 11.5px;
+      font-weight: 800;
       color: #92400E;
-      line-height: 1.35;
+      line-height: 1.3;
     }
 
     .uncertain-actions {
@@ -416,12 +519,12 @@
 
     .uncertain-btn {
       flex: 1;
-      padding: 6px 8px;
-      border-radius: 6px;
-      font-size: 11px;
+      padding: 6px 10px;
+      border-radius: 8px;
+      font-size: 11.5px;
       font-weight: 800;
       cursor: pointer;
-      border: 1px solid #F59E0B;
+      border: 1.5px solid #D97706;
       background: #FFFFFF;
       color: #92400E;
     }
@@ -432,142 +535,316 @@
       color: #FFFFFF;
     }
 
-    /* 3. Locked Bottom Checkout Footer */
+    /* 4. Running Order Ticker Strip Above Bottom Register */
+    .cart-strip {
+      flex-shrink: 0;
+      background: #1F2937;
+      color: #F8FAFC;
+      padding: 7px 12px;
+      min-height: 34px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      cursor: pointer;
+      border-top: 1px solid #374151;
+      z-index: 30;
+    }
+
+    .cart-strip.empty {
+      background: #1E293B;
+      color: #64748B;
+      cursor: default;
+    }
+
+    .cart-preview-text {
+      flex: 1;
+      font-size: 12px;
+      font-weight: 800;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .cart-strip:not(.empty) .cart-preview-text {
+      color: #FDE68A;
+    }
+
+    .cart-drawer-toggle {
+      font-size: 10.5px;
+      font-weight: 900;
+      background: rgba(245, 158, 11, 0.2);
+      color: #FBBF24;
+      border: 1px solid rgba(245, 158, 11, 0.4);
+      padding: 3px 8px;
+      border-radius: 999px;
+      white-space: nowrap;
+    }
+
+    .cart-strip.empty .cart-drawer-toggle {
+      display: none;
+    }
+
+    /* Slide-Up Running Order Drawer */
+    .cart-drawer-backdrop {
+      position: absolute;
+      inset: 0;
+      background: rgba(3, 7, 18, 0.65);
+      display: none;
+      flex-direction: column;
+      justify-content: flex-end;
+      z-index: 28;
+    }
+
+    .cart-drawer-backdrop.open {
+      display: flex;
+    }
+
+    .cart-drawer-sheet {
+      background: #111827;
+      color: #F8FAFC;
+      border-top: 2px solid var(--accent);
+      border-radius: 16px 16px 0 0;
+      max-height: 58%;
+      display: flex;
+      flex-direction: column;
+      box-shadow: 0 -10px 30px rgba(0, 0, 0, 0.5);
+      margin-bottom: 132px;
+    }
+
+    .cart-drawer-header {
+      padding: 10px 14px;
+      border-bottom: 1px solid #1F2937;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .cart-drawer-title {
+      font-size: 12.5px;
+      font-weight: 900;
+      color: #FBBF24;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+
+    .cart-drawer-close {
+      appearance: none;
+      border: 1px solid #374151;
+      background: #1F2937;
+      color: #F8FAFC;
+      font-size: 11.5px;
+      font-weight: 800;
+      padding: 4px 10px;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+
+    .cart-drawer-list {
+      padding: 8px 12px 12px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 7px;
+    }
+
+    .drawer-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      padding: 8px 10px;
+      background: #1F2937;
+      border: 1px solid #374151;
+      border-radius: 10px;
+    }
+
+    .drawer-item-info {
+      display: flex;
+      flex-direction: column;
+      min-width: 0;
+      flex: 1;
+    }
+
+    .drawer-item-name {
+      font-size: 13px;
+      font-weight: 800;
+      color: #FFFFFF;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .drawer-item-sub {
+      font-size: 11px;
+      font-weight: 700;
+      color: #FBBF24;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .drawer-controls {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    /* 5. Solid Commercial Bottom Register Bar (#111827) */
     footer {
       flex-shrink: 0;
-      background: var(--bg-surface);
-      border-top: 1px solid var(--border);
+      background: var(--bg-register);
+      border-top: 1px solid #374151;
       padding: 8px 12px max(10px, env(safe-area-inset-bottom));
       display: flex;
       flex-direction: column;
       gap: 7px;
-      box-shadow: 0 -4px 14px rgba(15, 23, 42, 0.06);
-      z-index: 25;
+      z-index: 30;
     }
 
-    .customer-row {
+    .register-meta-row {
       display: flex;
       align-items: center;
-      gap: 6px;
+      gap: 8px;
     }
 
     .customer-input {
       flex: 1;
-      background: var(--bg-app);
-      border: 1px solid var(--border);
-      border-radius: 7px;
-      padding: 7px 10px;
+      background: #1F2937;
+      border: 1px solid #374151;
+      border-radius: 8px;
+      padding: 5px 10px;
+      height: 30px;
       font-size: 12px;
       font-weight: 600;
-      color: var(--text-main);
+      color: #FFFFFF;
       outline: none;
       user-select: text;
       -webkit-user-select: text;
     }
 
+    .customer-input::placeholder {
+      color: #6B7280;
+    }
+
     .customer-input:focus {
       border-color: var(--accent);
-      background: #FFFFFF;
+      background: #0F172A;
     }
 
     .clear-order-btn {
       appearance: none;
-      border: 1px solid var(--border);
-      background: var(--bg-elevated);
-      color: var(--text-secondary);
+      border: 1px solid #374151;
+      background: #1F2937;
+      color: #F87171;
       font-size: 11px;
       font-weight: 800;
-      padding: 7px 10px;
-      border-radius: 7px;
+      padding: 0 12px;
+      height: 30px;
+      border-radius: 8px;
       cursor: pointer;
       white-space: nowrap;
-      min-height: 32px;
+      text-transform: uppercase;
+      letter-spacing: 0.03em;
     }
 
     .clear-order-btn:not(:disabled):active {
-      background: var(--danger-soft);
-      color: var(--danger);
-      border-color: var(--danger-border);
+      background: #EF4444;
+      color: #FFFFFF;
+      transform: scale(0.95);
     }
 
     .clear-order-btn:disabled {
-      opacity: 0.45;
+      opacity: 0.35;
+      color: #6B7280;
       cursor: not-allowed;
     }
 
     .checkout-row {
       display: flex;
-      align-items: center;
+      align-items: stretch;
       justify-content: space-between;
-      gap: 10px;
+      gap: 12px;
     }
 
     .summary-box {
       display: flex;
       flex-direction: column;
-      min-width: 110px;
+      justify-content: center;
+      min-width: 126px;
     }
 
     .summary-label {
-      font-size: 10px;
-      font-weight: 800;
-      color: var(--text-secondary);
+      font-size: 10.5px;
+      font-weight: 900;
+      color: #9CA3AF;
       text-transform: uppercase;
-      letter-spacing: 0.03em;
+      letter-spacing: 0.06em;
+      font-variant-numeric: tabular-nums;
     }
 
     .summary-total {
-      font-size: 17px;
+      font-size: 24px;
       font-weight: 900;
-      color: var(--text-main);
+      color: #FFFFFF;
       letter-spacing: -0.02em;
+      line-height: 1.05;
+      font-variant-numeric: tabular-nums;
+      white-space: nowrap;
     }
 
     .print-btn {
       flex: 1;
-      background: var(--accent);
-      color: var(--accent-dark);
-      border: 1px solid #D97706;
-      border-radius: 8px;
-      font-size: 14px;
+      background: linear-gradient(180deg, #F59E0B 0%, #D97706 100%);
+      color: #111827;
+      border: 1.5px solid #FBBF24;
+      border-bottom: 3.5px solid #92400E;
+      border-radius: 12px;
+      font-size: 16px;
       font-weight: 900;
-      padding: 11px 16px;
-      min-height: 44px;
+      padding: 0 16px;
+      min-height: 54px;
       cursor: pointer;
-      letter-spacing: 0.02em;
-      transition: background-color 0.1s ease, transform 0.06s ease;
+      letter-spacing: 0.03em;
+      text-transform: uppercase;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      box-shadow: 0 4px 14px rgba(245, 158, 11, 0.35);
+      transition: transform 0.06s ease, filter 0.1s ease;
     }
 
     .print-btn:not(:disabled):active {
-      background: var(--accent-hover);
-      color: #FFFFFF;
-      transform: scale(0.98);
+      transform: scale(0.96);
+      filter: brightness(1.08);
     }
 
     .print-btn:disabled {
-      background: #E2E8F0;
-      color: #94A3B8;
-      border-color: #CBD5E1;
+      background: #1F2937;
+      color: #4B5563;
+      border-color: #374151;
+      box-shadow: none;
       cursor: not-allowed;
     }
 
-    /* Toast Notification */
+    /* Subtle Non-Blocking Bottom Toast Notification */
     #toast {
       position: absolute;
-      top: 58px;
+      bottom: 138px;
       left: 12px;
       right: 12px;
-      background: #0F172A;
+      background: rgba(17, 24, 39, 0.96);
       color: #FFFFFF;
-      font-size: 12px;
-      font-weight: 700;
-      padding: 9px 12px;
-      border-radius: 8px;
-      box-shadow: 0 10px 20px rgba(0, 0, 0, 0.35);
+      font-size: 12.5px;
+      font-weight: 800;
+      padding: 10px 14px;
+      border-radius: 10px;
+      border: 1px solid #374151;
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.45);
       opacity: 0;
       pointer-events: none;
-      transform: translateY(-6px);
-      transition: opacity 0.16s ease, transform 0.16s ease;
+      transform: translateY(8px);
+      transition: opacity 0.15s ease, transform 0.15s ease;
       z-index: 1000;
       text-align: center;
     }
@@ -578,18 +855,20 @@
     }
 
     #toast[data-tone="error"] {
-      background: #991B1B;
+      background: rgba(153, 27, 27, 0.96);
+      border-color: #F87171;
     }
 
     #toast[data-tone="success"] {
-      background: #065F46;
+      background: rgba(6, 95, 70, 0.96);
+      border-color: #34D399;
     }
 
-    /* 4. Native Printer Manager Modal */
+    /* Modals (Printer Setup & Owner Hisaab) */
     .modal-backdrop {
       position: absolute;
       inset: 0;
-      background: rgba(15, 23, 42, 0.6);
+      background: rgba(3, 7, 18, 0.72);
       display: none;
       align-items: flex-end;
       justify-content: center;
@@ -602,69 +881,71 @@
 
     .modal-sheet {
       width: 100%;
-      max-height: 86%;
-      background: var(--bg-surface);
-      border-radius: 14px 14px 0 0;
-      padding: 14px;
+      max-height: 88%;
+      background: #FFFFFF;
+      color: #0F172A;
+      border-radius: 18px 18px 0 0;
+      padding: 16px;
       display: flex;
       flex-direction: column;
       gap: 10px;
       overflow-y: auto;
-      box-shadow: 0 -10px 25px rgba(0, 0, 0, 0.25);
+      box-shadow: 0 -12px 30px rgba(0, 0, 0, 0.4);
     }
 
     .modal-header {
       display: flex;
       align-items: center;
       justify-content: space-between;
-      border-bottom: 1px solid var(--border-subtle);
-      padding-bottom: 8px;
+      border-bottom: 1px solid #E2E8F0;
+      padding-bottom: 10px;
     }
 
     .modal-title {
-      font-size: 14px;
+      font-size: 15px;
       font-weight: 900;
-      color: var(--text-main);
+      color: #0F172A;
     }
 
     .modal-close-btn {
       appearance: none;
-      border: 1px solid var(--border);
-      background: var(--bg-app);
-      color: var(--text-main);
+      border: 1px solid #CBD5E1;
+      background: #F1F5F9;
+      color: #0F172A;
       font-size: 12px;
       font-weight: 800;
-      padding: 4px 10px;
-      border-radius: 6px;
+      padding: 5px 12px;
+      border-radius: 8px;
       cursor: pointer;
     }
 
     .status-card {
-      background: var(--bg-app);
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      padding: 10px;
+      background: #F8FAFC;
+      border: 1px solid #CBD5E1;
+      border-radius: 10px;
+      padding: 10px 12px;
       display: flex;
       flex-direction: column;
       gap: 4px;
     }
 
     .status-card-title {
-      font-size: 11px;
-      font-weight: 800;
-      color: var(--text-muted);
+      font-size: 10px;
+      font-weight: 900;
+      color: #64748B;
       text-transform: uppercase;
+      letter-spacing: 0.05em;
     }
 
     .status-card-value {
       font-size: 13px;
       font-weight: 800;
-      color: var(--text-main);
+      color: #0F172A;
     }
 
     .status-card-sub {
-      font-size: 11px;
-      color: var(--text-secondary);
+      font-size: 11.5px;
+      color: #334155;
       line-height: 1.35;
     }
 
@@ -676,28 +957,39 @@
     .modal-btn {
       flex: 1;
       appearance: none;
-      border: 1px solid var(--border);
-      background: var(--bg-surface);
-      color: var(--text-main);
+      border: 1.5px solid #CBD5E1;
+      background: #FFFFFF;
+      color: #0F172A;
       font-size: 12px;
       font-weight: 800;
-      padding: 9px 10px;
-      min-height: 38px;
-      border-radius: 8px;
+      padding: 10px;
+      min-height: 42px;
+      border-radius: 10px;
       cursor: pointer;
       text-align: center;
+      transition: transform 0.05s ease;
+    }
+
+    .modal-btn:not(:disabled):active {
+      transform: scale(0.96);
     }
 
     .modal-btn.primary {
       background: var(--accent);
       border-color: #D97706;
-      color: var(--accent-dark);
+      color: #111827;
+    }
+
+    .modal-btn.whatsapp {
+      background: #10B981;
+      border-color: #059669;
+      color: #FFFFFF;
     }
 
     .modal-btn.danger {
-      background: var(--danger-soft);
-      border-color: var(--danger-border);
-      color: var(--danger);
+      background: #FEF2F2;
+      border-color: #FCA5A5;
+      color: #DC2626;
     }
 
     .modal-btn:disabled {
@@ -718,14 +1010,14 @@
       align-items: center;
       justify-content: space-between;
       gap: 8px;
-      padding: 8px 10px;
-      background: var(--bg-app);
-      border: 1px solid var(--border-subtle);
-      border-radius: 8px;
+      padding: 9px 10px;
+      background: #F8FAFC;
+      border: 1px solid #CBD5E1;
+      border-radius: 10px;
     }
 
     .bonded-item.printer-match {
-      border-color: #FDE68A;
+      border-color: var(--accent);
       background: #FFFBEB;
     }
 
@@ -736,36 +1028,159 @@
     }
 
     .bonded-name {
-      font-size: 12px;
+      font-size: 12.5px;
       font-weight: 800;
-      color: var(--text-main);
+      color: #0F172A;
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
     }
 
     .bonded-mac {
-      font-size: 10px;
+      font-size: 10.5px;
       font-weight: 600;
-      color: var(--text-muted);
+      color: #64748B;
+      font-variant-numeric: tabular-nums;
     }
 
     .connect-dev-btn {
       appearance: none;
-      border: 1px solid var(--text-main);
-      background: var(--text-main);
+      border: 1px solid #0F172A;
+      background: #0F172A;
       color: #FFFFFF;
       font-size: 11px;
       font-weight: 800;
-      padding: 6px 10px;
-      border-radius: 6px;
+      padding: 6px 12px;
+      border-radius: 8px;
       cursor: pointer;
       white-space: nowrap;
     }
 
     .connect-dev-btn.connected {
-      background: var(--success);
-      border-color: var(--success);
+      background: #059669;
+      border-color: #059669;
+    }
+
+    /* Owner Hisaab Summary Specific Styles */
+    .hisaab-date-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: #111827;
+      color: #F8FAFC;
+      padding: 8px 12px;
+      border-radius: 10px;
+      font-size: 12px;
+      font-weight: 800;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .hisaab-kpi-grid {
+      display: grid;
+      grid-template-columns: 1fr 1.25fr;
+      gap: 8px;
+    }
+
+    .hisaab-kpi-card {
+      background: #F8FAFC;
+      border: 1.5px solid #CBD5E1;
+      border-radius: 10px;
+      padding: 10px 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    .hisaab-kpi-card.cash {
+      background: #ECFDF5;
+      border-color: #6EE7B7;
+    }
+
+    .hisaab-kpi-label {
+      font-size: 10px;
+      font-weight: 900;
+      text-transform: uppercase;
+      color: #64748B;
+      letter-spacing: 0.04em;
+    }
+
+    .hisaab-kpi-card.cash .hisaab-kpi-label {
+      color: #065F46;
+    }
+
+    .hisaab-kpi-val {
+      font-size: 19px;
+      font-weight: 900;
+      color: #0F172A;
+      font-variant-numeric: tabular-nums;
+      line-height: 1.15;
+    }
+
+    .hisaab-kpi-card.cash .hisaab-kpi-val {
+      color: #065F46;
+    }
+
+    .hisaab-breakdown {
+      background: #F8FAFC;
+      border: 1px solid #CBD5E1;
+      border-radius: 10px;
+      padding: 10px 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .hisaab-list {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      max-height: 165px;
+      overflow-y: auto;
+    }
+
+    .hisaab-item-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 12px;
+      font-weight: 800;
+      color: #0F172A;
+      padding: 5px 8px;
+      background: #FFFFFF;
+      border: 1px solid #E2E8F0;
+      border-radius: 6px;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .hisaab-item-qty {
+      background: #FEF3C7;
+      border: 1px solid #FDE68A;
+      color: #92400E;
+      padding: 2px 7px;
+      border-radius: 6px;
+      font-size: 11px;
+      font-weight: 900;
+    }
+
+    .reset-confirm-box {
+      display: none;
+      background: #FEF2F2;
+      border: 1.5px solid #FCA5A5;
+      border-radius: 10px;
+      padding: 10px;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .reset-confirm-box.show {
+      display: flex;
+    }
+
+    .reset-confirm-text {
+      font-size: 12px;
+      font-weight: 800;
+      color: #991B1B;
+      line-height: 1.3;
     }
   </style>
 </head>
@@ -773,58 +1188,72 @@
 <body>
 
   <div class="pos-screen">
-    <!-- Header -->
+    <!-- 1. Cohesive Dark Commercial Top Bar -->
     <header>
       <div class="brand-group">
-        <div class="brand">BiteDash POS</div>
-        <div class="token-tag" id="tokenDisplay">TOKEN #043</div>
+        <div class="brand">STUDENT BURGER</div>
+        <button type="button" class="token-tag" id="tokenDisplay" title="Tap to open Aaj Ka Hisaab">
+          TOKEN #001
+        </button>
       </div>
-      <button type="button" class="printer-status" id="printerStatus" data-state="disconnected" title="Tap to manage Bluetooth printer">
-        🔴 Not connected
+      <button type="button" class="printer-status" id="printerStatus" data-state="disconnected" title="First-time Bluetooth printer setup">
+        <span class="status-dot" aria-hidden="true"></span>
+        <span id="printerStatusLabel">Not connected</span>
       </button>
     </header>
 
-    <!-- Category Filter Bar -->
+    <!-- 2. Modern Horizontal Pill Category Filter Bar -->
     <nav class="category-bar" id="categoryBar" aria-label="Menu Categories">
-      <button type="button" class="cat-chip active" data-cat="all">All (تمام)</button>
-      <button type="button" class="cat-chip" data-cat="burgers">🍔 Burgers</button>
-      <button type="button" class="cat-chip" data-cat="sides">🍟 Sides</button>
-      <button type="button" class="cat-chip" data-cat="drinks">🥤 Drinks</button>
+      <button type="button" class="cat-chip active" data-cat="all">All</button>
+      <button type="button" class="cat-chip" data-cat="burgers" lang="ur">برگر</button>
+      <button type="button" class="cat-chip" data-cat="shawarma" lang="ur">شوارما</button>
+      <button type="button" class="cat-chip" data-cat="sandwiches" lang="ur">سینڈوچ</button>
     </nav>
 
     <div id="toast" role="status" aria-live="polite"></div>
 
-    <!-- Menu Area -->
+    <!-- 3. Modern Commercial POS Punch Grid -->
     <div class="menu-container" id="menuContainer">
       <div class="menu-section" id="section-burgers" data-section="burgers">
         <div class="section-title">
-          <span>🍔 Burgers</span>
-          <span lang="ur">برگر</span>
+          <span>Burgers</span>
+          <span class="section-title-urdu" lang="ur">برگر</span>
         </div>
         <div class="grid-2col" id="grid-burgers"></div>
       </div>
 
-      <div class="menu-section" id="section-sides" data-section="sides">
+      <div class="menu-section" id="section-shawarma" data-section="shawarma">
         <div class="section-title">
-          <span>🍟 Sides &amp; Fries</span>
-          <span lang="ur">فرائز اور سائیڈز</span>
+          <span>Shawarma &amp; Rolls</span>
+          <span class="section-title-urdu" lang="ur">شوارما و رول</span>
         </div>
-        <div class="grid-2col" id="grid-sides"></div>
+        <div class="grid-2col" id="grid-shawarma"></div>
       </div>
 
-      <div class="menu-section" id="section-drinks" data-section="drinks">
+      <div class="menu-section" id="section-sandwiches" data-section="sandwiches">
         <div class="section-title">
-          <span>🥤 Drinks</span>
-          <span lang="ur">مشروبات</span>
+          <span>Sandwiches &amp; Fries</span>
+          <span class="section-title-urdu" lang="ur">سینڈوچ و فرائز</span>
         </div>
-        <div class="grid-2col" id="grid-drinks"></div>
+        <div class="grid-2col" id="grid-sandwiches"></div>
       </div>
     </div>
 
-    <!-- Uncertain Print Recovery Banner (Shown only if transmission outcome was unknown) -->
+    <!-- Slide-Up Running Order Drawer -->
+    <div class="cart-drawer-backdrop" id="cartDrawerBackdrop">
+      <div class="cart-drawer-sheet">
+        <div class="cart-drawer-header">
+          <span class="cart-drawer-title" id="cartDrawerTitle">Current Ticket Items</span>
+          <button type="button" class="cart-drawer-close" id="closeCartDrawerBtn">Done</button>
+        </div>
+        <div class="cart-drawer-list" id="cartDrawerList"></div>
+      </div>
+    </div>
+
+    <!-- Uncertain Print Recovery Banner -->
     <div class="uncertain-banner" id="uncertainBanner">
       <div class="uncertain-text" id="uncertainText">
-        ⚠️ Print outcome unknown. Check printer paper before retrying to avoid duplicate KOT.
+        Print outcome unknown. Check printer paper before retrying to avoid duplicate KOT.
       </div>
       <div class="uncertain-actions">
         <button type="button" class="uncertain-btn" id="retryPrintBtn">Retry Print</button>
@@ -832,12 +1261,18 @@
       </div>
     </div>
 
-    <!-- Footer Checkout Bar -->
+    <!-- 4. Running Order Ticker Strip -->
+    <div class="cart-strip empty" id="cartStrip" role="button" tabindex="0" title="Tap to view or edit ticket items">
+      <div class="cart-preview-text" id="cartPreviewText">Tap any tile above to punch items</div>
+      <span class="cart-drawer-toggle" id="cartDrawerToggle">Ticket ▲</span>
+    </div>
+
+    <!-- 5. Solid Commercial Bottom Register Bar -->
     <footer>
-      <div class="customer-row">
+      <div class="register-meta-row">
         <input type="text" id="customerInput" class="customer-input" maxlength="32" autocomplete="off"
           placeholder="Customer Name / گاہک کا نام (Optional)">
-        <button type="button" id="clearOrderBtn" class="clear-order-btn" disabled title="Clear current order">
+        <button type="button" id="clearOrderBtn" class="clear-order-btn" disabled title="Reset draft cart in 1 tap">
           Clear
         </button>
       </div>
@@ -850,19 +1285,69 @@
       </div>
     </footer>
 
-    <!-- Bluetooth SPP Printer Setup Modal -->
+    <!-- Owner Daily Hisaab (Z-Report) Modal (Triggered by tapping TOKEN badge) -->
+    <div class="modal-backdrop" id="hisaabModal" role="dialog" aria-modal="true" aria-labelledby="hisaabModalTitle">
+      <div class="modal-sheet">
+        <div class="modal-header">
+          <span class="modal-title" id="hisaabModalTitle">Aaj Ka Hisaab • آج کا حساب</span>
+          <button type="button" class="modal-close-btn" id="closeHisaabModalBtn">Close</button>
+        </div>
+
+        <div class="hisaab-date-bar">
+          <span>Aaj Ki Date: <strong id="hisaabDateText">--</strong></span>
+          <span id="hisaabNextTokenText">Next: #001</span>
+        </div>
+
+        <div class="hisaab-kpi-grid">
+          <div class="hisaab-kpi-card">
+            <span class="hisaab-kpi-label">Total Orders</span>
+            <span class="hisaab-kpi-val" id="hisaabTotalOrders">0</span>
+          </div>
+          <div class="hisaab-kpi-card cash">
+            <span class="hisaab-kpi-label">Total Cash</span>
+            <span class="hisaab-kpi-val" id="hisaabTotalCash">Rs. 0</span>
+          </div>
+        </div>
+
+        <div class="hisaab-breakdown">
+          <span class="status-card-title">Top Selling Items Count</span>
+          <div class="hisaab-list" id="hisaabTopItemsList">
+            <div class="status-card-sub">No confirmed orders recorded today yet.</div>
+          </div>
+        </div>
+
+        <div class="modal-btn-row">
+          <button type="button" class="modal-btn primary" id="printSummarySlipBtn">Print Daily Summary 🧾</button>
+          <button type="button" class="modal-btn whatsapp" id="sendWhatsAppBtn">Share WhatsApp 📲</button>
+        </div>
+
+        <div class="reset-confirm-box" id="resetConfirmBox">
+          <div class="reset-confirm-text">
+            Reset Token counter to #001 and archive today's Hisaab orders for a New Day?
+          </div>
+          <div class="modal-btn-row">
+            <button type="button" class="modal-btn" id="cancelResetDayBtn">Cancel</button>
+            <button type="button" class="modal-btn danger" id="confirmResetDayBtn">Yes, Start New Day</button>
+          </div>
+        </div>
+
+        <button type="button" class="modal-btn danger" id="resetDayTriggerBtn">New Day / Reset Token 🔄</button>
+      </div>
+    </div>
+
+    <!-- Bluetooth SPP Printer Setup Modal (Only needed once for initial setup) -->
     <div class="modal-backdrop" id="printerModal" role="dialog" aria-modal="true" aria-labelledby="printerModalTitle">
       <div class="modal-sheet">
         <div class="modal-header">
-          <span class="modal-title" id="printerModalTitle">🖨️ 58mm Bluetooth Printer (SPP)</span>
-          <button type="button" class="modal-close-btn" id="closePrinterModalBtn">Close ✕</button>
+          <span class="modal-title" id="printerModalTitle">58mm Bluetooth Printer (SPP)</span>
+          <button type="button" class="modal-close-btn" id="closePrinterModalBtn">Close</button>
         </div>
 
         <div class="status-card">
           <span class="status-card-title">Connection Status</span>
           <span class="status-card-value" id="modalPrinterStateText">Not Connected</span>
           <span class="status-card-sub" id="modalPrinterHintText">
-            Pair the printer (e.g. Speed-X M450 / MPT-II) in Android Bluetooth Settings first, then select it below.
+            Select your paired printer once. Future prints will auto-connect silently in the background.
           </span>
         </div>
 
@@ -887,55 +1372,128 @@
   <script src="android-bridge.js"></script>
   <script>
     const STORAGE_KEY = 'bitedash_pos_state_v1';
+    const TOKEN_STORAGE_KEY = 'bitedash_current_token';
+    const ORDERS_TODAY_KEY = 'bitedash_orders_today';
+    const ORDERS_ARCHIVE_KEY = 'bitedash_orders_last_archive';
+    const LAST_PRINTER_MAC_KEY = 'bitedash_last_printer_mac';
+    const LAST_PRINTER_NAME_KEY = 'bitedash_last_printer_name';
+    const SILENT_CONNECT_TIMEOUT_MS = 2000;
 
     const MENU_ITEMS = [
-      { id: 'b1', name: 'Wagyu Burger', urdu: 'واگیو برگر', cat: 'burgers', price: 1490, key: '1', img: 'assets/images/wagyu_smash.jpg' },
-      { id: 'b2', name: 'Truffle Burger', urdu: 'ٹرفل برگر', cat: 'burgers', price: 1350, key: '2', img: 'assets/images/truffle_burger.jpg' },
-      { id: 'b3', name: 'Jalapeno Burger', urdu: 'ہلاپینو برگر', cat: 'burgers', price: 1190, key: '3', img: 'assets/images/jalapeno_burger.jpg' },
-      { id: 'b4', name: 'Double Cheese', urdu: 'ڈبل چیز برگر', cat: 'burgers', price: 1090, key: '4', img: 'assets/images/double_cheese.jpg' },
+      // Category: برگر (Burgers)
+      { id: 'b1', name: 'Shami Burger', short: 'Shami', urdu: 'شامی برگر', cat: 'burgers', price: 150, key: '1' },
+      { id: 'b2', name: 'Lapeta Burger', short: 'Lapeta', urdu: 'لپیٹا برگر', cat: 'burgers', price: 200, key: '2' },
+      { id: 'b3', name: 'Chicken Burger + Fries', short: 'Chk+Fries', urdu: 'چکن برگر + فرائز', cat: 'burgers', price: 300, key: '3' },
+      { id: 'b4', name: 'Zinger Burger + Fries', short: 'Zinger+Fries', urdu: 'زنگر برگر + فرائز', cat: 'burgers', price: 300, key: '4' },
+      { id: 'b5', name: 'Shami Double Egg', short: 'Shami Dbl Egg', urdu: 'شامی ڈبل انڈہ برگر', cat: 'burgers', price: 190, key: '5' },
+      { id: 'b6', name: 'Chicken Double Egg', short: 'Chk Dbl Egg', urdu: 'چکن ڈبل انڈہ برگر', cat: 'burgers', price: 240, key: '6' },
+      { id: 'b7', name: 'Special Lapeta Burger', short: 'Sp Lapeta', urdu: 'اسپیشل لپیٹا برگر', cat: 'burgers', price: 240, key: '7' },
+      { id: 'b8', name: 'Patty Burger + Fries', short: 'Patty+Fries', urdu: 'پیٹی برگر + فرائز', cat: 'burgers', price: 260, key: '8' },
+      { id: 'b9', name: 'Zinger without Fries', short: 'Zinger Only', urdu: 'زنگر برگر بغیر فرائز', cat: 'burgers', price: 270, key: '9' },
+      { id: 'b10', name: 'Extra Cheese Slice', short: 'Extra Cheese', urdu: 'ایکسٹرا چیز', cat: 'burgers', price: 60, key: '0' },
 
-      { id: 's1', name: 'Loaded Fries', urdu: 'لوڈڈ فرائز', cat: 'sides', price: 690, key: '5', img: 'assets/images/loaded_fries.jpg' },
-      { id: 's2', name: 'Peri Peri Fries', urdu: 'پیری پیری فرائز', cat: 'sides', price: 490, key: '6', img: 'assets/images/peri_fries.jpg' },
-      { id: 's3', name: 'Onion Rings', urdu: 'انین رنگز', cat: 'sides', price: 550, key: '7', img: 'assets/images/onion_rings.jpg' },
-      { id: 's4', name: 'Buffalo Wings', urdu: 'بفیلو ونگز', cat: 'sides', price: 850, key: '8', img: 'assets/images/buffalo_wings.jpg' },
+      // Category: شوارما و رول (Shawarma & Rolls)
+      { id: 'r1', name: 'Regular Shawarma', short: 'Reg Shawarma', urdu: 'ریگولر شوارما', cat: 'shawarma', price: 150 },
+      { id: 'r2', name: 'Jumbo Shawarma', short: 'Jumbo Shawarma', urdu: 'جمبو شوارما', cat: 'shawarma', price: 200 },
+      { id: 'r3', name: 'Zinger Paratha', short: 'Zinger Paratha', urdu: 'زنگر پراٹھا', cat: 'shawarma', price: 280 },
+      { id: 'r4', name: 'Chicken Platter Shawarma', short: 'Platter Shawarma', urdu: 'چکن پلیٹر شوارما', cat: 'shawarma', price: 400 },
+      { id: 'r5', name: 'Zinger Shawarma', short: 'Zinger Shawarma', urdu: 'زنگر شوارما', cat: 'shawarma', price: 260 },
+      { id: 'r6', name: 'Chicken Paratha Shawarma', short: 'Chk Paratha', urdu: 'چکن پراٹھا شوارما', cat: 'shawarma', price: 260 },
+      { id: 'r7', name: 'Double Lapeta Burger', short: 'Dbl Lapeta', urdu: 'ڈبل لپیٹا برگر', cat: 'shawarma', price: 300 },
 
-      { id: 'd1', name: 'Mint Cooler', urdu: 'منٹ لیمونیڈ', cat: 'drinks', price: 390, key: '9', img: 'assets/images/mint_cooler.jpg' },
-      { id: 'd2', name: 'Peach Iced Tea', urdu: 'پیچ آئس ٹی', cat: 'drinks', price: 420, key: '0', img: 'assets/images/peach_tea.jpg' },
-      { id: 'd3', name: 'Coca-Cola Can', urdu: 'کوکا کولا کین', cat: 'drinks', price: 180, key: '-', img: 'assets/images/cola_can.jpg' },
-      { id: 'd4', name: 'Caramel Shake', urdu: 'کیریمل شیک', cat: 'drinks', price: 650, key: '=', img: 'assets/images/caramel_shake.jpg' }
+      // Category: سینڈوچ و فرائز (Sandwiches & Fries)
+      { id: 's1', name: 'Chicken Sandwich', short: 'Chk Sandwich', urdu: 'چکن سینڈوچ', cat: 'sandwiches', price: 350 },
+      { id: 's2', name: 'Club Sandwich', short: 'Club Sandwich', urdu: 'کلب سینڈوچ', cat: 'sandwiches', price: 300 },
+      { id: 's3', name: 'Student Special Sandwich', short: 'Student Sp Snd', urdu: 'سٹوڈنٹ اسپیشل سینڈوچ', cat: 'sandwiches', price: 350 },
+      { id: 's4', name: 'Half Fries', short: 'Half Fries', urdu: 'ہاف فرائز', cat: 'sandwiches', price: 150, key: '-' },
+      { id: 's5', name: 'Full Fries', short: 'Full Fries', urdu: 'فل فرائز', cat: 'sandwiches', price: 300, key: '=' }
     ];
 
     const state = {
       cart: {},
-      token: 43,
+      token: 1,
       customer: '',
       activeCategory: 'all',
-      uncertainToken: null
+      uncertainToken: null,
+      drawerOpen: false,
+      ordersToday: []
     };
+
+    function formatTime12Hour(dateObj) {
+      const d = dateObj instanceof Date ? dateObj : new Date();
+      let hours = d.getHours();
+      const mins = String(d.getMinutes()).padStart(2, '0');
+      const ampm = hours >= 12 ? 'PM' : 'AM';
+      hours = hours % 12 || 12;
+      return `${String(hours).padStart(2, '0')}:${mins} ${ampm}`;
+    }
+
+    function formatDatePK(dateObj) {
+      const d = dateObj instanceof Date ? dateObj : new Date();
+      const day = String(d.getDate()).padStart(2, '0');
+      const month = String(d.getMonth() + 1).padStart(2, '0');
+      const year = d.getFullYear();
+      return `${day}/${month}/${year}`;
+    }
+
+    function getSavedPrinterMac() {
+      try {
+        return (localStorage.getItem(LAST_PRINTER_MAC_KEY) || '').trim();
+      } catch (e) {
+        return '';
+      }
+    }
+
+    function savePrinterMac(address, name) {
+      if (!address) return;
+      try {
+        localStorage.setItem(LAST_PRINTER_MAC_KEY, String(address).trim());
+        if (name) {
+          localStorage.setItem(LAST_PRINTER_NAME_KEY, String(name).trim());
+        }
+      } catch (e) {}
+    }
 
     function loadPersistedState() {
       try {
+        // 1. Load draft cart & uncertain state
         const raw = localStorage.getItem(STORAGE_KEY);
-        if (!raw) return;
-        const parsed = JSON.parse(raw);
-        if (parsed && typeof parsed === 'object') {
-          if (parsed.cart && typeof parsed.cart === 'object') {
-            state.cart = {};
-            MENU_ITEMS.forEach(item => {
-              const q = Number(parsed.cart[item.id] || 0);
-              if (Number.isInteger(q) && q > 0) {
-                state.cart[item.id] = q;
-              }
-            });
+        if (raw) {
+          const parsed = JSON.parse(raw);
+          if (parsed && typeof parsed === 'object') {
+            if (parsed.cart && typeof parsed.cart === 'object') {
+              state.cart = {};
+              MENU_ITEMS.forEach(item => {
+                const q = Number(parsed.cart[item.id] || 0);
+                if (Number.isInteger(q) && q > 0) {
+                  state.cart[item.id] = q;
+                }
+              });
+            }
+            if (typeof parsed.customer === 'string') {
+              state.customer = parsed.customer.slice(0, 32);
+            }
+            if (parsed.uncertainToken) {
+              state.uncertainToken = parsed.uncertainToken;
+            }
           }
-          if (Number.isInteger(parsed.token) && parsed.token >= 1) {
-            state.token = parsed.token;
-          }
-          if (typeof parsed.customer === 'string') {
-            state.customer = parsed.customer.slice(0, 32);
-          }
-          if (parsed.uncertainToken) {
-            state.uncertainToken = parsed.uncertainToken;
+        }
+
+        // 2. Load Dynamic Auto-Increment Token (`bitedash_current_token`, default: 1)
+        const storedToken = Number(localStorage.getItem(TOKEN_STORAGE_KEY));
+        if (Number.isInteger(storedToken) && storedToken >= 1) {
+          state.token = storedToken;
+        } else {
+          state.token = 1;
+          localStorage.setItem(TOKEN_STORAGE_KEY, '1');
+        }
+
+        // 3. Load Today's Confirmed Orders (`bitedash_orders_today`)
+        const rawOrders = localStorage.getItem(ORDERS_TODAY_KEY);
+        if (rawOrders) {
+          const parsedOrders = JSON.parse(rawOrders);
+          if (Array.isArray(parsedOrders)) {
+            state.ordersToday = parsedOrders;
           }
         }
       } catch (e) {
@@ -945,6 +1503,7 @@
 
     function savePersistedState() {
       try {
+        localStorage.setItem(TOKEN_STORAGE_KEY, String(state.token));
         localStorage.setItem(STORAGE_KEY, JSON.stringify({
           cart: state.cart,
           token: state.token,
@@ -954,26 +1513,63 @@
       } catch (e) {}
     }
 
+    function saveOrdersToday() {
+      try {
+        localStorage.setItem(ORDERS_TODAY_KEY, JSON.stringify(state.ordersToday));
+      } catch (e) {}
+    }
+
+    function recordConfirmedOrderToHisaab(printedToken) {
+      let itemsCount = 0;
+      let total = 0;
+      const items = [];
+
+      MENU_ITEMS.forEach(item => {
+        const qty = state.cart[item.id] || 0;
+        if (qty > 0) {
+          const linePrice = item.price * qty;
+          itemsCount += qty;
+          total += linePrice;
+          items.push({
+            name: item.name,
+            qty: qty,
+            price: linePrice
+          });
+        }
+      });
+
+      if (itemsCount === 0) return;
+
+      const record = {
+        token: printedToken,
+        time: formatTime12Hour(new Date()),
+        total: total,
+        itemsCount: itemsCount,
+        items: items
+      };
+
+      state.ordersToday.push(record);
+      saveOrdersToday();
+    }
+
     function renderMenu() {
-      ['burgers', 'sides', 'drinks'].forEach(cat => {
+      ['burgers', 'shawarma', 'sandwiches'].forEach(cat => {
         const grid = document.getElementById(`grid-${cat}`);
+        if (!grid) return;
         const items = MENU_ITEMS.filter(i => i.cat === cat);
         grid.innerHTML = items.map(item => `
-          <div class="tile" data-id="${item.id}" id="tile-${item.id}" role="button" tabindex="0">
-            <div class="tile-img">
-              <img src="${item.img}" alt="${item.name}" loading="eager" draggable="false">
-              <span class="hotkey-badge">[${item.key}]</span>
-              <span class="qty-badge" id="badge-${item.id}">x0</span>
-            </div>
-            <div class="tile-info">
+          <div class="tile" data-id="${item.id}" data-cat="${item.cat}" id="tile-${item.id}" role="button" tabindex="0" aria-label="${item.name} ${item.price}">
+            <div class="tile-header">
               <div class="item-name-urdu" lang="ur">${item.urdu}</div>
-              <div class="tile-bottom-row">
-                <div class="item-meta">
-                  <span class="item-name-en">${item.name}</span>
-                  <span class="item-price">Rs. ${item.price.toLocaleString()}</span>
-                </div>
-                <button type="button" class="tile-minus-btn" data-minus-id="${item.id}" aria-label="Decrease ${item.name} quantity" title="Decrease quantity">−</button>
-              </div>
+              <div class="item-name-en">${item.name}</div>
+            </div>
+            <div class="tile-footer">
+              <span class="item-price">${item.price}/-</span>
+            </div>
+            <div class="tile-stepper">
+              <button type="button" class="step-btn minus" data-minus-id="${item.id}" aria-label="Decrease ${item.name}">−</button>
+              <span class="qty-badge" id="badge-${item.id}">0</span>
+              <button type="button" class="step-btn plus" data-plus-id="${item.id}" aria-label="Increase ${item.name}">+</button>
             </div>
           </div>
         `).join('');
@@ -999,7 +1595,7 @@
         startY = e.clientY;
         isDragging = (Date.now() - lastScrollTime < 120);
         const tile = e.target.closest('.tile');
-        if (tile && !e.target.closest('.tile-minus-btn')) {
+        if (tile && !e.target.closest('.step-btn')) {
           tile.classList.add('pressed');
         }
       }, { passive: true });
@@ -1028,11 +1624,19 @@
           return;
         }
 
-        const minusBtn = e.target.closest('.tile-minus-btn');
+        const minusBtn = e.target.closest('[data-minus-id]');
         if (minusBtn) {
           e.preventDefault();
           e.stopPropagation();
           decrementItem(minusBtn.dataset.minusId);
+          return;
+        }
+
+        const plusBtn = e.target.closest('[data-plus-id]');
+        if (plusBtn) {
+          e.preventDefault();
+          e.stopPropagation();
+          incrementItem(plusBtn.dataset.plusId);
           return;
         }
 
@@ -1071,17 +1675,20 @@
       state.cart = {};
       state.customer = '';
       state.uncertainToken = null;
+      state.drawerOpen = false;
       document.getElementById('customerInput').value = '';
       savePersistedState();
       updateUI();
-      showToast('Order cleared.', 'default');
+      showToast('Draft order cleared.', 'default');
     }
 
     function completeOrderAndAdvanceToken() {
       const printedToken = state.token;
+      recordConfirmedOrderToHisaab(printedToken);
       state.cart = {};
       state.customer = '';
       state.uncertainToken = null;
+      state.drawerOpen = false;
       state.token += 1;
       document.getElementById('customerInput').value = '';
       savePersistedState();
@@ -1092,6 +1699,7 @@
     function updateUI() {
       let totalQty = 0;
       let grandTotal = 0;
+      const activeEntries = [];
 
       MENU_ITEMS.forEach(item => {
         const qty = state.cart[item.id] || 0;
@@ -1101,12 +1709,13 @@
 
         if (qty > 0) {
           tile.classList.add('active');
-          badge.textContent = `x${qty}`;
+          badge.textContent = `${qty}`;
           totalQty += qty;
           grandTotal += item.price * qty;
+          activeEntries.push({ item, qty });
         } else {
           tile.classList.remove('active');
-          badge.textContent = 'x0';
+          badge.textContent = '0';
         }
       });
 
@@ -1116,19 +1725,329 @@
       document.getElementById('printBtn').disabled = isPrinting || totalQty === 0;
       document.getElementById('clearOrderBtn').disabled = isPrinting || (totalQty === 0 && !state.customer);
 
+      // Update live itemized running ticker & slide-up drawer
+      const cartStrip = document.getElementById('cartStrip');
+      const cartPreviewText = document.getElementById('cartPreviewText');
+      const cartDrawerToggle = document.getElementById('cartDrawerToggle');
+      const cartDrawerBackdrop = document.getElementById('cartDrawerBackdrop');
+      const cartDrawerList = document.getElementById('cartDrawerList');
+      const cartDrawerTitle = document.getElementById('cartDrawerTitle');
+
+      if (activeEntries.length === 0) {
+        state.drawerOpen = false;
+        cartStrip.classList.add('empty');
+        cartPreviewText.textContent = 'Tap any tile above to punch items';
+        cartDrawerBackdrop.classList.remove('open');
+      } else {
+        cartStrip.classList.remove('empty');
+        cartPreviewText.textContent = activeEntries
+          .map(({ item, qty }) => `${qty}x ${item.short}`)
+          .join(', ');
+        cartDrawerToggle.textContent = state.drawerOpen ? 'Hide ▼' : `Ticket (${totalQty}) ▲`;
+        cartDrawerTitle.textContent = `Active Ticket (${totalQty})`;
+
+        if (state.drawerOpen) {
+          cartDrawerBackdrop.classList.add('open');
+          cartDrawerList.innerHTML = activeEntries.map(({ item, qty }) => `
+            <div class="drawer-row">
+              <div class="drawer-item-info">
+                <span class="drawer-item-name">${item.urdu} — ${item.name}</span>
+                <span class="drawer-item-sub">Rs. ${item.price.toLocaleString()} × ${qty} = Rs. ${(item.price * qty).toLocaleString()}</span>
+              </div>
+              <div class="drawer-controls">
+                <button type="button" class="step-btn minus" data-drawer-minus="${item.id}" aria-label="Decrease ${item.name}">−</button>
+                <span class="qty-badge">${qty}</span>
+                <button type="button" class="step-btn plus" data-drawer-plus="${item.id}" aria-label="Increase ${item.name}">+</button>
+              </div>
+            </div>
+          `).join('');
+        } else {
+          cartDrawerBackdrop.classList.remove('open');
+        }
+      }
+
       const banner = document.getElementById('uncertainBanner');
       const bannerText = document.getElementById('uncertainText');
       if (state.uncertainToken && totalQty > 0) {
         bannerText.textContent =
-          `⚠️ Print outcome for TOKEN #${String(state.uncertainToken).padStart(3, '0')} was uncertain. Check printer before retrying.`;
+          `Print outcome for TOKEN #${String(state.uncertainToken).padStart(3, '0')} was uncertain. Check printer before retrying.`;
         banner.classList.add('show');
       } else {
         banner.classList.remove('show');
       }
     }
 
+    // Vyapar-Style Silent Background Auto-Connect Helper (2-Second Timeout, No Modal Popups)
+    async function ensureSilentPrinterConnection() {
+      const bridge = window.AndroidPOSBridge;
+      if (!bridge || !bridge.isNative()) {
+        return false;
+      }
+
+      try {
+        const alreadyConnected = typeof bridge.isConnected === 'function'
+          ? await bridge.isConnected()
+          : Boolean((await bridge.getStatus()).connected);
+
+        if (alreadyConnected) {
+          return true;
+        }
+      } catch (e) {}
+
+      let targetMac = getSavedPrinterMac();
+
+      // If no saved MAC yet on this phone, silently check if a printer is already paired in Android BT
+      if (!targetMac && typeof bridge.listBondedDevices === 'function') {
+        try {
+          const bonded = await bridge.listBondedDevices();
+          if (Array.isArray(bonded) && bonded.length > 0) {
+            const preferred = bonded.find(d => d.isLikelyPrinter) || bonded[0];
+            if (preferred && preferred.address) {
+              targetMac = preferred.address;
+              savePrinterMac(preferred.address, preferred.name);
+            }
+          }
+        } catch (e) {}
+      }
+
+      if (!targetMac) {
+        return false;
+      }
+
+      setPrinterStatus('connecting', 'Connecting...');
+      try {
+        const res = await bridge.connect(targetMac, SILENT_CONNECT_TIMEOUT_MS);
+        if (res && res.connected) {
+          savePrinterMac(res.address || targetMac, res.name);
+          setPrinterStatus('ready', res.name || targetMac);
+          return true;
+        }
+      } catch (err) {
+        // Silent failure: caller shows non-blocking toast
+      }
+
+      setPrinterStatus('disconnected', 'Not connected');
+      return false;
+    }
+
+    // Owner Hisaab ("Aaj Ka Hisaab" Z-Report) Calculation & Modal Logic
+    const hisaabModal = document.getElementById('hisaabModal');
+    const resetConfirmBox = document.getElementById('resetConfirmBox');
+    const resetDayTriggerBtn = document.getElementById('resetDayTriggerBtn');
+
+    function computeHisaabSummary() {
+      const orders = Array.isArray(state.ordersToday) ? state.ordersToday : [];
+      const totalOrders = orders.length;
+      let totalCash = 0;
+      const itemMap = {};
+
+      orders.forEach(ord => {
+        totalCash += Number(ord.total || 0);
+        if (Array.isArray(ord.items)) {
+          ord.items.forEach(it => {
+            const name = String(it.name || 'Item');
+            const qty = Number(it.qty || 0);
+            const rev = Number(it.price || 0);
+            if (!itemMap[name]) {
+              itemMap[name] = { name, qty: 0, revenue: 0 };
+            }
+            itemMap[name].qty += qty;
+            itemMap[name].revenue += rev;
+          });
+        }
+      });
+
+      const breakdown = Object.values(itemMap).sort((a, b) => b.qty - a.qty || b.revenue - a.revenue);
+
+      return {
+        date: formatDatePK(new Date()),
+        totalOrders,
+        totalCash,
+        topItems: breakdown.slice(0, 5),
+        allItems: breakdown
+      };
+    }
+
+    function renderHisaabModal() {
+      const summary = computeHisaabSummary();
+      document.getElementById('hisaabDateText').textContent = summary.date;
+      document.getElementById('hisaabNextTokenText').textContent = `Next: #${String(state.token).padStart(3, '0')}`;
+      document.getElementById('hisaabTotalOrders').textContent = `${summary.totalOrders}`;
+      document.getElementById('hisaabTotalCash').textContent = `Rs. ${summary.totalCash.toLocaleString()}`;
+
+      const listEl = document.getElementById('hisaabTopItemsList');
+      if (summary.topItems.length === 0) {
+        listEl.innerHTML = '<div class="status-card-sub">No confirmed orders recorded today yet.</div>';
+      } else {
+        listEl.innerHTML = summary.topItems.map((item, idx) => `
+          <div class="hisaab-item-row">
+            <span>${idx + 1}. ${escapeHtml(item.name)}</span>
+            <span class="hisaab-item-qty">${item.qty} sold • Rs. ${item.revenue.toLocaleString()}</span>
+          </div>
+        `).join('');
+      }
+    }
+
+    function openHisaabModal() {
+      resetConfirmBox.classList.remove('show');
+      resetDayTriggerBtn.style.display = 'block';
+      renderHisaabModal();
+      hisaabModal.classList.add('open');
+    }
+
+    function closeHisaabModal() {
+      hisaabModal.classList.remove('open');
+      resetConfirmBox.classList.remove('show');
+      resetDayTriggerBtn.style.display = 'block';
+    }
+
+    function buildDailyHisaabEscPosBytes(summary) {
+      const PAPER_WIDTH = 32;
+      const ESC = 0x1B;
+      const GS = 0x1D;
+      const LF = 0x0A;
+      const bytes = [];
+
+      function pushCmd() {
+        for (let i = 0; i < arguments.length; i++) {
+          bytes.push(arguments[i] & 0xFF);
+        }
+      }
+
+      function toAscii(str) {
+        return String(str || '')
+          .replace(/[^\x20-\x7E]/g, '')
+          .replace(/\s+/g, ' ')
+          .trim();
+      }
+
+      function pushLine(text) {
+        const clean = toAscii(text);
+        for (let i = 0; i < clean.length; i++) {
+          bytes.push(clean.charCodeAt(i) & 0x7F);
+        }
+        bytes.push(LF);
+      }
+
+      function formatCols(left, right) {
+        const r = toAscii(right);
+        const maxLeft = Math.max(1, PAPER_WIDTH - r.length - 1);
+        const l = toAscii(left).slice(0, maxLeft);
+        const spaces = Math.max(1, PAPER_WIDTH - l.length - r.length);
+        return l + ' '.repeat(spaces) + r;
+      }
+
+      pushCmd(ESC, 0x40);       // Reset
+      pushCmd(ESC, 0x74, 0x00); // PC437
+      pushCmd(ESC, 0x61, 0x01); // Center align
+      pushCmd(ESC, 0x45, 0x01); // Bold ON
+      pushLine('*** STUDENT BURGER - DAILY HISAAB ***');
+      pushCmd(ESC, 0x45, 0x00); // Bold OFF
+      pushLine('================================');
+
+      pushCmd(ESC, 0x61, 0x00); // Left align
+      pushLine(formatCols('DATE: ' + summary.date, formatTime12Hour(new Date())));
+      pushLine(formatCols('TOTAL ORDERS:', String(summary.totalOrders)));
+      pushCmd(ESC, 0x45, 0x01);
+      pushLine(formatCols('TOTAL CASH:', 'Rs.' + summary.totalCash.toLocaleString('en-US')));
+      pushCmd(ESC, 0x45, 0x00);
+      pushLine('--------------------------------');
+
+      pushCmd(ESC, 0x45, 0x01);
+      pushLine(formatCols('QTY  ITEM SOLD', 'AMOUNT'));
+      pushCmd(ESC, 0x45, 0x00);
+      pushLine('--------------------------------');
+
+      if (summary.allItems.length === 0) {
+        pushLine('No orders recorded today.');
+      } else {
+        summary.allItems.forEach(item => {
+          const prefix = String(item.qty) + 'x ';
+          const rightStr = 'Rs.' + item.revenue.toLocaleString('en-US');
+          const maxName = Math.max(6, PAPER_WIDTH - prefix.length - rightStr.length - 1);
+          const itemLabel = prefix + toAscii(item.name).toUpperCase().slice(0, maxName);
+          pushLine(formatCols(itemLabel, rightStr));
+        });
+      }
+
+      pushLine('================================');
+      pushCmd(ESC, 0x61, 0x01);
+      pushLine('NEXT TOKEN: #' + String(state.token).padStart(3, '0'));
+      pushCmd(ESC, 0x61, 0x00);
+      pushCmd(LF, LF, LF, LF);
+      pushCmd(GS, 0x56, 0x42, 0x00);
+
+      return new Uint8Array(bytes);
+    }
+
+    async function printDailyHisaabSlip() {
+      const bridge = window.AndroidPOSBridge;
+      if (!bridge || typeof bridge.sendEscPosBytes !== 'function' || !bridge.isNative()) {
+        showToast('Printer off ya out of range hai', 'error');
+        return;
+      }
+
+      const btn = document.getElementById('printSummarySlipBtn');
+      btn.disabled = true;
+      btn.textContent = 'Printing...';
+
+      try {
+        const connected = await ensureSilentPrinterConnection();
+        if (!connected) {
+          showToast('Printer off ya out of range hai', 'error');
+          return;
+        }
+
+        const summary = computeHisaabSummary();
+        const bytes = buildDailyHisaabEscPosBytes(summary);
+        const res = await bridge.sendEscPosBytes(bytes);
+        if (res && res.status === 'SUCCESS') {
+          showToast('Daily Hisaab summary slip printed!', 'success');
+        } else {
+          showToast('Printer off ya out of range hai', 'error');
+        }
+      } catch (err) {
+        showToast('Printer off ya out of range hai', 'error');
+      } finally {
+        btn.disabled = false;
+        btn.textContent = 'Print Daily Summary 🧾';
+      }
+    }
+
+    function sendHisaabOnWhatsApp() {
+      const summary = computeHisaabSummary();
+      const message =
+        `Student Burger Hisaab: Date: ${summary.date} | Orders: ${summary.totalOrders} | Cash: Rs. ${summary.totalCash.toLocaleString()}`;
+      const waUrl = `https://wa.me/?text=${encodeURIComponent(message)}`;
+      window.open(waUrl, '_blank', 'noopener,noreferrer');
+    }
+
+    function executeResetDayAndToken() {
+      try {
+        if (state.ordersToday.length > 0) {
+          localStorage.setItem(ORDERS_ARCHIVE_KEY, JSON.stringify({
+            archivedAt: new Date().toISOString(),
+            lastToken: state.token,
+            orders: state.ordersToday
+          }));
+        }
+      } catch (e) {}
+
+      state.token = 1;
+      state.ordersToday = [];
+      state.uncertainToken = null;
+      savePersistedState();
+      saveOrdersToday();
+      updateUI();
+      renderHisaabModal();
+      resetConfirmBox.classList.remove('show');
+      resetDayTriggerBtn.style.display = 'block';
+      showToast('New Day started! Token reset to #001.', 'success');
+    }
+
     const printButton = document.getElementById('printBtn');
     const printerStatus = document.getElementById('printerStatus');
+    const printerStatusLabel = document.getElementById('printerStatusLabel');
     const toast = document.getElementById('toast');
 
     let isPrinting = false;
@@ -1142,14 +2061,27 @@
       clearTimeout(toastTimeout);
       toastTimeout = setTimeout(() => {
         toast.classList.remove('show');
-      }, 2800);
+      }, 2600);
     }
 
     function setPrinterStatus(status, message) {
       printerStatus.dataset.state = status;
-      printerStatus.textContent = message;
+      const cleanLabel = String(message || '').replace(/^[🟢🔴🟠]\s*/, '');
+      if (printerStatusLabel) {
+        printerStatusLabel.textContent = cleanLabel;
+      } else {
+        printerStatus.textContent = cleanLabel;
+      }
     }
 
+    /**
+     * Vyapar-Style Silent Auto-Connect & Print KOT:
+     * - Never pops up the Bluetooth modal or alert boxes when "PRINT KOT" is clicked.
+     * - Checks window.AndroidPOSBridge.isConnected().
+     * - If disconnected, silently connects to bitedash_last_printer_mac with a 2s timeout, then prints immediately.
+     * - If Bluetooth is OFF or printer power is dead, shows subtle bottom toast "Printer off ya out of range hai"
+     *   and preserves cart items intact.
+     */
     async function printKitchenKOT() {
       const hasItems = MENU_ITEMS.some(item => (state.cart[item.id] || 0) > 0);
       if (isPrinting || !hasItems) {
@@ -1157,79 +2089,65 @@
       }
 
       const bridge = window.AndroidPOSBridge;
-
       if (!bridge || typeof bridge.printKOT !== 'function' || !bridge.isNative()) {
-        setPrinterStatus('disconnected', '🔴 Not connected');
-        showToast('Connect a paired Bluetooth printer in the Android app first.', 'error');
-        openPrinterModal();
+        setPrinterStatus('disconnected', 'Not connected');
+        showToast('Printer off ya out of range hai', 'error');
         return;
       }
-
-      try {
-        const currentStatus = await bridge.getStatus();
-        if (!currentStatus.connected) {
-          setPrinterStatus('disconnected', '🔴 Not connected');
-          showToast('Printer is not connected. Select your paired printer first.', 'error');
-          openPrinterModal();
-          return;
-        }
-      } catch (e) {
-        setPrinterStatus('error', '🔴 Check printer');
-        showToast('Could not verify printer status. Order preserved.', 'error');
-        return;
-      }
-
-      // Snapshot the order so its contents cannot change mid-print.
-      const order = {
-        token: state.token,
-        timestamp: Date.now(),
-        customer: document.getElementById('customerInput').value.trim(),
-        items: MENU_ITEMS
-          .filter(item => (state.cart[item.id] || 0) > 0)
-          .map(item => ({
-            id: item.id,
-            name: item.name,
-            urdu: item.urdu,
-            quantity: state.cart[item.id],
-            unitPrice: item.price,
-            lineTotal: item.price * state.cart[item.id]
-          })),
-        total: MENU_ITEMS.reduce(
-          (sum, item) => sum + item.price * (state.cart[item.id] || 0),
-          0
-        )
-      };
 
       isPrinting = true;
       printButton.disabled = true;
       printButton.textContent = 'PRINTING...';
-      setPrinterStatus('printing', '🟠 Printing...');
 
       try {
+        const connected = await ensureSilentPrinterConnection();
+        if (!connected) {
+          showToast('Printer off ya out of range hai', 'error');
+          return;
+        }
+
+        const order = {
+          token: state.token,
+          timestamp: Date.now(),
+          customer: document.getElementById('customerInput').value.trim(),
+          items: MENU_ITEMS
+            .filter(item => (state.cart[item.id] || 0) > 0)
+            .map(item => ({
+              id: item.id,
+              name: item.name,
+              urdu: item.urdu,
+              quantity: state.cart[item.id],
+              unitPrice: item.price,
+              lineTotal: item.price * state.cart[item.id]
+            })),
+          total: MENU_ITEMS.reduce(
+            (sum, item) => sum + item.price * (state.cart[item.id] || 0),
+            0
+          )
+        };
+
+        setPrinterStatus('printing', 'Printing...');
         const result = await bridge.printKOT(JSON.stringify(order));
 
         if (result !== 'SUCCESS') {
           await syncPrinterStatusFromBridge();
           if (result === 'FAILED') {
-            showToast('Print failed before sending. Order preserved.', 'error');
+            showToast('Printer off ya out of range hai', 'error');
           } else {
             state.uncertainToken = state.token;
             savePersistedState();
-            showToast('Print outcome unknown. Check printer before retrying.', 'error');
+            showToast('Print outcome unknown. Check printer paper.', 'error');
           }
           return;
         }
 
-        // Clear the order and advance token ONLY after explicit native success confirmation.
         const printedToken = completeOrderAndAdvanceToken();
         await syncPrinterStatusFromBridge();
         showToast(`TOKEN #${String(printedToken).padStart(3, '0')} printed!`, 'success');
       } catch (error) {
         console.error('KOT printing error:', error);
-        state.uncertainToken = state.token;
-        savePersistedState();
-        setPrinterStatus('error', '🔴 Check printer');
-        showToast('Print outcome unknown. Check printer before retrying.', 'error');
+        setPrinterStatus('disconnected', 'Not connected');
+        showToast('Printer off ya out of range hai', 'error');
       } finally {
         isPrinting = false;
         printButton.textContent = 'PRINT KOT ⚡';
@@ -1237,7 +2155,7 @@
       }
     }
 
-    // Printer Manager Modal Logic
+    // Manual Printer Manager Modal Logic (Only needed for first-time pairing on a new phone)
     const printerModal = document.getElementById('printerModal');
     const modalPrinterStateText = document.getElementById('modalPrinterStateText');
     const modalPrinterHintText = document.getElementById('modalPrinterHintText');
@@ -1248,7 +2166,7 @@
     async function syncPrinterStatusFromBridge() {
       const bridge = window.AndroidPOSBridge;
       if (!bridge || !bridge.isNative()) {
-        setPrinterStatus('disconnected', '🔴 Not connected');
+        setPrinterStatus('disconnected', 'Not connected');
         modalPrinterStateText.textContent = 'Web Preview Mode (No Native Bluetooth)';
         modalPrinterHintText.textContent =
           'Build and run the Android APK to connect to the Speed-X M450 / MPT-II via Bluetooth Classic SPP.';
@@ -1261,23 +2179,26 @@
         const status = await bridge.getStatus();
         if (status.connected) {
           const label = status.deviceName || status.deviceAddress || 'Printer';
-          setPrinterStatus('ready', `🟢 ${label}`);
+          savePrinterMac(status.deviceAddress, status.deviceName);
+          setPrinterStatus('ready', label);
           modalPrinterStateText.textContent = `Connected: ${label} (${status.deviceAddress || ''})`;
-          modalPrinterHintText.textContent = 'Active Bluetooth Classic SPP socket verified.';
+          modalPrinterHintText.textContent = 'Saved for silent auto-connect & instant KOT printing.';
           testPrintBtn.disabled = false;
           disconnectPrinterBtn.disabled = false;
         } else {
-          setPrinterStatus('disconnected', '🔴 Not connected');
+          const savedMac = getSavedPrinterMac();
+          setPrinterStatus('disconnected', savedMac ? 'Auto-Print Ready' : 'Not connected');
           modalPrinterStateText.textContent = status.bluetoothEnabled
-            ? 'Not Connected (Bluetooth ON)'
+            ? (savedMac ? `Saved MAC: ${savedMac} (Standby)` : 'Not Connected (Bluetooth ON)')
             : 'Bluetooth is Turned OFF';
-          modalPrinterHintText.textContent =
-            'Pair the printer in Android Bluetooth Settings first, then tap "Refresh Paired List" below.';
+          modalPrinterHintText.textContent = savedMac
+            ? 'Printer MAC is saved. Tapping PRINT KOT will auto-connect silently in the background.'
+            : 'Pair the printer in Android Bluetooth Settings once, then tap "Refresh Paired List" below.';
           testPrintBtn.disabled = true;
           disconnectPrinterBtn.disabled = true;
         }
       } catch (err) {
-        setPrinterStatus('error', '🔴 Check printer');
+        setPrinterStatus('error', 'Check printer');
       }
     }
 
@@ -1301,11 +2222,11 @@
         bondedDevicesList.innerHTML = devices.map(dev => `
           <div class="bonded-item ${dev.isLikelyPrinter ? 'printer-match' : ''}">
             <div class="bonded-meta">
-              <span class="bonded-name">${escapeHtml(dev.name || 'Unknown')} ${dev.isLikelyPrinter ? '🖨️' : ''}</span>
+              <span class="bonded-name">${escapeHtml(dev.name || 'Unknown')}${dev.isLikelyPrinter ? ' (Printer)' : ''}</span>
               <span class="bonded-mac">${escapeHtml(dev.address || '')}</span>
             </div>
-            <button type="button" class="connect-dev-btn ${dev.connected ? 'connected' : ''}" data-address="${escapeHtml(dev.address || '')}">
-              ${dev.connected ? 'Connected ✓' : 'Connect'}
+            <button type="button" class="connect-dev-btn ${dev.connected ? 'connected' : ''}" data-address="${escapeHtml(dev.address || '')}" data-name="${escapeHtml(dev.name || '')}">
+              ${dev.connected ? 'Connected' : 'Select & Connect'}
             </button>
           </div>
         `).join('');
@@ -1313,7 +2234,9 @@
         bondedDevicesList.querySelectorAll('.connect-dev-btn').forEach(btn => {
           btn.addEventListener('click', async () => {
             const address = btn.dataset.address;
+            const name = btn.dataset.name;
             if (!address) return;
+            savePrinterMac(address, name);
             await connectToBondedPrinter(address, btn);
           });
         });
@@ -1330,16 +2253,17 @@
         btnEl.disabled = true;
         btnEl.textContent = 'Connecting...';
       }
-      setPrinterStatus('connecting', '🟠 Connecting...');
+      setPrinterStatus('connecting', 'Connecting...');
 
       try {
         const res = await bridge.connect(address);
         if (res && res.connected) {
+          savePrinterMac(res.address || address, res.name);
           showToast(`Connected to ${res.name || address}`, 'success');
         }
       } catch (err) {
-        setPrinterStatus('error', '🔴 Connect failed');
-        showToast(err.message || 'Could not connect to printer.', 'error');
+        setPrinterStatus('error', 'Connect failed');
+        showToast('Printer off ya out of range hai', 'error');
       } finally {
         await syncPrinterStatusFromBridge();
         await loadBondedDevicesInModal();
@@ -1364,7 +2288,55 @@
         .replace(/"/g, '&quot;');
     }
 
-    // Event Listeners
+    // Cart Strip & Drawer Events
+    document.getElementById('cartStrip').addEventListener('click', () => {
+      const hasItems = MENU_ITEMS.some(i => (state.cart[i.id] || 0) > 0);
+      if (!hasItems) return;
+      state.drawerOpen = !state.drawerOpen;
+      updateUI();
+    });
+
+    document.getElementById('closeCartDrawerBtn').addEventListener('click', () => {
+      state.drawerOpen = false;
+      updateUI();
+    });
+
+    document.getElementById('cartDrawerBackdrop').addEventListener('click', (e) => {
+      if (e.target.id === 'cartDrawerBackdrop') {
+        state.drawerOpen = false;
+        updateUI();
+        return;
+      }
+      const minus = e.target.closest('[data-drawer-minus]');
+      if (minus) {
+        decrementItem(minus.dataset.drawerMinus);
+        return;
+      }
+      const plus = e.target.closest('[data-drawer-plus]');
+      if (plus) {
+        incrementItem(plus.dataset.drawerPlus);
+      }
+    });
+
+    // Owner Hisaab Modal Listeners (Triggered by tapping TOKEN badge)
+    document.getElementById('tokenDisplay').addEventListener('click', openHisaabModal);
+    document.getElementById('closeHisaabModalBtn').addEventListener('click', closeHisaabModal);
+    hisaabModal.addEventListener('click', (e) => {
+      if (e.target === hisaabModal) closeHisaabModal();
+    });
+    document.getElementById('printSummarySlipBtn').addEventListener('click', printDailyHisaabSlip);
+    document.getElementById('sendWhatsAppBtn').addEventListener('click', sendHisaabOnWhatsApp);
+    resetDayTriggerBtn.addEventListener('click', () => {
+      resetDayTriggerBtn.style.display = 'none';
+      resetConfirmBox.classList.add('show');
+    });
+    document.getElementById('cancelResetDayBtn').addEventListener('click', () => {
+      resetConfirmBox.classList.remove('show');
+      resetDayTriggerBtn.style.display = 'block';
+    });
+    document.getElementById('confirmResetDayBtn').addEventListener('click', executeResetDayAndToken);
+
+    // Main Action Listeners
     printButton.addEventListener('click', printKitchenKOT);
     printerStatus.addEventListener('click', openPrinterModal);
     document.getElementById('closePrinterModalBtn').addEventListener('click', closePrinterModal);
@@ -1399,7 +2371,7 @@
         await bridge.printTestSlip();
         showToast('Test slip sent to printer.', 'success');
       } catch (err) {
-        showToast(err.message || 'Test print failed.', 'error');
+        showToast('Printer off ya out of range hai', 'error');
       } finally {
         testPrintBtn.textContent = 'Print Test Slip';
         await syncPrinterStatusFromBridge();
@@ -1445,7 +2417,7 @@
       });
     });
 
-    // Desktop Keyboard Hotkey Support (1-9, 0, -, =)
+    // Physical Keyboard Hotkey Support (1-9, 0, -, =)
     window.addEventListener('keydown', (e) => {
       const activeTag = document.activeElement ? document.activeElement.tagName : '';
       if (activeTag === 'INPUT' || activeTag === 'TEXTAREA') {
@@ -1457,14 +2429,25 @@
         return;
       }
 
-      if (e.key === 'Escape' && printerModal.classList.contains('open')) {
-        closePrinterModal();
-        return;
+      if (e.key === 'Escape') {
+        if (hisaabModal.classList.contains('open')) {
+          closeHisaabModal();
+          return;
+        }
+        if (printerModal.classList.contains('open')) {
+          closePrinterModal();
+          return;
+        }
+        if (state.drawerOpen) {
+          state.drawerOpen = false;
+          updateUI();
+          return;
+        }
       }
 
-      if (printerModal.classList.contains('open')) return;
+      if (printerModal.classList.contains('open') || hisaabModal.classList.contains('open')) return;
 
-      const matched = MENU_ITEMS.find(i => i.key === e.key);
+      const matched = MENU_ITEMS.find(i => i.key && i.key === e.key);
       if (matched) {
         e.preventDefault();
         incrementItem(matched.id);
@@ -1476,12 +2459,17 @@
       }
     });
 
-    document.addEventListener('DOMContentLoaded', () => {
+    document.addEventListener('DOMContentLoaded', async () => {
       loadPersistedState();
       document.getElementById('customerInput').value = state.customer || '';
       renderMenu();
       updateUI();
-      syncPrinterStatusFromBridge();
+      await syncPrinterStatusFromBridge();
+
+      // Warm up silent background connection on launch if a printer MAC is already saved
+      if (getSavedPrinterMac()) {
+        ensureSilentPrinterConnection().then(() => syncPrinterStatusFromBridge());
+      }
 
       if (window.AndroidPOSBridge && typeof window.AndroidPOSBridge.onStateChange === 'function') {
         window.AndroidPOSBridge.onStateChange(() => {

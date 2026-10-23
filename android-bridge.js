@@ -174,7 +174,7 @@
     // 2. Centered Header
     pushCmd(ESC, 0x61, 0x01); // Center align
     pushCmd(ESC, 0x45, 0x01); // Bold ON
-    pushLine('BITEDASH POS - LAHORE');
+    pushLine('STUDENT BURGER & SHAWARMA');
     pushCmd(ESC, 0x45, 0x00); // Bold OFF
     pushLine('*** KITCHEN ORDER TICKET ***');
     pushLine('================================');
@@ -398,9 +398,24 @@
     },
 
     /**
-     * Connect to a bonded printer's Bluetooth Classic SPP (RFCOMM) socket by MAC address.
+     * Fast boolean check for active Bluetooth SPP printer connection.
      */
-    connect: async function (address) {
+    isConnected: async function () {
+      const plugin = getNativePlugin();
+      if (!plugin) return false;
+      try {
+        const status = await plugin.getStatus();
+        return !!(status && status.connected);
+      } catch (e) {
+        return false;
+      }
+    },
+
+    /**
+     * Connect to a bonded printer's Bluetooth Classic SPP (RFCOMM) socket by MAC address.
+     * Supports optional custom timeoutMs (e.g. 2000ms for Vyapar-style silent auto-connect).
+     */
+    connect: async function (address, timeoutMs) {
       const plugin = getNativePlugin();
       if (!plugin) {
         throw new Error('Native Android printer bridge is not available.');
@@ -409,11 +424,12 @@
         throw new Error('Printer MAC address is required.');
       }
       ensureNativeStateListener();
+      const waitMs = (typeof timeoutMs === 'number' && timeoutMs > 0) ? timeoutMs : CONNECT_TIMEOUT_MS;
       const result = await withTimeout(
         plugin.connect({ address: address.trim() }),
-        CONNECT_TIMEOUT_MS,
+        waitMs,
         'CONNECT_TIMEOUT',
-        'Connection timed out. Ensure the printer is powered ON and within range.'
+        'Printer off ya out of range hai'
       );
       if (result && result.connected) {
         try {
