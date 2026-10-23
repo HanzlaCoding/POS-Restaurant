@@ -1,2161 +1,2485 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" dir="ltr">
 
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-  <title>BiteDash • Mobile Food Cart POS</title>
-
-  <!-- PWA & Mobile Web App Meta -->
+  <title>Student Burger • POS Terminal</title>
   <link rel="manifest" href="manifest.json">
-  <meta name="theme-color" content="#FFFFFF">
-  <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="default">
-  <meta name="apple-mobile-web-app-title" content="BiteDash POS">
+  <meta name="theme-color" content="#111827">
   <link rel="icon" type="image/svg+xml" href="assets/icons/icon.svg">
-  <link rel="apple-touch-icon" href="assets/icons/icon.svg">
-
-  <!-- Inter, Noto Naskh Arabic & Space Mono Fonts -->
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link
-    href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Noto+Naskh+Arabic:wght@500;600;700;800&family=Space+Mono:wght@400;700;800&display=swap"
-    rel="stylesheet">
-
   <style>
-    /* ==========================================================================
-       1. DESIGN TOKENS & RESET (SUNLIGHT-READABLE BITEDASH LIGHT THEME)
-       ========================================================================== */
     :root {
-      --bg-base: #F8FAFC;            /* Clean crisp slate canvas */
-      --bg-surface: #FFFFFF;         /* Solid paper-white */
-      --bg-surface-elevated: #F1F5F9;/* Subtle slate shelf */
-      --bg-card: #FFFFFF;            /* Pure white tile cards */
-      --bg-card-hover: #F8FAFC;
-      --bg-card-selected: #FFFBEB;   /* Warm amber tint for active tile */
-
-      --border-subtle: #E2E8F0;      /* Slate-200 */
-      --border-medium: #CBD5E1;      /* Slate-300 */
-      --border-dark: #0F172A;        /* Slate-900 */
-
-      --accent-amber: #F59E0B;       /* Warm Amber-500 */
-      --accent-amber-hover: #D97706; /* Amber-600 */
-      --accent-amber-active: #B45309;/* Amber-700 */
-      --accent-amber-light: #FEF3C7; /* Amber-100 */
-      --accent-amber-text: #92400E;  /* Amber-800 */
-      --accent-amber-shadow: rgba(245, 158, 11, 0.35);
-
-      --text-primary: #0F172A;       /* Slate-900: Maximum outdoor readability */
-      --text-secondary: #475569;     /* Slate-600 */
-      --text-muted: #94A3B8;         /* Slate-400 */
-
-      --status-green: #16A34A;
-      --status-yellow: #CA8A04;
-      --status-red: #DC2626;
-
-      --radius-card: 16px;
-      --radius-btn: 10px;
-      --radius-badge: 6px;
-      --radius-img: 10px;
-
-      --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-      --font-urdu: 'Noto Naskh Arabic', -apple-system, 'Segoe UI', sans-serif;
-      --font-mono: 'Space Mono', monospace;
+      --bg-outer: #030712;
+      --bg-app: #0F172A;
+      --bg-header: #111827;
+      --bg-register: #111827;
+      --bg-surface: #1E293B;
+      --text-light: #F8FAFC;
+      --text-dim: #94A3B8;
+      --accent: #F59E0B;
+      --accent-hover: #D97706;
+      --danger: #EF4444;
+      --success: #10B981;
+      --font-sans: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      --font-urdu: "Noto Naskh Arabic", "Geeza Pro", "Segoe UI", Tahoma, sans-serif;
     }
 
-    *, *::before, *::after {
+    * {
       box-sizing: border-box;
       margin: 0;
       padding: 0;
-      -webkit-font-smoothing: antialiased;
-      -moz-osx-font-smoothing: grayscale;
+      font-family: var(--font-sans);
+      -webkit-tap-highlight-color: transparent;
+      user-select: none;
+      -webkit-user-select: none;
     }
 
-    html, body {
+    html,
+    body {
+      background-color: var(--bg-outer);
+      color: var(--text-light);
       width: 100%;
       height: 100%;
       height: 100dvh;
-      min-height: 100dvh;
-      overflow: hidden;
-      background-color: #E2E8F0;
-      color: var(--text-primary);
-      font-family: var(--font-sans);
-      font-size: 14px;
-      user-select: none;
-      -webkit-user-select: none;
-      touch-action: manipulation;
-    }
-
-    /* ==========================================================================
-       2. FIXED MOBILE WRAPPER (MAX-WIDTH 480PX, 100DVH)
-       ========================================================================== */
-    .mobile-app-frame {
-      display: flex;
-      flex-direction: column;
-      width: 100%;
-      max-width: 480px;
-      margin: 0 auto;
-      height: 100vh;
-      height: 100dvh;
-      min-height: 100dvh;
-      overflow: hidden;
-      background-color: var(--bg-base);
-      position: relative;
-      box-shadow: 0 10px 40px rgba(15, 23, 42, 0.12);
-      border-left: 1px solid var(--border-subtle);
-      border-right: 1px solid var(--border-subtle);
-    }
-
-    /* ==========================================================================
-       3. TOP STATUS BAR (Brand + Token + Printer + Clear)
-       ========================================================================== */
-    .pos-header {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      height: 54px;
-      min-height: 54px;
-      padding: 0 12px;
-      background: var(--bg-surface);
-      border-bottom: 1px solid var(--border-subtle);
-      z-index: 100;
-      flex-shrink: 0;
-      gap: 6px;
-    }
-
-    .header-left {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      min-width: 0;
-    }
-
-    .brand-logo-icon {
-      font-size: 1.3rem;
-      line-height: 1;
-      flex-shrink: 0;
-    }
-
-    .brand-text-col {
-      display: flex;
-      flex-direction: column;
-      line-height: 1.1;
-      min-width: 0;
-    }
-
-    .brand-title {
-      font-size: 1.12rem;
-      font-weight: 900;
-      color: var(--text-primary);
-      letter-spacing: -0.03em;
-      white-space: nowrap;
-    }
-
-    .brand-subtitle {
-      font-family: var(--font-mono);
-      font-size: 0.58rem;
-      font-weight: 800;
-      color: var(--accent-amber);
-      letter-spacing: 0.08em;
-      text-transform: uppercase;
-    }
-
-    .header-center {
       display: flex;
       justify-content: center;
       align-items: center;
-      flex-shrink: 0;
-    }
-
-    .top-token-display {
-      font-family: var(--font-mono);
-      font-size: 0.74rem;
-      font-weight: 800;
-      letter-spacing: 0.03em;
-      color: #92400E;
-      background: #FEF3C7;
-      border: 1px solid #FDE68A;
-      padding: 3px 10px;
-      border-radius: 9999px;
-      text-align: center;
-      line-height: 1.2;
-      white-space: nowrap;
-      box-shadow: 0 1px 2px rgba(245, 158, 11, 0.08);
-    }
-
-    .header-right {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      flex-shrink: 0;
-    }
-
-    .printer-status-pill {
-      display: inline-flex;
-      align-items: center;
-      gap: 5px;
-      height: 30px;
-      padding: 0 9px;
-      background: #F0FDF4;
-      border: 1px solid #BBF7D0;
-      border-radius: 9999px;
-      font-family: var(--font-sans);
-      font-size: 0.72rem;
-      font-weight: 700;
-      color: #166534;
-      cursor: pointer;
-      transition: all 0.12s ease;
-      white-space: nowrap;
-    }
-
-    .printer-status-pill:hover {
-      background: #DCFCE7;
-      border-color: #86EFAC;
-    }
-
-    .printer-status-pill.connected,
-    .printer-status-pill.ready {
-      background: #F0FDF4;
-      border-color: #BBF7D0;
-      color: #166534;
-    }
-
-    .printer-status-pill.reconnecting,
-    .printer-status-pill.printing {
-      background: #FEFCE8;
-      border-color: #FDE047;
-      color: #A16207;
-    }
-
-    .printer-status-pill.disconnected {
-      background: #FEF2F2;
-      border-color: #FECACA;
-      color: #991B1B;
-    }
-
-    .printer-ready-dot {
-      width: 7px;
-      height: 7px;
-      border-radius: 50%;
-      background-color: var(--status-green);
-      flex-shrink: 0;
-      transition: all 0.2s ease;
-    }
-
-    .printer-ready-dot.connected,
-    .printer-ready-dot.ready {
-      background-color: var(--status-green);
-    }
-
-    .printer-ready-dot.reconnecting,
-    .printer-ready-dot.printing {
-      background-color: var(--status-yellow);
-      animation: pulseDot 0.8s infinite ease-in-out;
-    }
-
-    .printer-ready-dot.disconnected {
-      background-color: var(--status-red);
-    }
-
-    @keyframes pulseDot {
-      0% { transform: scale(0.9); opacity: 0.6; }
-      50% { transform: scale(1.25); opacity: 1; }
-      100% { transform: scale(0.9); opacity: 0.6; }
-    }
-
-    .btn-clear-ticket {
-      height: 30px;
-      padding: 0 9px;
-      background: #F1F5F9;
-      border: 1px solid var(--border-subtle);
-      border-radius: 9999px;
-      color: var(--text-secondary);
-      font-family: var(--font-sans);
-      font-size: 0.72rem;
-      font-weight: 700;
-      cursor: pointer;
-      display: inline-flex;
-      align-items: center;
-      gap: 3px;
-      transition: all 0.12s ease;
-      white-space: nowrap;
-    }
-
-    .btn-clear-ticket:hover {
-      background: #FEE2E2;
-      border-color: #FCA5A5;
-      color: #DC2626;
-    }
-
-    .btn-clear-ticket:active {
-      transform: scale(0.96);
-    }
-
-    /* ==========================================================================
-       4. HORIZONTAL STICKY CATEGORY PILLS BAR
-       ========================================================================== */
-    .category-pills-bar {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      height: 48px;
-      min-height: 48px;
-      padding: 0 12px;
-      background: var(--bg-surface);
-      border-bottom: 1px solid var(--border-subtle);
-      overflow-x: auto;
-      white-space: nowrap;
-      -webkit-overflow-scrolling: touch;
-      scrollbar-width: none;
-      z-index: 90;
-      flex-shrink: 0;
-    }
-
-    .category-pills-bar::-webkit-scrollbar {
-      display: none;
-    }
-
-    .cat-pill {
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      height: 32px;
-      padding: 0 12px;
-      background: #FFFFFF;
-      border: 1px solid var(--border-medium);
-      border-radius: 9999px;
-      color: var(--text-secondary);
-      font-family: var(--font-sans);
-      font-size: 0.78rem;
-      font-weight: 700;
-      cursor: pointer;
-      flex-shrink: 0;
-      transition: all 0.12s ease;
-    }
-
-    .cat-pill:hover {
-      border-color: var(--text-primary);
-      color: var(--text-primary);
-      background: #F8FAFC;
-    }
-
-    .cat-pill:active {
-      transform: scale(0.96);
-    }
-
-    .cat-pill.active {
-      background: #0F172A !important;
-      color: #FFFFFF !important;
-      border-color: #0F172A !important;
-      box-shadow: 0 2px 8px rgba(15, 23, 42, 0.18);
-    }
-
-    .cat-pill .pill-dot {
-      width: 6px;
-      height: 6px;
-      border-radius: 50%;
-      background-color: #94A3B8;
-      flex-shrink: 0;
-    }
-
-    .cat-pill.active .pill-dot {
-      background-color: var(--accent-amber);
-    }
-
-    .cat-pill .pill-ur {
-      font-family: var(--font-urdu);
-      font-size: 0.92rem;
-      font-weight: 700;
-      line-height: 1;
-      color: inherit;
-    }
-
-    .cat-pill .pill-en {
-      font-size: 0.68rem;
-      font-weight: 800;
-      letter-spacing: 0.04em;
-      text-transform: uppercase;
-      color: inherit;
-    }
-
-    /* ==========================================================================
-       5. SPEED GRID SCROLLABLE PANEL & 2-COLUMN TILES
-       ========================================================================== */
-    .pos-workspace {
-      display: flex;
-      flex: 1;
-      height: calc(100vh - 102px);
-      height: calc(100dvh - 102px);
       overflow: hidden;
-      background-color: var(--bg-base);
+      touch-action: manipulation;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* Mobile POS Viewport Container (360px - 420px) */
+    .pos-screen {
+      width: 100%;
+      max-width: 420px;
+      height: 100vh;
+      height: 100dvh;
+      background: #F1F5F9;
+      display: flex;
+      flex-direction: column;
       position: relative;
+      overflow: hidden;
+      box-shadow: 0 25px 60px rgba(0, 0, 0, 0.85);
     }
 
-    .speed-pad-panel {
-      width: 100%;
-      height: 100%;
-      padding: 10px 12px calc(160px + env(safe-area-inset-bottom)) 12px;
-      overflow-y: auto;
-      overflow-x: hidden;
-      display: flex;
-      flex-direction: column;
-      -webkit-overflow-scrolling: touch;
-      overscroll-behavior-y: contain;
-    }
-
-    .speed-categories-container {
-      display: flex;
-      flex-direction: column;
-      gap: 16px;
-      width: 100%;
-    }
-
-    .speed-category-group {
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-    }
-
-    .category-header-bar {
-      position: sticky;
-      top: 0;
-      z-index: 10;
+    /* 1. Cohesive Dark Commercial Header (#111827) */
+    header {
+      background: var(--bg-header);
+      color: #FFFFFF;
+      padding: 8px 12px;
+      height: 50px;
       display: flex;
       align-items: center;
       justify-content: space-between;
-      padding: 6px 2px;
-      background-color: var(--bg-base);
-      border-bottom: 1px solid var(--border-subtle);
-    }
-
-    .category-tag {
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-    }
-
-    .cat-pill-dot {
-      width: 6px;
-      height: 6px;
-      border-radius: 50%;
-      background-color: var(--accent-amber);
+      gap: 8px;
       flex-shrink: 0;
+      z-index: 25;
     }
 
-    .cat-title-ur {
-      font-family: var(--font-urdu);
-      font-size: 1rem;
-      font-weight: 700;
-      color: var(--text-primary);
-      line-height: 1.3;
+    .brand-group {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      min-width: 0;
     }
 
-    .cat-title-sep {
-      color: var(--border-medium);
-      font-size: 0.75rem;
-    }
-
-    .cat-title-en {
-      font-family: var(--font-sans);
-      font-size: 0.74rem;
-      font-weight: 800;
-      color: var(--text-secondary);
-      letter-spacing: 0.05em;
+    .brand {
+      font-size: 14px;
+      font-weight: 900;
+      letter-spacing: 0.02em;
+      color: #FFFFFF;
+      white-space: nowrap;
       text-transform: uppercase;
     }
 
-    .cat-count-badge {
-      font-family: var(--font-mono);
-      font-size: 0.65rem;
-      font-weight: 800;
-      color: var(--text-secondary);
-      background: var(--bg-surface);
-      padding: 2px 7px;
-      border-radius: 9999px;
-      border: 1px solid var(--border-subtle);
-    }
-
-    .category-tiles-grid {
-      display: grid;
-      grid-template-columns: repeat(2, 1fr);
-      gap: 12px;
-      width: 100%;
-    }
-
-    /* Speed Tile Cards */
-    .speed-tile {
-      position: relative;
-      display: flex;
-      flex-direction: column;
-      padding: 8px;
-      border-radius: 16px;
+    /* Glowing Token Pill */
+    .token-tag {
+      appearance: none;
+      border: 1.5px solid #FBBF24;
+      background: linear-gradient(135deg, #F59E0B 0%, #D97706 100%);
+      color: #111827;
+      font-size: 11.5px;
+      font-weight: 900;
+      padding: 4px 10px;
+      min-height: 28px;
+      border-radius: 999px;
+      white-space: nowrap;
+      letter-spacing: 0.04em;
+      font-variant-numeric: tabular-nums;
+      flex-shrink: 0;
       cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      box-shadow: 0 0 14px rgba(245, 158, 11, 0.45);
+      transition: transform 0.08s ease, box-shadow 0.12s ease;
+    }
+
+    .token-tag:active {
+      transform: scale(0.94);
+    }
+
+    .printer-status {
+      appearance: none;
+      background: #1F2937;
+      color: #CBD5E1;
+      border: 1px solid #374151;
+      font-size: 11px;
+      font-weight: 800;
+      padding: 5px 10px;
+      min-height: 30px;
+      border-radius: 999px;
+      max-width: 142px;
       overflow: hidden;
-      background: var(--bg-card);
-      border: 1px solid var(--border-subtle);
-      box-shadow: 0 2px 8px rgba(15, 23, 42, 0.04);
-      transition: transform 0.08s ease, border-color 0.12s ease, background-color 0.12s ease, box-shadow 0.12s ease;
+      white-space: nowrap;
+      text-overflow: ellipsis;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      flex-shrink: 0;
+      transition: transform 0.08s ease;
+    }
+
+    .printer-status:active {
+      transform: scale(0.95);
+    }
+
+    .status-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #EF4444;
+      box-shadow: 0 0 6px #EF4444;
+      flex-shrink: 0;
+    }
+
+    .printer-status[data-state="ready"] {
+      background: rgba(16, 185, 129, 0.15);
+      color: #A7F3D0;
+      border-color: rgba(16, 185, 129, 0.45);
+    }
+
+    .printer-status[data-state="ready"] .status-dot {
+      background: #10B981;
+      box-shadow: 0 0 8px #10B981;
+    }
+
+    .printer-status[data-state="connecting"],
+    .printer-status[data-state="printing"] {
+      background: rgba(245, 158, 11, 0.18);
+      color: #FDE68A;
+      border-color: rgba(245, 158, 11, 0.5);
+    }
+
+    .printer-status[data-state="connecting"] .status-dot,
+    .printer-status[data-state="printing"] .status-dot {
+      background: #F59E0B;
+      box-shadow: 0 0 8px #F59E0B;
+    }
+
+    /* 2. Modern Horizontal Pill Category Filter Bar */
+    .category-bar {
+      background: var(--bg-header);
+      border-bottom: 1px solid #1F2937;
+      padding: 2px 12px 10px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      overflow-x: auto;
+      scrollbar-width: none;
+      flex-shrink: 0;
+    }
+
+    .category-bar::-webkit-scrollbar {
+      display: none;
+    }
+
+    .cat-chip {
+      appearance: none;
+      border: 1.5px solid #374151;
+      background: #1F2937;
+      color: #9CA3AF;
+      font-family: var(--font-urdu);
+      font-size: 13px;
+      font-weight: 800;
+      padding: 6px 14px;
+      min-height: 34px;
+      border-radius: 999px;
+      cursor: pointer;
+      white-space: nowrap;
+      flex: 1;
+      text-align: center;
+      transition: transform 0.06s ease, background-color 0.12s ease, color 0.12s ease, border-color 0.12s ease;
+    }
+
+    .cat-chip:active {
+      transform: scale(0.95);
+    }
+
+    .cat-chip.active {
+      background: var(--accent);
+      color: #111827;
+      border-color: #FBBF24;
+      box-shadow: 0 2px 10px rgba(245, 158, 11, 0.35);
+    }
+
+    /* 3. Commercial POS Punch Grid */
+    .menu-container {
+      flex: 1;
+      min-height: 0;
+      overflow-y: auto;
+      overflow-x: hidden;
+      padding: 10px 10px 14px;
+      background: #E2E8F0;
+      -webkit-overflow-scrolling: touch;
+      overscroll-behavior-y: contain;
       touch-action: pan-y;
     }
 
-    .speed-tile:hover {
-      background: var(--bg-card-hover);
-      border-color: var(--border-medium);
-      box-shadow: 0 4px 12px rgba(15, 23, 42, 0.07);
+    .menu-section {
+      margin-bottom: 14px;
     }
 
-    .speed-tile:active {
-      transform: scale(0.975);
+    .menu-section:last-child {
+      margin-bottom: 4px;
     }
 
-    .speed-tile.pulse-active {
-      animation: tilePunch 0.16s cubic-bezier(0.2, 0.8, 0.4, 1);
-    }
-
-    @keyframes tilePunch {
-      0% { transform: scale(1); }
-      50% { transform: scale(0.95); }
-      100% { transform: scale(1); }
-    }
-
-    /* Active State: Amber Border & Light Tint */
-    .speed-tile.has-qty {
-      border: 2px solid var(--accent-amber) !important;
-      background: var(--bg-card-selected) !important;
-      box-shadow: 0 4px 14px rgba(245, 158, 11, 0.18) !important;
-    }
-
-    .tile-image-section {
-      position: relative;
-      width: 100%;
-      aspect-ratio: 16 / 10;
-      border-radius: 10px;
-      overflow: hidden;
-      background-color: var(--bg-surface-elevated);
-      flex-shrink: 0;
-    }
-
-    .tile-thumbnail {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-      display: block;
-      border-radius: 10px;
-      pointer-events: none;
-    }
-
-    .tile-hotkey-tag {
-      position: absolute;
-      top: 6px;
-      left: 6px;
-      background: rgba(15, 23, 42, 0.82);
-      color: #FFFFFF;
-      font-family: var(--font-mono);
-      font-size: 0.65rem;
-      font-weight: 700;
-      padding: 2px 6px;
-      border-radius: 4px;
-      backdrop-filter: blur(4px);
-      -webkit-backdrop-filter: blur(4px);
-      pointer-events: none;
-      z-index: 2;
-      line-height: 1;
-    }
-
-    .tile-qty-badge {
-      display: none;
-      position: absolute;
-      top: 6px;
-      right: 6px;
-      align-items: center;
-      justify-content: center;
-      min-width: 24px;
-      height: 22px;
-      padding: 0 6px;
-      border-radius: 6px;
-      background-color: var(--accent-amber);
-      color: #FFFFFF;
-      font-family: var(--font-mono);
-      font-size: 0.75rem;
-      font-weight: 800;
-      pointer-events: none;
-      z-index: 2;
-      box-shadow: 0 2px 6px var(--accent-amber-shadow);
-      line-height: 1;
-    }
-
-    .speed-tile.has-qty .tile-qty-badge {
+    .section-title {
+      font-size: 11px;
+      font-weight: 900;
+      text-transform: uppercase;
+      color: #334155;
+      margin-bottom: 7px;
+      padding: 0 4px;
+      letter-spacing: 0.06em;
       display: flex;
+      align-items: center;
+      justify-content: space-between;
     }
 
-    .tile-info-section {
+    .section-title-urdu {
+      font-family: var(--font-urdu);
+      font-size: 13px;
+      font-weight: 800;
+      color: #0F172A;
+    }
+
+    .grid-2col {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 8px;
+    }
+
+    /* Modern Tactile Rounded-XL Punch Tiles (Min 78px Height) */
+    .tile {
+      border-radius: 14px;
+      padding: 10px 8px;
+      min-height: 86px;
       display: flex;
       flex-direction: column;
+      align-items: center;
       justify-content: center;
-      padding: 8px 4px 2px 4px;
-      gap: 3px;
-      pointer-events: none;
+      text-align: center;
+      gap: 5px;
+      cursor: pointer;
+      position: relative;
+      overflow: hidden;
+      transition: transform 0.06s cubic-bezier(0.2, 0, 0, 1), box-shadow 0.1s ease, background 0.1s ease;
+      touch-action: pan-y;
+    }
+
+    /* Category Theme 1: Burgers — Warm Amber / Slate */
+    .tile[data-cat="burgers"] {
+      background: linear-gradient(145deg, #FFFBEB 0%, #FEF3C7 100%);
+      border: 1.5px solid #F59E0B;
+      border-bottom: 3.5px solid #D97706;
+      box-shadow: 0 3px 6px rgba(180, 83, 9, 0.12);
+    }
+
+    .tile[data-cat="burgers"] .item-name-urdu {
+      color: #451A03;
+    }
+
+    .tile[data-cat="burgers"] .item-name-en {
+      color: #92400E;
+    }
+
+    /* Category Theme 2: Shawarma — Clean Emerald / Teal */
+    .tile[data-cat="shawarma"] {
+      background: linear-gradient(145deg, #ECFDF5 0%, #D1FAE5 100%);
+      border: 1.5px solid #10B981;
+      border-bottom: 3.5px solid #059669;
+      box-shadow: 0 3px 6px rgba(6, 95, 70, 0.12);
+    }
+
+    .tile[data-cat="shawarma"] .item-name-urdu {
+      color: #064E3B;
+    }
+
+    .tile[data-cat="shawarma"] .item-name-en {
+      color: #047857;
+    }
+
+    /* Category Theme 3: Sandwiches & Fries — Royal Indigo / Blue */
+    .tile[data-cat="sandwiches"] {
+      background: linear-gradient(145deg, #EEF2FF 0%, #E0E7FF 100%);
+      border: 1.5px solid #6366F1;
+      border-bottom: 3.5px solid #4F46E5;
+      box-shadow: 0 3px 6px rgba(55, 48, 163, 0.12);
+    }
+
+    .tile[data-cat="sandwiches"] .item-name-urdu {
+      color: #1E1B4B;
+    }
+
+    .tile[data-cat="sandwiches"] .item-name-en {
+      color: #4338CA;
+    }
+
+    /* Tactile Press Down Effect */
+    .tile.pressed {
+      transform: scale(0.96);
+    }
+
+    /* Active Glowing State when Qty > 0 */
+    .tile.active {
+      background: #111827 !important;
+      border: 2px solid #F59E0B !important;
+      border-bottom: 3.5px solid #D97706 !important;
+      box-shadow: 0 0 0 2px rgba(245, 158, 11, 0.28), 0 8px 16px rgba(15, 23, 42, 0.35) !important;
+    }
+
+    .tile.active .item-name-urdu {
+      color: #FFFFFF !important;
+      font-size: 13px;
+    }
+
+    .tile.active .item-name-en {
+      display: none;
+    }
+
+    .tile-header {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      gap: 2px;
+      width: 100%;
       min-width: 0;
     }
 
-    .tile-urdu-name {
-      font-family: var(--font-urdu);
-      font-size: 1.05rem;
-      font-weight: 700;
-      color: var(--text-primary);
-      line-height: 1.35;
-      text-align: right;
+    /* Urdu Item Name FIRST in Centered Bold Sans Font */
+    .item-name-urdu {
+      font-family: var(--font-sans);
+      font-size: 15.5px;
+      font-weight: 800;
       direction: rtl;
+      text-align: center;
+      line-height: 1.3;
+      width: 100%;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+
+    /* Subtle Centered English Name Underneath */
+    .item-name-en {
+      font-family: var(--font-sans);
+      font-size: 11.5px;
+      font-weight: 700;
+      text-align: center;
+      line-height: 1.2;
+      width: 100%;
+      opacity: 0.75;
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
     }
 
-    .tile-price {
-      font-family: var(--font-sans);
-      font-size: 0.88rem;
-      font-weight: 800;
-      color: var(--accent-amber-hover);
-      letter-spacing: -0.01em;
-      text-align: left;
-      direction: ltr;
-    }
-
-    /* ==========================================================================
-       6. FLOATING STICKY BOTTOM CHECKOUT CARD (ZERO FRICTION)
-       ========================================================================== */
-    .mobile-action-bar {
-      position: absolute;
-      bottom: 12px;
-      left: 12px;
-      right: 12px;
-      z-index: 1000;
-      background: rgba(255, 255, 255, 0.94);
-      backdrop-filter: blur(16px);
-      -webkit-backdrop-filter: blur(16px);
-      border: 1px solid rgba(226, 232, 240, 0.95);
-      border-radius: 18px;
-      padding: 10px 12px max(10px, env(safe-area-inset-bottom));
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-      box-shadow: 0 10px 30px rgba(15, 23, 42, 0.14);
-    }
-
-    .m-customer-row {
-      width: 100%;
-    }
-
-    .m-customer-wrap {
-      position: relative;
-      display: flex;
-      align-items: center;
-      width: 100%;
-    }
-
-    .m-cust-icon {
-      position: absolute;
-      left: 10px;
-      font-size: 0.88rem;
-      color: var(--text-muted);
-      pointer-events: none;
-      line-height: 1;
-    }
-
-    .m-customer-input {
-      width: 100%;
-      height: 38px;
-      padding: 0 28px 0 32px;
-      background-color: var(--bg-base);
-      border: 1px solid var(--border-subtle);
-      border-radius: 10px;
-      font-family: var(--font-sans);
-      font-size: 0.84rem;
-      font-weight: 600;
-      color: var(--text-primary);
-      outline: none;
-      transition: all 0.12s ease;
-    }
-
-    .m-customer-input::placeholder {
-      color: var(--text-muted);
-      font-weight: 400;
-      font-size: 0.82rem;
-    }
-
-    .m-customer-input:focus {
-      border-color: var(--accent-amber);
-      background-color: #FFFFFF;
-      box-shadow: 0 0 0 2px rgba(245, 158, 11, 0.18);
-    }
-
-    .m-clear-cust-btn {
-      position: absolute;
-      right: 8px;
-      width: 22px;
-      height: 22px;
-      border-radius: 50%;
-      border: none;
-      background-color: var(--border-subtle);
-      color: var(--text-secondary);
-      font-size: 0.72rem;
-      font-weight: 800;
+    .tile-footer {
       display: flex;
       align-items: center;
       justify-content: center;
-      cursor: pointer;
-      transition: all 0.1s ease;
+      width: 100%;
+      margin-top: 2px;
     }
 
-    .m-clear-cust-btn:hover {
-      background-color: var(--border-medium);
-      color: var(--text-primary);
-    }
-
-    .m-action-summary-row {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 0 2px;
-    }
-
-    .m-action-meta {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-    }
-
-    .m-badge-count {
-      font-family: var(--font-mono);
-      font-size: 0.72rem;
-      font-weight: 800;
-      padding: 3px 8px;
-      background: var(--bg-surface-elevated);
-      border: 1px solid var(--border-subtle);
-      color: var(--text-secondary);
-      border-radius: 9999px;
+    /* Centered Compact Price Pill ("150/-") */
+    .item-price {
+      background: #111827;
+      color: #FBBF24;
+      font-size: 11.5px;
+      font-weight: 900;
+      padding: 2.5px 10px;
+      border-radius: 999px;
+      white-space: nowrap;
+      font-variant-numeric: tabular-nums;
       letter-spacing: 0.02em;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.18);
     }
 
-    .m-summary-label {
-      font-family: var(--font-sans);
-      font-size: 0.78rem;
-      font-weight: 700;
-      color: var(--text-muted);
-      text-transform: uppercase;
+    .tile.active .tile-footer {
+      display: none;
     }
 
-    .m-total-val {
-      font-family: var(--font-mono);
-      font-size: 1.4rem;
-      font-weight: 900;
-      color: var(--text-primary);
-      letter-spacing: -0.02em;
-    }
-
-    .m-print-kot-btn {
-      width: 100%;
-      height: 48px;
-      min-height: 48px;
-      border: none;
-      border-radius: 12px;
-      font-family: var(--font-sans);
-      font-size: 0.98rem;
-      font-weight: 900;
-      letter-spacing: 0.03em;
-      text-transform: uppercase;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      transition: all 0.12s ease;
-      cursor: pointer;
-    }
-
-    .m-print-kot-btn:disabled {
-      background: #E2E8F0 !important;
-      color: #94A3B8 !important;
-      cursor: not-allowed;
-      box-shadow: none;
-    }
-
-    .m-print-kot-btn:not(:disabled) {
-      background: var(--accent-amber) !important;
-      color: #FFFFFF !important;
-      cursor: pointer;
-      box-shadow: 0 4px 14px var(--accent-amber-shadow);
-    }
-
-    .m-print-kot-btn:not(:disabled):hover {
-      background: var(--accent-amber-hover) !important;
-    }
-
-    .m-print-kot-btn:not(:disabled):active {
-      transform: scale(0.985);
-      background: var(--accent-amber-active) !important;
-    }
-
-    /* ==========================================================================
-       7. PRINTER SETUP MODAL & TOAST
-       ========================================================================== */
-    .printer-modal-backdrop {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100vw;
-      height: 100vh;
-      background-color: rgba(15, 23, 42, 0.55);
-      backdrop-filter: blur(4px);
-      -webkit-backdrop-filter: blur(4px);
-      z-index: 2500;
+    /* 3-Part Circular Quantity Stepper Inside Active Tile */
+    .tile-stepper {
       display: none;
       align-items: center;
-      justify-content: center;
-      padding: 1rem;
-      animation: modalFadeIn 0.12s ease-out;
-    }
-
-    .printer-modal-backdrop.active {
-      display: flex;
-    }
-
-    @keyframes modalFadeIn {
-      from { opacity: 0; }
-      to { opacity: 1; }
-    }
-
-    .printer-modal-card {
-      width: 100%;
-      max-width: 420px;
-      background: var(--bg-surface);
-      border-radius: var(--radius-card);
-      box-shadow: 0 16px 36px rgba(15, 23, 42, 0.16);
-      overflow: hidden;
-      border: 1px solid var(--border-subtle);
-    }
-
-    .printer-modal-header {
-      display: flex;
-      align-items: flex-start;
       justify-content: space-between;
-      padding: 1rem 1.25rem 0.85rem;
-      border-bottom: 1px solid var(--border-subtle);
-      background: var(--bg-surface-elevated);
+      width: 100%;
+      margin-top: auto;
+      padding-top: 2px;
     }
 
-    .printer-modal-title-group {
+    .tile.active .tile-stepper {
       display: flex;
-      align-items: center;
-      gap: 0.65rem;
     }
 
-    .printer-modal-icon {
-      font-size: 1.6rem;
+    .step-btn {
+      appearance: none;
+      border: none;
+      width: 34px;
+      height: 34px;
+      border-radius: 50%;
+      font-size: 20px;
+      font-weight: 900;
+      line-height: 1;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      flex-shrink: 0;
+      transition: transform 0.06s ease;
+    }
+
+    .step-btn.minus {
+      background: #EF4444;
+      color: #FFFFFF;
+      box-shadow: 0 2px 8px rgba(239, 68, 68, 0.45);
+    }
+
+    .step-btn.minus:active {
+      transform: scale(0.9);
+      background: #DC2626;
+    }
+
+    .step-btn.plus {
+      background: #10B981;
+      color: #FFFFFF;
+      box-shadow: 0 2px 8px rgba(16, 185, 129, 0.45);
+    }
+
+    .step-btn.plus:active {
+      transform: scale(0.9);
+      background: #059669;
+    }
+
+    .qty-badge {
+      flex: 1;
+      text-align: center;
+      font-size: 20px;
+      font-weight: 900;
+      color: #FBBF24;
+      font-variant-numeric: tabular-nums;
       line-height: 1;
     }
 
-    .printer-modal-title {
-      font-size: 1.05rem;
-      font-weight: 800;
-      color: var(--text-primary);
+    /* Uncertain Print Recovery Banner */
+    .uncertain-banner {
+      display: none;
+      background: #FEF3C7;
+      border-top: 2px solid var(--accent);
+      padding: 8px 12px;
+      flex-direction: column;
+      gap: 6px;
+      flex-shrink: 0;
+      z-index: 35;
     }
 
-    .printer-modal-subtitle {
-      font-size: 0.76rem;
-      color: var(--text-secondary);
-      margin-top: 2px;
+    .uncertain-banner.show {
+      display: flex;
+    }
+
+    .uncertain-text {
+      font-size: 11.5px;
+      font-weight: 800;
+      color: #92400E;
       line-height: 1.3;
     }
 
-    .printer-modal-close {
-      background: var(--bg-surface);
-      border: 1px solid var(--border-subtle);
-      font-size: 1rem;
-      color: var(--text-secondary);
-      cursor: pointer;
-      padding: 3px 7px;
-      border-radius: var(--radius-badge);
-      line-height: 1;
-    }
-
-    .printer-modal-body {
-      padding: 1.15rem 1.25rem;
+    .uncertain-actions {
       display: flex;
-      flex-direction: column;
-      gap: 0.85rem;
+      gap: 8px;
     }
 
-    .printer-status-box {
-      background: var(--bg-base);
-      border: 1px solid var(--border-subtle);
-      border-radius: var(--radius-card);
-      padding: 0.85rem 1rem;
-      display: flex;
-      flex-direction: column;
-      gap: 0.3rem;
-    }
-
-    .ps-indicator-row {
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-    }
-
-    .ps-dot {
-      width: 8px;
-      height: 8px;
-      border-radius: 50%;
-      background-color: var(--text-muted);
-    }
-
-    .ps-dot.connected,
-    .ps-dot.ready {
-      background-color: var(--status-green);
-    }
-
-    .ps-dot.reconnecting {
-      background-color: var(--status-yellow);
-      animation: pulseDot 0.8s infinite ease-in-out;
-    }
-
-    .ps-dot.disconnected {
-      background-color: var(--status-red);
-    }
-
-    .ps-status-text {
-      font-weight: 700;
-      font-size: 0.85rem;
-      color: var(--text-primary);
-    }
-
-    .ps-device-name {
-      font-size: 0.95rem;
+    .uncertain-btn {
+      flex: 1;
+      padding: 6px 10px;
+      border-radius: 8px;
+      font-size: 11.5px;
       font-weight: 800;
-      color: var(--text-primary);
-    }
-
-    .ps-device-id {
-      font-family: var(--font-mono);
-      font-size: 0.7rem;
-      color: var(--text-muted);
-      word-break: break-all;
-    }
-
-    .printer-guide-box {
-      background: #FEF3C7;
-      border: 1px solid #FDE68A;
-      border-radius: var(--radius-card);
-      padding: 0.7rem 0.85rem;
-      display: flex;
-      flex-direction: column;
-      gap: 0.4rem;
-      font-size: 0.76rem;
+      cursor: pointer;
+      border: 1.5px solid #D97706;
+      background: #FFFFFF;
       color: #92400E;
-      line-height: 1.35;
     }
 
-    .guide-item {
+    .uncertain-btn.confirm {
+      background: #059669;
+      border-color: #059669;
+      color: #FFFFFF;
+    }
+
+    /* 4. Running Order Ticker Strip Above Bottom Register */
+    .cart-strip {
+      flex-shrink: 0;
+      background: #1F2937;
+      color: #F8FAFC;
+      padding: 7px 12px;
+      min-height: 34px;
       display: flex;
       align-items: center;
-      gap: 0.5rem;
+      justify-content: space-between;
+      gap: 8px;
+      cursor: pointer;
+      border-top: 1px solid #374151;
+      z-index: 30;
     }
 
-    .guide-badge {
-      background: #FDE68A;
-      color: #78350F;
-      font-size: 0.64rem;
+    .cart-strip.empty {
+      background: #1E293B;
+      color: #64748B;
+      cursor: default;
+    }
+
+    .cart-preview-text {
+      flex: 1;
+      font-size: 12px;
       font-weight: 800;
-      padding: 1px 5px;
-      border-radius: var(--radius-badge);
-      letter-spacing: 0.02em;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      font-variant-numeric: tabular-nums;
     }
 
-    .printer-modal-actions {
+    .cart-strip:not(.empty) .cart-preview-text {
+      color: #FDE68A;
+    }
+
+    .cart-drawer-toggle {
+      font-size: 10.5px;
+      font-weight: 900;
+      background: rgba(245, 158, 11, 0.2);
+      color: #FBBF24;
+      border: 1px solid rgba(245, 158, 11, 0.4);
+      padding: 3px 8px;
+      border-radius: 999px;
+      white-space: nowrap;
+    }
+
+    .cart-strip.empty .cart-drawer-toggle {
+      display: none;
+    }
+
+    /* Slide-Up Running Order Drawer */
+    .cart-drawer-backdrop {
+      position: absolute;
+      inset: 0;
+      background: rgba(3, 7, 18, 0.65);
+      display: none;
+      flex-direction: column;
+      justify-content: flex-end;
+      z-index: 28;
+    }
+
+    .cart-drawer-backdrop.open {
+      display: flex;
+    }
+
+    .cart-drawer-sheet {
+      background: #111827;
+      color: #F8FAFC;
+      border-top: 2px solid var(--accent);
+      border-radius: 16px 16px 0 0;
+      max-height: 58%;
       display: flex;
       flex-direction: column;
-      gap: 0.55rem;
-      margin-top: 0.2rem;
+      box-shadow: 0 -10px 30px rgba(0, 0, 0, 0.5);
+      margin-bottom: 132px;
     }
 
-    .btn-primary-pair {
-      height: 42px;
-      background: var(--accent-amber);
-      color: #FFFFFF;
-      border: none;
-      border-radius: var(--radius-btn);
-      font-family: var(--font-sans);
-      font-size: 0.9rem;
-      font-weight: 800;
-      cursor: pointer;
+    .cart-drawer-header {
+      padding: 10px 14px;
+      border-bottom: 1px solid #1F2937;
       display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .cart-drawer-title {
+      font-size: 12.5px;
+      font-weight: 900;
+      color: #FBBF24;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+
+    .cart-drawer-close {
+      appearance: none;
+      border: 1px solid #374151;
+      background: #1F2937;
+      color: #F8FAFC;
+      font-size: 11.5px;
+      font-weight: 800;
+      padding: 4px 10px;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+
+    .cart-drawer-list {
+      padding: 8px 12px 12px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 7px;
+    }
+
+    .drawer-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      padding: 8px 10px;
+      background: #1F2937;
+      border: 1px solid #374151;
+      border-radius: 10px;
+    }
+
+    .drawer-item-info {
+      display: flex;
+      flex-direction: column;
+      min-width: 0;
+      flex: 1;
+    }
+
+    .drawer-item-name {
+      font-size: 13px;
+      font-weight: 800;
+      color: #FFFFFF;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .drawer-item-sub {
+      font-size: 11px;
+      font-weight: 700;
+      color: #FBBF24;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .drawer-controls {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    /* 5. Solid Commercial Bottom Register Bar (#111827) */
+    footer {
+      flex-shrink: 0;
+      background: var(--bg-register);
+      border-top: 1px solid #374151;
+      padding: 8px 12px max(10px, env(safe-area-inset-bottom));
+      display: flex;
+      flex-direction: column;
+      gap: 7px;
+      z-index: 30;
+    }
+
+    .register-meta-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .customer-input {
+      flex: 1;
+      background: #1F2937;
+      border: 1px solid #374151;
+      border-radius: 8px;
+      padding: 5px 10px;
+      height: 30px;
+      font-size: 12px;
+      font-weight: 600;
+      color: #FFFFFF;
+      outline: none;
+      user-select: text;
+      -webkit-user-select: text;
+    }
+
+    .customer-input::placeholder {
+      color: #6B7280;
+    }
+
+    .customer-input:focus {
+      border-color: var(--accent);
+      background: #0F172A;
+    }
+
+    .clear-order-btn {
+      appearance: none;
+      border: 1px solid #374151;
+      background: #1F2937;
+      color: #F87171;
+      font-size: 11px;
+      font-weight: 800;
+      padding: 0 12px;
+      height: 30px;
+      border-radius: 8px;
+      cursor: pointer;
+      white-space: nowrap;
+      text-transform: uppercase;
+      letter-spacing: 0.03em;
+    }
+
+    .clear-order-btn:not(:disabled):active {
+      background: #EF4444;
+      color: #FFFFFF;
+      transform: scale(0.95);
+    }
+
+    .clear-order-btn:disabled {
+      opacity: 0.35;
+      color: #6B7280;
+      cursor: not-allowed;
+    }
+
+    .checkout-row {
+      display: flex;
+      align-items: stretch;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    .summary-box {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      min-width: 126px;
+    }
+
+    .summary-label {
+      font-size: 10.5px;
+      font-weight: 900;
+      color: #9CA3AF;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .summary-total {
+      font-size: 24px;
+      font-weight: 900;
+      color: #FFFFFF;
+      letter-spacing: -0.02em;
+      line-height: 1.05;
+      font-variant-numeric: tabular-nums;
+      white-space: nowrap;
+    }
+
+    .print-btn {
+      flex: 1;
+      background: linear-gradient(180deg, #F59E0B 0%, #D97706 100%);
+      color: #111827;
+      border: 1.5px solid #FBBF24;
+      border-bottom: 3.5px solid #92400E;
+      border-radius: 12px;
+      font-size: 16px;
+      font-weight: 900;
+      padding: 0 16px;
+      min-height: 54px;
+      cursor: pointer;
+      letter-spacing: 0.03em;
+      text-transform: uppercase;
+      display: inline-flex;
       align-items: center;
       justify-content: center;
-      gap: 0.5rem;
-      box-shadow: 0 2px 8px var(--accent-amber-shadow);
-    }
-
-    .btn-primary-pair:hover {
-      background: var(--accent-amber-hover);
-    }
-
-    .btn-test-print {
-      height: 38px;
-      background: var(--bg-surface);
-      color: var(--text-primary);
-      border: 1px solid var(--border-subtle);
-      border-radius: var(--radius-btn);
-      font-family: var(--font-sans);
-      font-size: 0.84rem;
-      font-weight: 700;
-      cursor: pointer;
-    }
-
-    .btn-forget-printer {
-      height: 34px;
-      background: none;
-      color: var(--status-red);
-      border: 1px solid #FCA5A5;
-      border-radius: var(--radius-btn);
-      font-family: var(--font-sans);
-      font-size: 0.8rem;
-      font-weight: 700;
-      cursor: pointer;
-    }
-
-    .toast-container {
-      position: fixed;
-      bottom: 20px;
-      left: 50%;
-      transform: translateX(-50%);
-      display: flex;
-      flex-direction: column;
       gap: 6px;
-      z-index: 99999;
-      pointer-events: none;
-      width: calc(100% - 32px);
-      max-width: 440px;
+      box-shadow: 0 4px 14px rgba(245, 158, 11, 0.35);
+      transition: transform 0.06s ease, filter 0.1s ease;
     }
 
-    .pos-toast {
-      padding: 0.75rem 1rem;
-      background: var(--text-primary);
+    .print-btn:not(:disabled):active {
+      transform: scale(0.96);
+      filter: brightness(1.08);
+    }
+
+    .print-btn:disabled {
+      background: #1F2937;
+      color: #4B5563;
+      border-color: #374151;
+      box-shadow: none;
+      cursor: not-allowed;
+    }
+
+    /* Subtle Non-Blocking Bottom Toast Notification */
+    #toast {
+      position: absolute;
+      bottom: 138px;
+      left: 12px;
+      right: 12px;
+      background: rgba(17, 24, 39, 0.96);
       color: #FFFFFF;
-      border-radius: var(--radius-btn);
-      font-size: 0.86rem;
-      font-weight: 700;
-      box-shadow: 0 4px 16px rgba(15, 23, 42, 0.25);
-      animation: slideInToast 0.16s cubic-bezier(0.16, 1, 0.3, 1);
+      font-size: 12.5px;
+      font-weight: 800;
+      padding: 10px 14px;
+      border-radius: 10px;
+      border: 1px solid #374151;
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.45);
+      opacity: 0;
+      pointer-events: none;
+      transform: translateY(8px);
+      transition: opacity 0.15s ease, transform 0.15s ease;
+      z-index: 1000;
       text-align: center;
     }
 
-    @keyframes slideInToast {
-      from { transform: translateY(8px); opacity: 0; }
-      to { transform: translateY(0); opacity: 1; }
+    #toast.show {
+      opacity: 1;
+      transform: translateY(0);
     }
 
-    /* ==========================================================================
-       8. THERMAL PRINTER PRINT EMULATION
-       ========================================================================== */
-    @media print {
-      body * {
-        visibility: hidden !important;
-      }
-      .mobile-app-frame,
-      .pos-header,
-      .category-pills-bar,
-      .pos-workspace,
-      .mobile-action-bar,
-      .toast-container {
-        display: none !important;
-      }
-      .thermal-receipt-container {
-        display: block !important;
-        position: static !important;
-      }
-      #thermalPaper,
-      #thermalPaper * {
-        visibility: visible !important;
-      }
-      #thermalPaper {
-        position: absolute !important;
-        left: 0 !important;
-        top: 0 !important;
-        width: 58mm !important;
-        max-width: 58mm !important;
-        padding: 2mm !important;
-        margin: 0 !important;
-        border: none !important;
-        box-shadow: none !important;
-        background: #FFFFFF !important;
-        color: #000000 !important;
-        font-family: 'Space Mono', 'Courier New', Courier, monospace !important;
-        font-size: 11px !important;
-        line-height: 1.25 !important;
-      }
-      @page {
-        margin: 0;
-        size: 58mm auto;
-      }
+    #toast[data-tone="error"] {
+      background: rgba(153, 27, 27, 0.96);
+      border-color: #F87171;
+    }
+
+    #toast[data-tone="success"] {
+      background: rgba(6, 95, 70, 0.96);
+      border-color: #34D399;
+    }
+
+    /* Modals (Printer Setup & Owner Hisaab) */
+    .modal-backdrop {
+      position: absolute;
+      inset: 0;
+      background: rgba(3, 7, 18, 0.72);
+      display: none;
+      align-items: flex-end;
+      justify-content: center;
+      z-index: 500;
+    }
+
+    .modal-backdrop.open {
+      display: flex;
+    }
+
+    .modal-sheet {
+      width: 100%;
+      max-height: 88%;
+      background: #FFFFFF;
+      color: #0F172A;
+      border-radius: 18px 18px 0 0;
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      overflow-y: auto;
+      box-shadow: 0 -12px 30px rgba(0, 0, 0, 0.4);
+    }
+
+    .modal-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid #E2E8F0;
+      padding-bottom: 10px;
+    }
+
+    .modal-title {
+      font-size: 15px;
+      font-weight: 900;
+      color: #0F172A;
+    }
+
+    .modal-close-btn {
+      appearance: none;
+      border: 1px solid #CBD5E1;
+      background: #F1F5F9;
+      color: #0F172A;
+      font-size: 12px;
+      font-weight: 800;
+      padding: 5px 12px;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+
+    .status-card {
+      background: #F8FAFC;
+      border: 1px solid #CBD5E1;
+      border-radius: 10px;
+      padding: 10px 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .status-card-title {
+      font-size: 10px;
+      font-weight: 900;
+      color: #64748B;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .status-card-value {
+      font-size: 13px;
+      font-weight: 800;
+      color: #0F172A;
+    }
+
+    .status-card-sub {
+      font-size: 11.5px;
+      color: #334155;
+      line-height: 1.35;
+    }
+
+    .modal-btn-row {
+      display: flex;
+      gap: 8px;
+    }
+
+    .modal-btn {
+      flex: 1;
+      appearance: none;
+      border: 1.5px solid #CBD5E1;
+      background: #FFFFFF;
+      color: #0F172A;
+      font-size: 12px;
+      font-weight: 800;
+      padding: 10px;
+      min-height: 42px;
+      border-radius: 10px;
+      cursor: pointer;
+      text-align: center;
+      transition: transform 0.05s ease;
+    }
+
+    .modal-btn:not(:disabled):active {
+      transform: scale(0.96);
+    }
+
+    .modal-btn.primary {
+      background: var(--accent);
+      border-color: #D97706;
+      color: #111827;
+    }
+
+    .modal-btn.whatsapp {
+      background: #10B981;
+      border-color: #059669;
+      color: #FFFFFF;
+    }
+
+    .modal-btn.danger {
+      background: #FEF2F2;
+      border-color: #FCA5A5;
+      color: #DC2626;
+    }
+
+    .modal-btn:disabled {
+      opacity: 0.45;
+      cursor: not-allowed;
+    }
+
+    .bonded-list {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      max-height: 210px;
+      overflow-y: auto;
+    }
+
+    .bonded-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      padding: 9px 10px;
+      background: #F8FAFC;
+      border: 1px solid #CBD5E1;
+      border-radius: 10px;
+    }
+
+    .bonded-item.printer-match {
+      border-color: var(--accent);
+      background: #FFFBEB;
+    }
+
+    .bonded-meta {
+      display: flex;
+      flex-direction: column;
+      min-width: 0;
+    }
+
+    .bonded-name {
+      font-size: 12.5px;
+      font-weight: 800;
+      color: #0F172A;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .bonded-mac {
+      font-size: 10.5px;
+      font-weight: 600;
+      color: #64748B;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .connect-dev-btn {
+      appearance: none;
+      border: 1px solid #0F172A;
+      background: #0F172A;
+      color: #FFFFFF;
+      font-size: 11px;
+      font-weight: 800;
+      padding: 6px 12px;
+      border-radius: 8px;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+
+    .connect-dev-btn.connected {
+      background: #059669;
+      border-color: #059669;
+    }
+
+    /* Owner Hisaab Summary Specific Styles */
+    .hisaab-date-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: #111827;
+      color: #F8FAFC;
+      padding: 8px 12px;
+      border-radius: 10px;
+      font-size: 12px;
+      font-weight: 800;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .hisaab-kpi-grid {
+      display: grid;
+      grid-template-columns: 1fr 1.25fr;
+      gap: 8px;
+    }
+
+    .hisaab-kpi-card {
+      background: #F8FAFC;
+      border: 1.5px solid #CBD5E1;
+      border-radius: 10px;
+      padding: 10px 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    .hisaab-kpi-card.cash {
+      background: #ECFDF5;
+      border-color: #6EE7B7;
+    }
+
+    .hisaab-kpi-label {
+      font-size: 10px;
+      font-weight: 900;
+      text-transform: uppercase;
+      color: #64748B;
+      letter-spacing: 0.04em;
+    }
+
+    .hisaab-kpi-card.cash .hisaab-kpi-label {
+      color: #065F46;
+    }
+
+    .hisaab-kpi-val {
+      font-size: 19px;
+      font-weight: 900;
+      color: #0F172A;
+      font-variant-numeric: tabular-nums;
+      line-height: 1.15;
+    }
+
+    .hisaab-kpi-card.cash .hisaab-kpi-val {
+      color: #065F46;
+    }
+
+    .hisaab-breakdown {
+      background: #F8FAFC;
+      border: 1px solid #CBD5E1;
+      border-radius: 10px;
+      padding: 10px 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .hisaab-list {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      max-height: 165px;
+      overflow-y: auto;
+    }
+
+    .hisaab-item-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 12px;
+      font-weight: 800;
+      color: #0F172A;
+      padding: 5px 8px;
+      background: #FFFFFF;
+      border: 1px solid #E2E8F0;
+      border-radius: 6px;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .hisaab-item-qty {
+      background: #FEF3C7;
+      border: 1px solid #FDE68A;
+      color: #92400E;
+      padding: 2px 7px;
+      border-radius: 6px;
+      font-size: 11px;
+      font-weight: 900;
+    }
+
+    .reset-confirm-box {
+      display: none;
+      background: #FEF2F2;
+      border: 1.5px solid #FCA5A5;
+      border-radius: 10px;
+      padding: 10px;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .reset-confirm-box.show {
+      display: flex;
+    }
+
+    .reset-confirm-text {
+      font-size: 12px;
+      font-weight: 800;
+      color: #991B1B;
+      line-height: 1.3;
     }
   </style>
 </head>
 
 <body>
-  <div class="mobile-app-frame">
 
-    <!-- 1. COMPACT TOP STATUS BAR -->
-    <header class="pos-header">
-      <div class="header-left">
-        <span class="brand-logo-icon">🍔</span>
-        <div class="brand-text-col">
-          <h1 class="brand-title">BiteDash</h1>
-          <span class="brand-subtitle">CART POS</span>
-        </div>
-      </div>
-
-      <div class="header-center">
-        <div class="top-token-display" id="topTokenDisplay">TOKEN #043</div>
-      </div>
-
-      <div class="header-right">
-        <button type="button" class="printer-status-pill ready" id="connectBtBtn" title="Thermal Printer • Tap to pair or test">
-          <span class="printer-ready-dot ready" id="printerStatusDot"></span>
-          <span class="printer-ready-text" id="printerBtnText">MPT-II Ready</span>
-        </button>
-        <button type="button" class="btn-clear-ticket" id="clearCartBtn" title="Reset ticket (Esc)">
-          ✕ Reset
+  <div class="pos-screen">
+    <!-- 1. Cohesive Dark Commercial Top Bar -->
+    <header>
+      <div class="brand-group">
+        <div class="brand">STUDENT BURGER</div>
+        <button type="button" class="token-tag" id="tokenDisplay" title="Tap to open Aaj Ka Hisaab">
+          TOKEN #001
         </button>
       </div>
+      <button type="button" class="printer-status" id="printerStatus" data-state="disconnected" title="First-time Bluetooth printer setup">
+        <span class="status-dot" aria-hidden="true"></span>
+        <span id="printerStatusLabel">Not connected</span>
+      </button>
     </header>
 
-    <!-- 2. STICKY HORIZONTAL CATEGORY BAR -->
-    <nav class="category-pills-bar" id="categoryPillsBar">
-      <button type="button" class="cat-pill active" data-category="all">
-        <span class="pill-ur" lang="ur">تمام</span>
-        <span class="pill-en">ALL</span>
-      </button>
-      <button type="button" class="cat-pill" data-category="burger">
-        <span class="pill-dot"></span>
-        <span class="pill-ur" lang="ur">برگر</span>
-        <span class="pill-en">BURGERS</span>
-      </button>
-      <button type="button" class="cat-pill" data-category="side">
-        <span class="pill-dot"></span>
-        <span class="pill-ur" lang="ur">فرائز اور سائیڈز</span>
-        <span class="pill-en">SIDES</span>
-      </button>
-      <button type="button" class="cat-pill" data-category="drink">
-        <span class="pill-dot"></span>
-        <span class="pill-ur" lang="ur">مشروبات</span>
-        <span class="pill-en">DRINKS</span>
-      </button>
+    <!-- 2. Modern Horizontal Pill Category Filter Bar -->
+    <nav class="category-bar" id="categoryBar" aria-label="Menu Categories">
+      <button type="button" class="cat-chip active" data-cat="all">All</button>
+      <button type="button" class="cat-chip" data-cat="burgers" lang="ur">برگر</button>
+      <button type="button" class="cat-chip" data-cat="shawarma" lang="ur">شوارما</button>
+      <button type="button" class="cat-chip" data-cat="sandwiches" lang="ur">سینڈوچ</button>
     </nav>
 
-    <!-- 3. MOBILE-FIRST SPEED GRID WORKSPACE -->
-    <main class="pos-workspace">
-      <section class="speed-pad-panel" id="speedPadPanel">
-        <div class="speed-dial-grid" id="speedDialGrid">
-          <!-- Populated dynamically via JS -->
-        </div>
-      </section>
-    </main>
+    <div id="toast" role="status" aria-live="polite"></div>
 
-    <!-- 4. STICKY BOTTOM CHECKOUT BAR -->
-    <footer class="mobile-action-bar" id="mobileActionBar">
-      <!-- Customer Name Input -->
-      <div class="m-customer-row">
-        <div class="m-customer-wrap">
-          <span class="m-cust-icon">👤</span>
-          <input 
-            type="text" 
-            id="mobileCustomerInput" 
-            class="m-customer-input" 
-            placeholder="گاہک کا نام (Optional Customer Name)..." 
-            autocomplete="off" 
-            spellcheck="false"
-            maxlength="32"
-          />
-          <button type="button" id="mobileClearCustBtn" class="m-clear-cust-btn" style="display: none;" title="Clear">✕</button>
+    <!-- 3. Modern Commercial POS Punch Grid -->
+    <div class="menu-container" id="menuContainer">
+      <div class="menu-section" id="section-burgers" data-section="burgers">
+        <div class="section-title">
+          <span>Burgers</span>
+          <span class="section-title-urdu" lang="ur">برگر</span>
         </div>
+        <div class="grid-2col" id="grid-burgers"></div>
       </div>
 
-      <!-- Summary Row -->
-      <div class="m-action-summary-row">
-        <div class="m-action-meta">
-          <span class="m-badge-count" id="mobileCountBadge">0 ITEMS</span>
-          <span class="m-summary-label">Total:</span>
+      <div class="menu-section" id="section-shawarma" data-section="shawarma">
+        <div class="section-title">
+          <span>Shawarma &amp; Rolls</span>
+          <span class="section-title-urdu" lang="ur">شوارما و رول</span>
         </div>
-        <div class="m-total-val" id="mobileTotalDisplay">Rs. 0</div>
+        <div class="grid-2col" id="grid-shawarma"></div>
       </div>
 
-      <!-- Massive Warm Amber PRINT KOT Button -->
-      <button type="button" class="m-print-kot-btn" id="mobileCheckoutBtn" disabled title="Send KOT to Kitchen & Next Customer [Enter]">
-        PRINT KOT ⚡ [ENTER]
-      </button>
+      <div class="menu-section" id="section-sandwiches" data-section="sandwiches">
+        <div class="section-title">
+          <span>Sandwiches &amp; Fries</span>
+          <span class="section-title-urdu" lang="ur">سینڈوچ و فرائز</span>
+        </div>
+        <div class="grid-2col" id="grid-sandwiches"></div>
+      </div>
+    </div>
+
+    <!-- Slide-Up Running Order Drawer -->
+    <div class="cart-drawer-backdrop" id="cartDrawerBackdrop">
+      <div class="cart-drawer-sheet">
+        <div class="cart-drawer-header">
+          <span class="cart-drawer-title" id="cartDrawerTitle">Current Ticket Items</span>
+          <button type="button" class="cart-drawer-close" id="closeCartDrawerBtn">Done</button>
+        </div>
+        <div class="cart-drawer-list" id="cartDrawerList"></div>
+      </div>
+    </div>
+
+    <!-- Uncertain Print Recovery Banner -->
+    <div class="uncertain-banner" id="uncertainBanner">
+      <div class="uncertain-text" id="uncertainText">
+        Print outcome unknown. Check printer paper before retrying to avoid duplicate KOT.
+      </div>
+      <div class="uncertain-actions">
+        <button type="button" class="uncertain-btn" id="retryPrintBtn">Retry Print</button>
+        <button type="button" class="uncertain-btn confirm" id="confirmPrintedBtn">Printed OK (Next Token)</button>
+      </div>
+    </div>
+
+    <!-- 4. Running Order Ticker Strip -->
+    <div class="cart-strip empty" id="cartStrip" role="button" tabindex="0" title="Tap to view or edit ticket items">
+      <div class="cart-preview-text" id="cartPreviewText">Tap any tile above to punch items</div>
+      <span class="cart-drawer-toggle" id="cartDrawerToggle">Ticket ▲</span>
+    </div>
+
+    <!-- 5. Solid Commercial Bottom Register Bar -->
+    <footer>
+      <div class="register-meta-row">
+        <input type="text" id="customerInput" class="customer-input" maxlength="32" autocomplete="off"
+          placeholder="Customer Name / گاہک کا نام (Optional)">
+        <button type="button" id="clearOrderBtn" class="clear-order-btn" disabled title="Reset draft cart in 1 tap">
+          Clear
+        </button>
+      </div>
+      <div class="checkout-row">
+        <div class="summary-box">
+          <span class="summary-label" id="itemCountLabel">0 ITEMS</span>
+          <span class="summary-total" id="grandTotalDisplay">Rs. 0</span>
+        </div>
+        <button type="button" class="print-btn" id="printBtn" disabled>PRINT KOT ⚡</button>
+      </div>
     </footer>
 
-    <!-- TOAST NOTIFICATION CONTAINER -->
-    <div class="toast-container" id="toastContainer"></div>
-
-    <!-- PRINTER CONFIGURATION DIALOG MODAL -->
-    <div class="printer-modal-backdrop" id="printerModalBackdrop">
-      <div class="printer-modal-card">
-        <div class="printer-modal-header">
-          <div class="printer-modal-title-group">
-            <span class="printer-modal-icon">🖨️</span>
-            <div>
-              <div class="printer-modal-title">Thermal Printer Setup</div>
-              <div class="printer-modal-subtitle">58mm Bluetooth ESC/POS Device</div>
-            </div>
-          </div>
-          <button type="button" class="printer-modal-close" id="closePrinterModalBtn" title="Close">✕</button>
+    <!-- Owner Daily Hisaab (Z-Report) Modal (Triggered by tapping TOKEN badge) -->
+    <div class="modal-backdrop" id="hisaabModal" role="dialog" aria-modal="true" aria-labelledby="hisaabModalTitle">
+      <div class="modal-sheet">
+        <div class="modal-header">
+          <span class="modal-title" id="hisaabModalTitle">Aaj Ka Hisaab • آج کا حساب</span>
+          <button type="button" class="modal-close-btn" id="closeHisaabModalBtn">Close</button>
         </div>
 
-        <div class="printer-modal-body">
-          <div class="printer-status-box" id="modalPrinterStatusBox">
-            <div class="ps-indicator-row">
-              <span class="ps-dot" id="modalStatusDot"></span>
-              <span class="ps-status-text" id="modalStatusText">Unpaired</span>
-            </div>
-            <div class="ps-device-name" id="modalDeviceName">No printer paired</div>
-            <div class="ps-device-id" id="modalDeviceId"></div>
-          </div>
+        <div class="hisaab-date-bar">
+          <span>Aaj Ki Date: <strong id="hisaabDateText">--</strong></span>
+          <span id="hisaabNextTokenText">Next: #001</span>
+        </div>
 
-          <div class="printer-guide-box">
-            <div class="guide-item">
-              <span class="guide-badge">ON-DEMAND</span>
-              <span><strong>YD583 / MPT-II Fast Pipe</strong>: Writes 100-byte raw slices with 10ms intervals.</span>
-            </div>
+        <div class="hisaab-kpi-grid">
+          <div class="hisaab-kpi-card">
+            <span class="hisaab-kpi-label">Total Orders</span>
+            <span class="hisaab-kpi-val" id="hisaabTotalOrders">0</span>
           </div>
-
-          <div class="printer-modal-actions">
-            <button type="button" class="btn-primary-pair" id="pairNewPrinterBtn">
-              🔍 Pair Bluetooth Thermal Printer
-            </button>
-            <button type="button" class="btn-test-print" id="modalTestPrintBtn">
-              🖨️ Print Test Slip
-            </button>
-            <button type="button" class="btn-forget-printer" id="forgetPrinterBtn" style="display: none;">
-              Forget Printer
-            </button>
+          <div class="hisaab-kpi-card cash">
+            <span class="hisaab-kpi-label">Total Cash</span>
+            <span class="hisaab-kpi-val" id="hisaabTotalCash">Rs. 0</span>
           </div>
         </div>
+
+        <div class="hisaab-breakdown">
+          <span class="status-card-title">Top Selling Items Count</span>
+          <div class="hisaab-list" id="hisaabTopItemsList">
+            <div class="status-card-sub">No confirmed orders recorded today yet.</div>
+          </div>
+        </div>
+
+        <div class="modal-btn-row">
+          <button type="button" class="modal-btn primary" id="printSummarySlipBtn">Print Daily Summary 🧾</button>
+          <button type="button" class="modal-btn whatsapp" id="sendWhatsAppBtn">Share WhatsApp 📲</button>
+        </div>
+
+        <div class="reset-confirm-box" id="resetConfirmBox">
+          <div class="reset-confirm-text">
+            Reset Token counter to #001 and archive today's Hisaab orders for a New Day?
+          </div>
+          <div class="modal-btn-row">
+            <button type="button" class="modal-btn" id="cancelResetDayBtn">Cancel</button>
+            <button type="button" class="modal-btn danger" id="confirmResetDayBtn">Yes, Start New Day</button>
+          </div>
+        </div>
+
+        <button type="button" class="modal-btn danger" id="resetDayTriggerBtn">New Day / Reset Token 🔄</button>
       </div>
     </div>
 
-    <!-- PHYSICAL THERMAL RECEIPT (Used for print spooling and window.print fallback) -->
-    <div class="thermal-receipt-container" id="receiptPrintContainer" style="display: none;">
-      <div class="thermal-paper mode-both" id="thermalPaper">
-        <div class="receipt-section kot-section" id="receiptKotSection">
-          <div style="text-align: center; font-weight: bold;">================================</div>
-          <div style="text-align: center; font-weight: bold; font-size: 14px;">*** KITCHEN KOT ***</div>
-          <div style="text-align: center; font-weight: bold;">================================</div>
-          <div style="display: flex; justify-content: space-between; font-weight: bold; font-size: 16px; margin: 4px 0;">
-            <span id="receiptKotToken">TOKEN #043</span>
-            <span>COUNTER</span>
-          </div>
-          <div id="receiptKotCustomerName" style="font-weight: bold; font-size: 13px;">NAME: COUNTER</div>
-          <div style="display: flex; justify-content: space-between; font-size: 11px; margin-bottom: 4px;">
-            <span id="receiptKotDate">22/10/2026</span>
-            <span id="receiptKotTime">02:30 AM</span>
-          </div>
-          <div style="text-align: center;">--------------------------------</div>
-          <div style="display: flex; justify-content: space-between; font-weight: bold;">
-            <span>QTY</span>
-            <span>ITEM</span>
-          </div>
-          <div style="text-align: center;">--------------------------------</div>
-          <div id="receiptKotItemsBody"></div>
-          <div style="text-align: center;">================================</div>
-          <div style="text-align: center; font-size: 11px;">[ KITCHEN COPY • BITEDASH ]</div>
+    <!-- Bluetooth SPP Printer Setup Modal (Only needed once for initial setup) -->
+    <div class="modal-backdrop" id="printerModal" role="dialog" aria-modal="true" aria-labelledby="printerModalTitle">
+      <div class="modal-sheet">
+        <div class="modal-header">
+          <span class="modal-title" id="printerModalTitle">58mm Bluetooth Printer (SPP)</span>
+          <button type="button" class="modal-close-btn" id="closePrinterModalBtn">Close</button>
+        </div>
+
+        <div class="status-card">
+          <span class="status-card-title">Connection Status</span>
+          <span class="status-card-value" id="modalPrinterStateText">Not Connected</span>
+          <span class="status-card-sub" id="modalPrinterHintText">
+            Select your paired printer once. Future prints will auto-connect silently in the background.
+          </span>
+        </div>
+
+        <div class="modal-btn-row">
+          <button type="button" class="modal-btn" id="openBtSettingsBtn">1. Android BT Settings</button>
+          <button type="button" class="modal-btn primary" id="refreshPairedBtn">2. Refresh Paired List</button>
+        </div>
+
+        <div class="bonded-list" id="bondedDevicesList">
+          <div class="status-card-sub">Tap "Refresh Paired List" to load paired Bluetooth devices.</div>
+        </div>
+
+        <div class="modal-btn-row">
+          <button type="button" class="modal-btn primary" id="testPrintBtn" disabled>Print Test Slip</button>
+          <button type="button" class="modal-btn danger" id="disconnectPrinterBtn" disabled>Disconnect</button>
         </div>
       </div>
     </div>
-
   </div>
 
-  <!-- ==========================================================================
-       9. PRODUCTION-GRADE BULLETPROOF JAVASCRIPT
-       ========================================================================== -->
+  <!-- Native Capacitor & Android SPP Printer Bridge -->
+  <script src="android-bridge.js"></script>
   <script>
-    /**
-     * BITEDASH MOBILE FOOD CART TOUCH POS
-     * - Sunlight-Readable BiteDash Theme
-     * - Drag Distance Discrimination (Zero Accidental Punches While Scrolling!)
-     * - Targeted In-Place DOM Badge Updates (Zero Scroll Reset!)
-     * - Raw ESC/POS Bluetooth Engine with Android Native Bridge fallback
-     */
+    const STORAGE_KEY = 'bitedash_pos_state_v1';
+    const TOKEN_STORAGE_KEY = 'bitedash_current_token';
+    const ORDERS_TODAY_KEY = 'bitedash_orders_today';
+    const ORDERS_ARCHIVE_KEY = 'bitedash_orders_last_archive';
+    const LAST_PRINTER_MAC_KEY = 'bitedash_last_printer_mac';
+    const LAST_PRINTER_NAME_KEY = 'bitedash_last_printer_name';
+    const SILENT_CONNECT_TIMEOUT_MS = 2000;
 
-    // 1. SPEED-PAD MENU ITEMS (Categorized 12 Top Items)
-    const SPEED_ITEMS = [
-      // BURGERS
-      {
-        id: 'sp-01',
-        hotkey: '1',
-        name: 'واگیو برگر',
-        urduName: 'واگیو برگر',
-        englishName: 'Wagyu Smash Burger',
-        category: 'burger',
-        image: 'assets/images/wagyu_smash.jpg',
-        price: 1490
-      },
-      {
-        id: 'sp-02',
-        hotkey: '2',
-        name: 'ٹرفل برگر',
-        urduName: 'ٹرفل برگر',
-        englishName: 'Smoked Truffle Burger',
-        category: 'burger',
-        image: 'assets/images/truffle_burger.jpg',
-        price: 1350
-      },
-      {
-        id: 'sp-03',
-        hotkey: '3',
-        name: 'ہلاپینو برگر',
-        urduName: 'ہلاپینو برگر',
-        englishName: 'Crispy Jalapeno Burger',
-        category: 'burger',
-        image: 'assets/images/jalapeno_burger.jpg',
-        price: 1190
-      },
-      {
-        id: 'sp-04',
-        hotkey: '4',
-        name: 'ڈبل چیز برگر',
-        urduName: 'ڈبل چیز برگر',
-        englishName: 'Double Cheese Burger',
-        category: 'burger',
-        image: 'assets/images/double_cheese.jpg',
-        price: 1090
-      },
+    const MENU_ITEMS = [
+      // Category: برگر (Burgers)
+      { id: 'b1', name: 'Shami Burger', short: 'Shami', urdu: 'شامی برگر', cat: 'burgers', price: 150, key: '1' },
+      { id: 'b2', name: 'Lapeta Burger', short: 'Lapeta', urdu: 'لپیٹا برگر', cat: 'burgers', price: 200, key: '2' },
+      { id: 'b3', name: 'Chicken Burger + Fries', short: 'Chk+Fries', urdu: 'چکن برگر + فرائز', cat: 'burgers', price: 300, key: '3' },
+      { id: 'b4', name: 'Zinger Burger + Fries', short: 'Zinger+Fries', urdu: 'زنگر برگر + فرائز', cat: 'burgers', price: 300, key: '4' },
+      { id: 'b5', name: 'Shami Double Egg', short: 'Shami Dbl Egg', urdu: 'شامی ڈبل انڈہ برگر', cat: 'burgers', price: 190, key: '5' },
+      { id: 'b6', name: 'Chicken Double Egg', short: 'Chk Dbl Egg', urdu: 'چکن ڈبل انڈہ برگر', cat: 'burgers', price: 240, key: '6' },
+      { id: 'b7', name: 'Special Lapeta Burger', short: 'Sp Lapeta', urdu: 'اسپیشل لپیٹا برگر', cat: 'burgers', price: 240, key: '7' },
+      { id: 'b8', name: 'Patty Burger + Fries', short: 'Patty+Fries', urdu: 'پیٹی برگر + فرائز', cat: 'burgers', price: 260, key: '8' },
+      { id: 'b9', name: 'Zinger without Fries', short: 'Zinger Only', urdu: 'زنگر برگر بغیر فرائز', cat: 'burgers', price: 270, key: '9' },
+      { id: 'b10', name: 'Extra Cheese Slice', short: 'Extra Cheese', urdu: 'ایکسٹرا چیز', cat: 'burgers', price: 60, key: '0' },
 
-      // FRIES & SIDES
-      {
-        id: 'sp-05',
-        hotkey: '5',
-        name: 'لوڈڈ فرائز',
-        urduName: 'لوڈڈ فرائز',
-        englishName: 'Loaded Truffle Fries',
-        category: 'side',
-        image: 'assets/images/loaded_fries.jpg',
-        price: 690
-      },
-      {
-        id: 'sp-06',
-        hotkey: '6',
-        name: 'پیری پیری فرائز',
-        urduName: 'پیری پیری فرائز',
-        englishName: 'Peri Peri Crispy Fries',
-        category: 'side',
-        image: 'assets/images/peri_fries.jpg',
-        price: 490
-      },
-      {
-        id: 'sp-07',
-        hotkey: '7',
-        name: 'انین رنگز',
-        urduName: 'انین رنگز',
-        englishName: 'Gourmet Onion Rings',
-        category: 'side',
-        image: 'assets/images/onion_rings.jpg',
-        price: 550
-      },
-      {
-        id: 'sp-08',
-        hotkey: '8',
-        name: 'بفیلو ونگز',
-        urduName: 'بفیلو ونگز',
-        englishName: 'Buffalo Wings (6 Pcs)',
-        category: 'side',
-        image: 'assets/images/buffalo_wings.jpg',
-        price: 850
-      },
+      // Category: شوارما و رول (Shawarma & Rolls)
+      { id: 'r1', name: 'Regular Shawarma', short: 'Reg Shawarma', urdu: 'ریگولر شوارما', cat: 'shawarma', price: 150 },
+      { id: 'r2', name: 'Jumbo Shawarma', short: 'Jumbo Shawarma', urdu: 'جمبو شوارما', cat: 'shawarma', price: 200 },
+      { id: 'r3', name: 'Zinger Paratha', short: 'Zinger Paratha', urdu: 'زنگر پراٹھا', cat: 'shawarma', price: 280 },
+      { id: 'r4', name: 'Chicken Platter Shawarma', short: 'Platter Shawarma', urdu: 'چکن پلیٹر شوارما', cat: 'shawarma', price: 400 },
+      { id: 'r5', name: 'Zinger Shawarma', short: 'Zinger Shawarma', urdu: 'زنگر شوارما', cat: 'shawarma', price: 260 },
+      { id: 'r6', name: 'Chicken Paratha Shawarma', short: 'Chk Paratha', urdu: 'چکن پراٹھا شوارما', cat: 'shawarma', price: 260 },
+      { id: 'r7', name: 'Double Lapeta Burger', short: 'Dbl Lapeta', urdu: 'ڈبل لپیٹا برگر', cat: 'shawarma', price: 300 },
 
-      // DRINKS
-      {
-        id: 'sp-09',
-        hotkey: '9',
-        name: 'منٹ لیمونیڈ',
-        urduName: 'منٹ لیمونیڈ',
-        englishName: 'Mint Lemonade Cooler',
-        category: 'drink',
-        image: 'assets/images/mint_cooler.jpg',
-        price: 390
-      },
-      {
-        id: 'sp-10',
-        hotkey: '0',
-        name: 'پیچ آئس ٹی',
-        urduName: 'پیچ آئس ٹی',
-        englishName: 'Artisan Peach Iced Tea',
-        category: 'drink',
-        image: 'assets/images/peach_tea.jpg',
-        price: 420
-      },
-      {
-        id: 'sp-11',
-        hotkey: '-',
-        name: 'کوکا کولا کین',
-        urduName: 'کوکا کولا کین',
-        englishName: 'Classic Coca-Cola Can',
-        category: 'drink',
-        image: 'assets/images/cola_can.jpg',
-        price: 180
-      },
-      {
-        id: 'sp-12',
-        hotkey: '=',
-        name: 'کیریمل شیک',
-        urduName: 'کیریمل شیک',
-        englishName: 'Caramel Thick Shake',
-        category: 'drink',
-        image: 'assets/images/caramel_shake.jpg',
-        price: 650
-      }
+      // Category: سینڈوچ و فرائز (Sandwiches & Fries)
+      { id: 's1', name: 'Chicken Sandwich', short: 'Chk Sandwich', urdu: 'چکن سینڈوچ', cat: 'sandwiches', price: 350 },
+      { id: 's2', name: 'Club Sandwich', short: 'Club Sandwich', urdu: 'کلب سینڈوچ', cat: 'sandwiches', price: 300 },
+      { id: 's3', name: 'Student Special Sandwich', short: 'Student Sp Snd', urdu: 'سٹوڈنٹ اسپیشل سینڈوچ', cat: 'sandwiches', price: 350 },
+      { id: 's4', name: 'Half Fries', short: 'Half Fries', urdu: 'ہاف فرائز', cat: 'sandwiches', price: 150, key: '-' },
+      { id: 's5', name: 'Full Fries', short: 'Full Fries', urdu: 'فل فرائز', cat: 'sandwiches', price: 300, key: '=' }
     ];
 
-    const SPEED_CATEGORIES = [
-      { key: 'burger', titleUrdu: 'برگر', titleEn: 'Burgers' },
-      { key: 'side', titleUrdu: 'فرائز اور سائیڈز', titleEn: 'Sides' },
-      { key: 'drink', titleUrdu: 'مشروبات', titleEn: 'Drinks' }
-    ];
-
-    // 2. STATE MANAGEMENT
     const state = {
-      cart: [], // Array of { id, name, englishName, price, qty }
-      tokenNumber: 43,
-      customerName: '',
+      cart: {},
+      token: 1,
+      customer: '',
       activeCategory: 'all',
-      printerConnected: false,
-      bluetoothDevice: null,
-      gattServer: null,
-      writeCharacteristic: null
+      uncertainToken: null,
+      drawerOpen: false,
+      ordersToday: []
     };
 
-    // 3. LOW-LATENCY SYNTHESIZER SOUND ENGINE (No Audio File Loading Delay)
-    class POSSoundEngine {
-      constructor() {
-        this.ctx = null;
+    function formatTime12Hour(dateObj) {
+      const d = dateObj instanceof Date ? dateObj : new Date();
+      let hours = d.getHours();
+      const mins = String(d.getMinutes()).padStart(2, '0');
+      const ampm = hours >= 12 ? 'PM' : 'AM';
+      hours = hours % 12 || 12;
+      return `${String(hours).padStart(2, '0')}:${mins} ${ampm}`;
+    }
+
+    function formatDatePK(dateObj) {
+      const d = dateObj instanceof Date ? dateObj : new Date();
+      const day = String(d.getDate()).padStart(2, '0');
+      const month = String(d.getMonth() + 1).padStart(2, '0');
+      const year = d.getFullYear();
+      return `${day}/${month}/${year}`;
+    }
+
+    function getSavedPrinterMac() {
+      try {
+        return (localStorage.getItem(LAST_PRINTER_MAC_KEY) || '').trim();
+      } catch (e) {
+        return '';
       }
-      init() {
-        if (!this.ctx) {
-          const AudioCtx = window.AudioContext || window.webkitAudioContext;
-          if (AudioCtx) this.ctx = new AudioCtx();
+    }
+
+    function savePrinterMac(address, name) {
+      if (!address) return;
+      try {
+        localStorage.setItem(LAST_PRINTER_MAC_KEY, String(address).trim());
+        if (name) {
+          localStorage.setItem(LAST_PRINTER_NAME_KEY, String(name).trim());
         }
-        if (this.ctx && this.ctx.state === 'suspended') {
-          this.ctx.resume();
-        }
-      }
-      playBeep() {
-        try {
-          this.init();
-          if (!this.ctx) return;
-          const osc = this.ctx.createOscillator();
-          const gain = this.ctx.createGain();
-          osc.type = 'sine';
-          osc.frequency.setValueAtTime(1550, this.ctx.currentTime);
-          gain.gain.setValueAtTime(0.18, this.ctx.currentTime);
-          gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.05);
-          osc.connect(gain);
-          gain.connect(this.ctx.destination);
-          osc.start();
-          osc.stop(this.ctx.currentTime + 0.05);
-        } catch (e) {}
-      }
-      playRemoveBeep() {
-        try {
-          this.init();
-          if (!this.ctx) return;
-          const osc = this.ctx.createOscillator();
-          const gain = this.ctx.createGain();
-          osc.type = 'triangle';
-          osc.frequency.setValueAtTime(420, this.ctx.currentTime);
-          gain.gain.setValueAtTime(0.15, this.ctx.currentTime);
-          gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.08);
-          osc.connect(gain);
-          gain.connect(this.ctx.destination);
-          osc.start();
-          osc.stop(this.ctx.currentTime + 0.08);
-        } catch (e) {}
-      }
-      playPrinterFeed() {
-        try {
-          this.init();
-          if (!this.ctx) return;
-          const now = this.ctx.currentTime;
-          for (let i = 0; i < 4; i++) {
-            const osc = this.ctx.createOscillator();
-            const gain = this.ctx.createGain();
-            osc.type = 'sawtooth';
-            osc.frequency.setValueAtTime(750 + (i % 2) * 200, now + i * 0.04);
-            gain.gain.setValueAtTime(0.12, now + i * 0.04);
-            gain.gain.exponentialRampToValueAtTime(0.001, now + i * 0.04 + 0.03);
-            osc.connect(gain);
-            gain.connect(this.ctx.destination);
-            osc.start(now + i * 0.04);
-            osc.stop(now + i * 0.04 + 0.03);
+      } catch (e) {}
+    }
+
+    function loadPersistedState() {
+      try {
+        // 1. Load draft cart & uncertain state
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if (raw) {
+          const parsed = JSON.parse(raw);
+          if (parsed && typeof parsed === 'object') {
+            if (parsed.cart && typeof parsed.cart === 'object') {
+              state.cart = {};
+              MENU_ITEMS.forEach(item => {
+                const q = Number(parsed.cart[item.id] || 0);
+                if (Number.isInteger(q) && q > 0) {
+                  state.cart[item.id] = q;
+                }
+              });
+            }
+            if (typeof parsed.customer === 'string') {
+              state.customer = parsed.customer.slice(0, 32);
+            }
+            if (parsed.uncertainToken) {
+              state.uncertainToken = parsed.uncertainToken;
+            }
           }
-        } catch (e) {}
+        }
+
+        // 2. Load Dynamic Auto-Increment Token (`bitedash_current_token`, default: 1)
+        const storedToken = Number(localStorage.getItem(TOKEN_STORAGE_KEY));
+        if (Number.isInteger(storedToken) && storedToken >= 1) {
+          state.token = storedToken;
+        } else {
+          state.token = 1;
+          localStorage.setItem(TOKEN_STORAGE_KEY, '1');
+        }
+
+        // 3. Load Today's Confirmed Orders (`bitedash_orders_today`)
+        const rawOrders = localStorage.getItem(ORDERS_TODAY_KEY);
+        if (rawOrders) {
+          const parsedOrders = JSON.parse(rawOrders);
+          if (Array.isArray(parsedOrders)) {
+            state.ordersToday = parsedOrders;
+          }
+        }
+      } catch (e) {
+        console.warn('Could not restore persisted POS state:', e);
       }
     }
-    const soundEngine = new POSSoundEngine();
 
-    // 4. UTILITIES
-    function formatPKR(amount) {
-      return `Rs. ${Math.round(amount || 0).toLocaleString('en-PK')}`;
+    function savePersistedState() {
+      try {
+        localStorage.setItem(TOKEN_STORAGE_KEY, String(state.token));
+        localStorage.setItem(STORAGE_KEY, JSON.stringify({
+          cart: state.cart,
+          token: state.token,
+          customer: state.customer,
+          uncertainToken: state.uncertainToken
+        }));
+      } catch (e) {}
     }
 
-    function showToast(message) {
-      const container = document.getElementById('toastContainer');
-      if (!container) return;
-      while (container.firstChild) container.removeChild(container.firstChild);
-
-      const toast = document.createElement('div');
-      toast.className = 'pos-toast';
-      toast.textContent = message;
-      container.appendChild(toast);
-
-      setTimeout(() => {
-        toast.style.opacity = '0';
-        toast.style.transform = 'translateY(8px)';
-        toast.style.transition = 'all 0.18s ease';
-        setTimeout(() => {
-          if (toast.parentNode === container) container.removeChild(toast);
-        }, 180);
-      }, 2000);
+    function saveOrdersToday() {
+      try {
+        localStorage.setItem(ORDERS_TODAY_KEY, JSON.stringify(state.ordersToday));
+      } catch (e) {}
     }
 
-    // 5. RENDERING SPEED GRID
-    function renderSpeedGrid() {
-      const grid = document.getElementById('speedDialGrid');
-      if (!grid) return;
+    function recordConfirmedOrderToHisaab(printedToken) {
+      let itemsCount = 0;
+      let total = 0;
+      const items = [];
 
-      const activeCat = state.activeCategory || 'all';
-      const categoriesToRender = activeCat === 'all'
-        ? SPEED_CATEGORIES
-        : SPEED_CATEGORIES.filter(c => c.key === activeCat);
+      MENU_ITEMS.forEach(item => {
+        const qty = state.cart[item.id] || 0;
+        if (qty > 0) {
+          const linePrice = item.price * qty;
+          itemsCount += qty;
+          total += linePrice;
+          items.push({
+            name: item.name,
+            qty: qty,
+            price: linePrice
+          });
+        }
+      });
 
-      grid.innerHTML = `
-        <div class="speed-categories-container">
-          ${categoriesToRender.map(cat => {
-            const catItems = SPEED_ITEMS.filter(it => it.category === cat.key);
-            if (catItems.length === 0) return '';
+      if (itemsCount === 0) return;
 
-            return `
-              <div class="speed-category-group" data-category="${cat.key}" id="cat-group-${cat.key}">
-                <div class="category-header-bar">
-                  <div class="category-tag">
-                    <span class="cat-pill-dot"></span>
-                    <span class="cat-title-ur" lang="ur">${cat.titleUrdu}</span>
-                    <span class="cat-title-sep">—</span>
-                    <span class="cat-title-en">${cat.titleEn}</span>
-                  </div>
-                  <span class="cat-count-badge">${catItems.length} ITEMS</span>
-                </div>
-                <div class="category-tiles-grid">
-                  ${catItems.map(item => {
-                    const cartEntry = state.cart.find(c => c.id === item.id);
-                    const qty = cartEntry ? cartEntry.qty : 0;
-                    const hasQtyClass = qty > 0 ? 'has-qty' : '';
+      const record = {
+        token: printedToken,
+        time: formatTime12Hour(new Date()),
+        total: total,
+        itemsCount: itemsCount,
+        items: items
+      };
 
-                    return `
-                      <div 
-                        class="speed-tile ${hasQtyClass}" 
-                        data-id="${item.id}"
-                        id="tile-${item.id}"
-                        role="button"
-                        tabindex="0"
-                        title="${item.urduName} (${item.englishName}) - ${formatPKR(item.price)}"
-                      >
-                        <div class="tile-image-section">
-                          <img 
-                            src="${item.image}" 
-                            alt="${item.englishName}" 
-                            class="tile-thumbnail" 
-                            loading="eager" 
-                            draggable="false"
-                            onerror="this.style.display='none'"
-                          />
-                          <span class="tile-hotkey-tag">[${item.hotkey.toUpperCase()}]</span>
-                          <span class="tile-qty-badge" id="badge-${item.id}" style="${qty > 0 ? 'display:flex;' : 'display:none;'}">x${qty}</span>
-                        </div>
-                        <div class="tile-info-section">
-                          <div class="tile-urdu-name" lang="ur">${item.urduName}</div>
-                          <div class="tile-price">${formatPKR(item.price)}</div>
-                        </div>
-                      </div>
-                    `;
-                  }).join('')}
-                </div>
-              </div>
-            `;
-          }).join('')}
-        </div>
-      `;
+      state.ordersToday.push(record);
+      saveOrdersToday();
     }
 
-    // 6. BULLETPROOF TOUCH & SCROLL DISCRIMINATOR
-    let isPointerMoved = false;
-    let pointerStartX = 0;
-    let pointerStartY = 0;
-    let pointerStartTime = 0;
+    function renderMenu() {
+      ['burgers', 'shawarma', 'sandwiches'].forEach(cat => {
+        const grid = document.getElementById(`grid-${cat}`);
+        if (!grid) return;
+        const items = MENU_ITEMS.filter(i => i.cat === cat);
+        grid.innerHTML = items.map(item => `
+          <div class="tile" data-id="${item.id}" data-cat="${item.cat}" id="tile-${item.id}" role="button" tabindex="0" aria-label="${item.name} ${item.price}">
+            <div class="tile-header">
+              <div class="item-name-urdu" lang="ur">${item.urdu}</div>
+              <div class="item-name-en">${item.name}</div>
+            </div>
+            <div class="tile-footer">
+              <span class="item-price">${item.price}/-</span>
+            </div>
+            <div class="tile-stepper">
+              <button type="button" class="step-btn minus" data-minus-id="${item.id}" aria-label="Decrease ${item.name}">−</button>
+              <span class="qty-badge" id="badge-${item.id}">0</span>
+              <button type="button" class="step-btn plus" data-plus-id="${item.id}" aria-label="Increase ${item.name}">+</button>
+            </div>
+          </div>
+        `).join('');
+      });
 
-    function setupTouchDiscrimination() {
-      const panel = document.getElementById('speedPadPanel');
-      if (!panel) return;
+      setupTouchSafeMenuListeners();
+    }
 
-      // Pointerdown records start coordinates
-      panel.addEventListener('pointerdown', (e) => {
-        isPointerMoved = false;
-        pointerStartX = e.clientX;
-        pointerStartY = e.clientY;
-        pointerStartTime = Date.now();
+    function setupTouchSafeMenuListeners() {
+      const container = document.getElementById('menuContainer');
+      let startX = 0;
+      let startY = 0;
+      let isDragging = false;
+      let lastScrollTime = 0;
+
+      container.addEventListener('scroll', () => {
+        lastScrollTime = Date.now();
+        isDragging = true;
       }, { passive: true });
 
-      // If finger moves more than 8 pixels, mark as scrolling gesture!
-      panel.addEventListener('pointermove', (e) => {
-        if (isPointerMoved) return;
-        const dx = Math.abs(e.clientX - pointerStartX);
-        const dy = Math.abs(e.clientY - pointerStartY);
-        if (dx > 8 || dy > 8) {
-          isPointerMoved = true;
+      container.addEventListener('pointerdown', (e) => {
+        startX = e.clientX;
+        startY = e.clientY;
+        isDragging = (Date.now() - lastScrollTime < 120);
+        const tile = e.target.closest('.tile');
+        if (tile && !e.target.closest('.step-btn')) {
+          tile.classList.add('pressed');
         }
       }, { passive: true });
 
-      // Click event fires only if NOT a drag/scroll
-      panel.addEventListener('click', (e) => {
-        if (isPointerMoved) {
+      container.addEventListener('pointermove', (e) => {
+        if (isDragging) return;
+        if (Math.abs(e.clientX - startX) > 10 || Math.abs(e.clientY - startY) > 10) {
+          isDragging = true;
+          document.querySelectorAll('.tile.pressed').forEach(el => el.classList.remove('pressed'));
+        }
+      }, { passive: true });
+
+      container.addEventListener('pointerup', () => {
+        document.querySelectorAll('.tile.pressed').forEach(el => el.classList.remove('pressed'));
+      }, { passive: true });
+
+      container.addEventListener('pointercancel', () => {
+        isDragging = true;
+        document.querySelectorAll('.tile.pressed').forEach(el => el.classList.remove('pressed'));
+      }, { passive: true });
+
+      container.addEventListener('click', (e) => {
+        if (isDragging || (Date.now() - lastScrollTime < 120)) {
           e.preventDefault();
           e.stopPropagation();
           return;
         }
 
-        const tile = e.target.closest('.speed-tile');
-        if (!tile) return;
+        const minusBtn = e.target.closest('[data-minus-id]');
+        if (minusBtn) {
+          e.preventDefault();
+          e.stopPropagation();
+          decrementItem(minusBtn.dataset.minusId);
+          return;
+        }
 
-        const itemId = tile.dataset.id;
-        if (!itemId) return;
+        const plusBtn = e.target.closest('[data-plus-id]');
+        if (plusBtn) {
+          e.preventDefault();
+          e.stopPropagation();
+          incrementItem(plusBtn.dataset.plusId);
+          return;
+        }
 
-        e.preventDefault();
-        soundEngine.playBeep();
-        addToCart(itemId);
-
-        // Tactile punch animation
-        tile.classList.remove('pulse-active');
-        void tile.offsetWidth;
-        tile.classList.add('pulse-active');
-      });
-
-      // Right-click or long-press contextmenu decrements item
-      panel.addEventListener('contextmenu', (e) => {
-        const tile = e.target.closest('.speed-tile');
-        if (!tile) return;
-        e.preventDefault();
-        const itemId = tile.dataset.id;
-        if (!itemId) return;
-        removeFromCart(itemId);
+        const tile = e.target.closest('.tile');
+        if (tile && tile.dataset.id) {
+          incrementItem(tile.dataset.id);
+        }
       });
     }
 
-    // 7. TARGETED IN-PLACE TILE BADGE & BOTTOM BAR UPDATES (ZERO SCROLL FLICKER!)
-    function updateTileBadge(itemId) {
-      const tile = document.getElementById(`tile-${itemId}`);
-      const badge = document.getElementById(`badge-${itemId}`);
-      if (!tile || !badge) return;
+    function incrementItem(id) {
+      state.cart[id] = (state.cart[id] || 0) + 1;
+      state.uncertainToken = null;
+      savePersistedState();
+      updateUI();
+    }
 
-      const cartEntry = state.cart.find(c => c.id === itemId);
-      const qty = cartEntry ? cartEntry.qty : 0;
-
-      if (qty > 0) {
-        tile.classList.add('has-qty');
-        badge.textContent = `x${qty}`;
-        badge.style.display = 'flex';
+    function decrementItem(id) {
+      if (!state.cart[id]) return;
+      if (state.cart[id] > 1) {
+        state.cart[id] -= 1;
       } else {
-        tile.classList.remove('has-qty');
-        badge.textContent = '';
-        badge.style.display = 'none';
+        delete state.cart[id];
       }
+      state.uncertainToken = null;
+      savePersistedState();
+      updateUI();
     }
 
-    function updateBottomBar() {
-      const totalItems = state.cart.reduce((sum, item) => sum + item.qty, 0);
-      const totalPrice = state.cart.reduce((sum, item) => sum + (item.price * item.qty), 0);
-
-      const mCountBadge = document.getElementById('mobileCountBadge');
-      if (mCountBadge) {
-        mCountBadge.textContent = `${totalItems} ${totalItems === 1 ? 'ITEM' : 'ITEMS'}`;
-      }
-
-      const mTotal = document.getElementById('mobileTotalDisplay');
-      if (mTotal) {
-        mTotal.textContent = `Rs. ${totalPrice.toLocaleString('en-PK')}`;
-      }
-
-      const mCheckoutBtn = document.getElementById('mobileCheckoutBtn');
-      if (mCheckoutBtn) {
-        mCheckoutBtn.disabled = totalItems === 0;
-      }
+    function toggleItem(id) {
+      incrementItem(id);
     }
 
-    function addToCart(itemId) {
-      const item = SPEED_ITEMS.find(i => i.id === itemId);
-      if (!item) return;
-
-      const existing = state.cart.find(c => c.id === itemId);
-      if (existing) {
-        existing.qty += 1;
-      } else {
-        state.cart.push({
-          id: item.id,
-          name: item.name,
-          urduName: item.urduName,
-          englishName: item.englishName,
-          price: item.price,
-          qty: 1
-        });
-      }
-
-      updateTileBadge(itemId);
-      updateBottomBar();
+    function clearCurrentOrder() {
+      if (isPrinting) return;
+      state.cart = {};
+      state.customer = '';
+      state.uncertainToken = null;
+      state.drawerOpen = false;
+      document.getElementById('customerInput').value = '';
+      savePersistedState();
+      updateUI();
+      showToast('Draft order cleared.', 'default');
     }
 
-    function removeFromCart(itemId) {
-      const index = state.cart.findIndex(c => c.id === itemId);
-      if (index === -1) return;
-
-      soundEngine.playRemoveBeep();
-      if (state.cart[index].qty > 1) {
-        state.cart[index].qty -= 1;
-      } else {
-        state.cart.splice(index, 1);
-      }
-
-      updateTileBadge(itemId);
-      updateBottomBar();
+    function completeOrderAndAdvanceToken() {
+      const printedToken = state.token;
+      recordConfirmedOrderToHisaab(printedToken);
+      state.cart = {};
+      state.customer = '';
+      state.uncertainToken = null;
+      state.drawerOpen = false;
+      state.token += 1;
+      document.getElementById('customerInput').value = '';
+      savePersistedState();
+      updateUI();
+      return printedToken;
     }
 
-    function clearCart() {
-      const previousIds = state.cart.map(c => c.id);
-      state.cart = [];
-      previousIds.forEach(id => updateTileBadge(id));
-      setCustomerName('');
-      updateBottomBar();
-      soundEngine.playRemoveBeep();
-      showToast('Cart Cleared');
-    }
+    function updateUI() {
+      let totalQty = 0;
+      let grandTotal = 0;
+      const activeEntries = [];
 
-    function setCustomerName(val) {
-      state.customerName = val;
-      const input = document.getElementById('mobileCustomerInput');
-      const clearBtn = document.getElementById('mobileClearCustBtn');
-      if (input && input.value !== val) input.value = val;
-      if (clearBtn) clearBtn.style.display = val.trim() ? 'flex' : 'none';
-    }
+      MENU_ITEMS.forEach(item => {
+        const qty = state.cart[item.id] || 0;
+        const tile = document.getElementById(`tile-${item.id}`);
+        const badge = document.getElementById(`badge-${item.id}`);
+        if (!tile || !badge) return;
 
-    function getCustomerName() {
-      const val = (state.customerName || '').trim();
-      return val || 'Counter';
-    }
-
-    // 8. ESC/POS RECEIPT GENERATOR & BLUETOOTH ENGINE
-    const ESC = 0x1B;
-    const GS = 0x1D;
-    const LF = 0x0A;
-
-    function sanitizeAscii(str) {
-      if (!str) return '';
-      return String(str).replace(/[^\x20-\x7E]/g, '').trim();
-    }
-
-    function stringToAsciiBytes(str) {
-      const bytes = [];
-      for (let i = 0; i < str.length; i++) {
-        const code = str.charCodeAt(i);
-        bytes.push(code <= 0x7F ? code : 0x20);
-      }
-      return bytes;
-    }
-
-    function buildKitchenKotEscPos(order) {
-      const bytes = [];
-      function cmd(...cmdBytes) { for (const b of cmdBytes) bytes.push(b); }
-      function line(str = '') {
-        const ascii = stringToAsciiBytes(sanitizeAscii(str));
-        for (const b of ascii) bytes.push(b);
-        bytes.push(LF);
-      }
-
-      // Init & Center
-      cmd(ESC, 0x40); // Init
-      cmd(ESC, 0x61, 0x01); // Center Align
-      line('================================');
-      cmd(ESC, 0x45, 0x01); // Bold ON
-      line('*** KITCHEN KOT ***');
-      cmd(ESC, 0x45, 0x00); // Bold OFF
-      line('================================');
-
-      // Double-size Token
-      cmd(GS, 0x21, 0x11); // Double size
-      cmd(ESC, 0x45, 0x01);
-      line(`TOKEN #${sanitizeAscii(order.token)}`);
-      cmd(GS, 0x21, 0x00); // Normal size
-      cmd(ESC, 0x45, 0x00);
-
-      // Customer Name
-      cmd(ESC, 0x45, 0x01);
-      line(`NAME: ${sanitizeAscii(order.customerName).toUpperCase()}`);
-      cmd(ESC, 0x45, 0x00);
-
-      // Left Align & Meta
-      cmd(ESC, 0x61, 0x00);
-      line(`TIME: ${sanitizeAscii(order.timestamp)}`);
-      line('--------------------------------');
-      cmd(ESC, 0x45, 0x01);
-      line('QTY  ITEM');
-      cmd(ESC, 0x45, 0x00);
-      line('--------------------------------');
-
-      // Items
-      order.items.forEach(it => {
-        const cleanName = sanitizeAscii(it.englishName || it.name).toUpperCase();
-        cmd(ESC, 0x45, 0x01);
-        line(`[ ${it.qty} ]  ${cleanName}`);
-        cmd(ESC, 0x45, 0x00);
+        if (qty > 0) {
+          tile.classList.add('active');
+          badge.textContent = `${qty}`;
+          totalQty += qty;
+          grandTotal += item.price * qty;
+          activeEntries.push({ item, qty });
+        } else {
+          tile.classList.remove('active');
+          badge.textContent = '0';
+        }
       });
 
-      line('================================');
-      line('[ KITCHEN COPY • BITEDASH ]');
+      document.getElementById('tokenDisplay').textContent = `TOKEN #${String(state.token).padStart(3, '0')}`;
+      document.getElementById('itemCountLabel').textContent = `${totalQty} ITEM${totalQty === 1 ? '' : 'S'}`;
+      document.getElementById('grandTotalDisplay').textContent = `Rs. ${grandTotal.toLocaleString()}`;
+      document.getElementById('printBtn').disabled = isPrinting || totalQty === 0;
+      document.getElementById('clearOrderBtn').disabled = isPrinting || (totalQty === 0 && !state.customer);
 
-      // Feed & Cut
-      bytes.push(LF, LF, LF, LF);
-      cmd(GS, 0x56, 0x00); // Cut
-      return new Uint8Array(bytes);
+      // Update live itemized running ticker & slide-up drawer
+      const cartStrip = document.getElementById('cartStrip');
+      const cartPreviewText = document.getElementById('cartPreviewText');
+      const cartDrawerToggle = document.getElementById('cartDrawerToggle');
+      const cartDrawerBackdrop = document.getElementById('cartDrawerBackdrop');
+      const cartDrawerList = document.getElementById('cartDrawerList');
+      const cartDrawerTitle = document.getElementById('cartDrawerTitle');
+
+      if (activeEntries.length === 0) {
+        state.drawerOpen = false;
+        cartStrip.classList.add('empty');
+        cartPreviewText.textContent = 'Tap any tile above to punch items';
+        cartDrawerBackdrop.classList.remove('open');
+      } else {
+        cartStrip.classList.remove('empty');
+        cartPreviewText.textContent = activeEntries
+          .map(({ item, qty }) => `${qty}x ${item.short}`)
+          .join(', ');
+        cartDrawerToggle.textContent = state.drawerOpen ? 'Hide ▼' : `Ticket (${totalQty}) ▲`;
+        cartDrawerTitle.textContent = `Active Ticket (${totalQty})`;
+
+        if (state.drawerOpen) {
+          cartDrawerBackdrop.classList.add('open');
+          cartDrawerList.innerHTML = activeEntries.map(({ item, qty }) => `
+            <div class="drawer-row">
+              <div class="drawer-item-info">
+                <span class="drawer-item-name">${item.urdu} — ${item.name}</span>
+                <span class="drawer-item-sub">Rs. ${item.price.toLocaleString()} × ${qty} = Rs. ${(item.price * qty).toLocaleString()}</span>
+              </div>
+              <div class="drawer-controls">
+                <button type="button" class="step-btn minus" data-drawer-minus="${item.id}" aria-label="Decrease ${item.name}">−</button>
+                <span class="qty-badge">${qty}</span>
+                <button type="button" class="step-btn plus" data-drawer-plus="${item.id}" aria-label="Increase ${item.name}">+</button>
+              </div>
+            </div>
+          `).join('');
+        } else {
+          cartDrawerBackdrop.classList.remove('open');
+        }
+      }
+
+      const banner = document.getElementById('uncertainBanner');
+      const bannerText = document.getElementById('uncertainText');
+      if (state.uncertainToken && totalQty > 0) {
+        bannerText.textContent =
+          `Print outcome for TOKEN #${String(state.uncertainToken).padStart(3, '0')} was uncertain. Check printer before retrying.`;
+        banner.classList.add('show');
+      } else {
+        banner.classList.remove('show');
+      }
     }
 
-    async function dispatchPrintJob(escposBytes) {
-      // 1. Check Native Android Bridge (Capacitor/Cordova)
-      if (window.AndroidPOSBridge && typeof window.AndroidPOSBridge.isNative === 'function' && window.AndroidPOSBridge.isNative()) {
-        try {
-          await window.AndroidPOSBridge.sendEscPosBytes(escposBytes);
+    // Vyapar-Style Silent Background Auto-Connect Helper (2-Second Timeout, No Modal Popups)
+    async function ensureSilentPrinterConnection() {
+      const bridge = window.AndroidPOSBridge;
+      if (!bridge || !bridge.isNative()) {
+        return false;
+      }
+
+      try {
+        const alreadyConnected = typeof bridge.isConnected === 'function'
+          ? await bridge.isConnected()
+          : Boolean((await bridge.getStatus()).connected);
+
+        if (alreadyConnected) {
           return true;
-        } catch (e) {
-          console.warn('[Android Bridge Print Fail, Falling back]:', e);
         }
-      }
+      } catch (e) {}
 
-      // 2. Check Web Bluetooth active characteristic
-      if (state.writeCharacteristic && state.bluetoothDevice && state.bluetoothDevice.gatt && state.bluetoothDevice.gatt.connected) {
-        const CHUNK_SIZE = 100;
-        for (let offset = 0; offset < escposBytes.length; offset += CHUNK_SIZE) {
-          const chunk = escposBytes.slice(offset, offset + CHUNK_SIZE);
-          if (typeof state.writeCharacteristic.writeValueWithoutResponse === 'function') {
-            await state.writeCharacteristic.writeValueWithoutResponse(chunk);
-          } else {
-            await state.writeCharacteristic.writeValue(chunk);
+      let targetMac = getSavedPrinterMac();
+
+      // If no saved MAC yet on this phone, silently check if a printer is already paired in Android BT
+      if (!targetMac && typeof bridge.listBondedDevices === 'function') {
+        try {
+          const bonded = await bridge.listBondedDevices();
+          if (Array.isArray(bonded) && bonded.length > 0) {
+            const preferred = bonded.find(d => d.isLikelyPrinter) || bonded[0];
+            if (preferred && preferred.address) {
+              targetMac = preferred.address;
+              savePrinterMac(preferred.address, preferred.name);
+            }
           }
-          await new Promise(r => setTimeout(r, 10));
-        }
-        return true;
+        } catch (e) {}
       }
 
-      // 3. Fallback: Emulate print to window
-      console.log('[Print Engine] Dispatched ESC/POS payload (' + escposBytes.length + ' bytes).');
-      return true;
+      if (!targetMac) {
+        return false;
+      }
+
+      setPrinterStatus('connecting', 'Connecting...');
+      try {
+        const res = await bridge.connect(targetMac, SILENT_CONNECT_TIMEOUT_MS);
+        if (res && res.connected) {
+          savePrinterMac(res.address || targetMac, res.name);
+          setPrinterStatus('ready', res.name || targetMac);
+          return true;
+        }
+      } catch (err) {
+        // Silent failure: caller shows non-blocking toast
+      }
+
+      setPrinterStatus('disconnected', 'Not connected');
+      return false;
     }
 
-    // 9. PRINT KOT PRIMARY ACTION TRIGGER
-    async function printKitchenKOT() {
-      if (state.cart.length === 0) return;
+    // Owner Hisaab ("Aaj Ka Hisaab" Z-Report) Calculation & Modal Logic
+    const hisaabModal = document.getElementById('hisaabModal');
+    const resetConfirmBox = document.getElementById('resetConfirmBox');
+    const resetDayTriggerBtn = document.getElementById('resetDayTriggerBtn');
 
-      const currentToken = state.tokenNumber;
-      const tokenFormatted = String(currentToken).padStart(3, '0');
-      const custName = getCustomerName();
-      const nowStr = `${new Date().toLocaleDateString('en-GB')} ${new Date().toLocaleTimeString('en-PK')}`;
+    function computeHisaabSummary() {
+      const orders = Array.isArray(state.ordersToday) ? state.ordersToday : [];
+      const totalOrders = orders.length;
+      let totalCash = 0;
+      const itemMap = {};
 
-      // Populate thermal receipt emulation container
-      const tokenEl = document.getElementById('receiptKotToken');
-      if (tokenEl) tokenEl.textContent = `TOKEN #${tokenFormatted}`;
-      const nameEl = document.getElementById('receiptKotCustomerName');
-      if (nameEl) nameEl.textContent = `NAME: ${custName.toUpperCase()}`;
-      const timeEl = document.getElementById('receiptKotTime');
-      if (timeEl) timeEl.textContent = new Date().toLocaleTimeString('en-PK');
-      const dateEl = document.getElementById('receiptKotDate');
-      if (dateEl) dateEl.textContent = new Date().toLocaleDateString('en-GB');
+      orders.forEach(ord => {
+        totalCash += Number(ord.total || 0);
+        if (Array.isArray(ord.items)) {
+          ord.items.forEach(it => {
+            const name = String(it.name || 'Item');
+            const qty = Number(it.qty || 0);
+            const rev = Number(it.price || 0);
+            if (!itemMap[name]) {
+              itemMap[name] = { name, qty: 0, revenue: 0 };
+            }
+            itemMap[name].qty += qty;
+            itemMap[name].revenue += rev;
+          });
+        }
+      });
 
-      const itemsBody = document.getElementById('receiptKotItemsBody');
-      if (itemsBody) {
-        itemsBody.innerHTML = state.cart.map(it => `
-          <div style="display: flex; justify-content: space-between; font-weight: bold; margin: 3px 0;">
-            <span style="min-width: 35px;">[ ${it.qty} ]</span>
-            <span style="flex: 1; text-align: left;">${it.englishName}</span>
+      const breakdown = Object.values(itemMap).sort((a, b) => b.qty - a.qty || b.revenue - a.revenue);
+
+      return {
+        date: formatDatePK(new Date()),
+        totalOrders,
+        totalCash,
+        topItems: breakdown.slice(0, 5),
+        allItems: breakdown
+      };
+    }
+
+    function renderHisaabModal() {
+      const summary = computeHisaabSummary();
+      document.getElementById('hisaabDateText').textContent = summary.date;
+      document.getElementById('hisaabNextTokenText').textContent = `Next: #${String(state.token).padStart(3, '0')}`;
+      document.getElementById('hisaabTotalOrders').textContent = `${summary.totalOrders}`;
+      document.getElementById('hisaabTotalCash').textContent = `Rs. ${summary.totalCash.toLocaleString()}`;
+
+      const listEl = document.getElementById('hisaabTopItemsList');
+      if (summary.topItems.length === 0) {
+        listEl.innerHTML = '<div class="status-card-sub">No confirmed orders recorded today yet.</div>';
+      } else {
+        listEl.innerHTML = summary.topItems.map((item, idx) => `
+          <div class="hisaab-item-row">
+            <span>${idx + 1}. ${escapeHtml(item.name)}</span>
+            <span class="hisaab-item-qty">${item.qty} sold • Rs. ${item.revenue.toLocaleString()}</span>
           </div>
         `).join('');
       }
-
-      soundEngine.playPrinterFeed();
-      showToast(`🖨️ Printing TOKEN #${tokenFormatted}...`);
-
-      const orderData = {
-        token: tokenFormatted,
-        customerName: custName,
-        timestamp: nowStr,
-        items: [...state.cart]
-      };
-
-      const escposBytes = buildKitchenKotEscPos(orderData);
-      await dispatchPrintJob(escposBytes);
-
-      // Increment Token Number & Reset Register
-      state.tokenNumber += 1;
-      const nextTokenStr = `TOKEN #${String(state.tokenNumber).padStart(3, '0')}`;
-      const tokenDisplay = document.getElementById('topTokenDisplay');
-      if (tokenDisplay) tokenDisplay.textContent = nextTokenStr;
-
-      // Clean Cart & Badges
-      const previousIds = state.cart.map(c => c.id);
-      state.cart = [];
-      previousIds.forEach(id => updateTileBadge(id));
-      setCustomerName('');
-      updateBottomBar();
-
-      showToast(`✅ TOKEN #${tokenFormatted} Sent to Kitchen!`);
     }
 
-    // 10. BLUETOOTH PAIRING & SETUP MODAL
-    async function pairBluetoothPrinter() {
-      if (!navigator.bluetooth || typeof navigator.bluetooth.requestDevice !== 'function') {
-        alert('Web Bluetooth is supported on Google Chrome / Microsoft Edge on Android & Desktop.\nInside APK, Bluetooth pairs automatically.');
+    function openHisaabModal() {
+      resetConfirmBox.classList.remove('show');
+      resetDayTriggerBtn.style.display = 'block';
+      renderHisaabModal();
+      hisaabModal.classList.add('open');
+    }
+
+    function closeHisaabModal() {
+      hisaabModal.classList.remove('open');
+      resetConfirmBox.classList.remove('show');
+      resetDayTriggerBtn.style.display = 'block';
+    }
+
+    function buildDailyHisaabEscPosBytes(summary) {
+      const PAPER_WIDTH = 32;
+      const ESC = 0x1B;
+      const GS = 0x1D;
+      const LF = 0x0A;
+      const bytes = [];
+
+      function pushCmd() {
+        for (let i = 0; i < arguments.length; i++) {
+          bytes.push(arguments[i] & 0xFF);
+        }
+      }
+
+      function toAscii(str) {
+        return String(str || '')
+          .replace(/[^\x20-\x7E]/g, '')
+          .replace(/\s+/g, ' ')
+          .trim();
+      }
+
+      function pushLine(text) {
+        const clean = toAscii(text);
+        for (let i = 0; i < clean.length; i++) {
+          bytes.push(clean.charCodeAt(i) & 0x7F);
+        }
+        bytes.push(LF);
+      }
+
+      function formatCols(left, right) {
+        const r = toAscii(right);
+        const maxLeft = Math.max(1, PAPER_WIDTH - r.length - 1);
+        const l = toAscii(left).slice(0, maxLeft);
+        const spaces = Math.max(1, PAPER_WIDTH - l.length - r.length);
+        return l + ' '.repeat(spaces) + r;
+      }
+
+      pushCmd(ESC, 0x40);       // Reset
+      pushCmd(ESC, 0x74, 0x00); // PC437
+      pushCmd(ESC, 0x61, 0x01); // Center align
+      pushCmd(ESC, 0x45, 0x01); // Bold ON
+      pushLine('*** STUDENT BURGER - DAILY HISAAB ***');
+      pushCmd(ESC, 0x45, 0x00); // Bold OFF
+      pushLine('================================');
+
+      pushCmd(ESC, 0x61, 0x00); // Left align
+      pushLine(formatCols('DATE: ' + summary.date, formatTime12Hour(new Date())));
+      pushLine(formatCols('TOTAL ORDERS:', String(summary.totalOrders)));
+      pushCmd(ESC, 0x45, 0x01);
+      pushLine(formatCols('TOTAL CASH:', 'Rs.' + summary.totalCash.toLocaleString('en-US')));
+      pushCmd(ESC, 0x45, 0x00);
+      pushLine('--------------------------------');
+
+      pushCmd(ESC, 0x45, 0x01);
+      pushLine(formatCols('QTY  ITEM SOLD', 'AMOUNT'));
+      pushCmd(ESC, 0x45, 0x00);
+      pushLine('--------------------------------');
+
+      if (summary.allItems.length === 0) {
+        pushLine('No orders recorded today.');
+      } else {
+        summary.allItems.forEach(item => {
+          const prefix = String(item.qty) + 'x ';
+          const rightStr = 'Rs.' + item.revenue.toLocaleString('en-US');
+          const maxName = Math.max(6, PAPER_WIDTH - prefix.length - rightStr.length - 1);
+          const itemLabel = prefix + toAscii(item.name).toUpperCase().slice(0, maxName);
+          pushLine(formatCols(itemLabel, rightStr));
+        });
+      }
+
+      pushLine('================================');
+      pushCmd(ESC, 0x61, 0x01);
+      pushLine('NEXT TOKEN: #' + String(state.token).padStart(3, '0'));
+      pushCmd(ESC, 0x61, 0x00);
+      pushCmd(LF, LF, LF, LF);
+      pushCmd(GS, 0x56, 0x42, 0x00);
+
+      return new Uint8Array(bytes);
+    }
+
+    async function printDailyHisaabSlip() {
+      const bridge = window.AndroidPOSBridge;
+      if (!bridge || typeof bridge.sendEscPosBytes !== 'function' || !bridge.isNative()) {
+        showToast('Printer off ya out of range hai', 'error');
+        return;
+      }
+
+      const btn = document.getElementById('printSummarySlipBtn');
+      btn.disabled = true;
+      btn.textContent = 'Printing...';
+
+      try {
+        const connected = await ensureSilentPrinterConnection();
+        if (!connected) {
+          showToast('Printer off ya out of range hai', 'error');
+          return;
+        }
+
+        const summary = computeHisaabSummary();
+        const bytes = buildDailyHisaabEscPosBytes(summary);
+        const res = await bridge.sendEscPosBytes(bytes);
+        if (res && res.status === 'SUCCESS') {
+          showToast('Daily Hisaab summary slip printed!', 'success');
+        } else {
+          showToast('Printer off ya out of range hai', 'error');
+        }
+      } catch (err) {
+        showToast('Printer off ya out of range hai', 'error');
+      } finally {
+        btn.disabled = false;
+        btn.textContent = 'Print Daily Summary 🧾';
+      }
+    }
+
+    function sendHisaabOnWhatsApp() {
+      const summary = computeHisaabSummary();
+      const message =
+        `Student Burger Hisaab: Date: ${summary.date} | Orders: ${summary.totalOrders} | Cash: Rs. ${summary.totalCash.toLocaleString()}`;
+      const waUrl = `https://wa.me/?text=${encodeURIComponent(message)}`;
+      window.open(waUrl, '_blank', 'noopener,noreferrer');
+    }
+
+    function executeResetDayAndToken() {
+      try {
+        if (state.ordersToday.length > 0) {
+          localStorage.setItem(ORDERS_ARCHIVE_KEY, JSON.stringify({
+            archivedAt: new Date().toISOString(),
+            lastToken: state.token,
+            orders: state.ordersToday
+          }));
+        }
+      } catch (e) {}
+
+      state.token = 1;
+      state.ordersToday = [];
+      state.uncertainToken = null;
+      savePersistedState();
+      saveOrdersToday();
+      updateUI();
+      renderHisaabModal();
+      resetConfirmBox.classList.remove('show');
+      resetDayTriggerBtn.style.display = 'block';
+      showToast('New Day started! Token reset to #001.', 'success');
+    }
+
+    const printButton = document.getElementById('printBtn');
+    const printerStatus = document.getElementById('printerStatus');
+    const printerStatusLabel = document.getElementById('printerStatusLabel');
+    const toast = document.getElementById('toast');
+
+    let isPrinting = false;
+    let toastTimeout;
+
+    function showToast(message, tone = 'default') {
+      toast.textContent = message;
+      toast.dataset.tone = tone;
+      toast.classList.add('show');
+
+      clearTimeout(toastTimeout);
+      toastTimeout = setTimeout(() => {
+        toast.classList.remove('show');
+      }, 2600);
+    }
+
+    function setPrinterStatus(status, message) {
+      printerStatus.dataset.state = status;
+      const cleanLabel = String(message || '').replace(/^[🟢🔴🟠]\s*/, '');
+      if (printerStatusLabel) {
+        printerStatusLabel.textContent = cleanLabel;
+      } else {
+        printerStatus.textContent = cleanLabel;
+      }
+    }
+
+    /**
+     * Vyapar-Style Silent Auto-Connect & Print KOT:
+     * - Never pops up the Bluetooth modal or alert boxes when "PRINT KOT" is clicked.
+     * - Checks window.AndroidPOSBridge.isConnected().
+     * - If disconnected, silently connects to bitedash_last_printer_mac with a 2s timeout, then prints immediately.
+     * - If Bluetooth is OFF or printer power is dead, shows subtle bottom toast "Printer off ya out of range hai"
+     *   and preserves cart items intact.
+     */
+    async function printKitchenKOT() {
+      const hasItems = MENU_ITEMS.some(item => (state.cart[item.id] || 0) > 0);
+      if (isPrinting || !hasItems) {
+        return;
+      }
+
+      const bridge = window.AndroidPOSBridge;
+      if (!bridge || typeof bridge.printKOT !== 'function' || !bridge.isNative()) {
+        setPrinterStatus('disconnected', 'Not connected');
+        showToast('Printer off ya out of range hai', 'error');
+        return;
+      }
+
+      isPrinting = true;
+      printButton.disabled = true;
+      printButton.textContent = 'PRINTING...';
+
+      try {
+        const connected = await ensureSilentPrinterConnection();
+        if (!connected) {
+          showToast('Printer off ya out of range hai', 'error');
+          return;
+        }
+
+        const order = {
+          token: state.token,
+          timestamp: Date.now(),
+          customer: document.getElementById('customerInput').value.trim(),
+          items: MENU_ITEMS
+            .filter(item => (state.cart[item.id] || 0) > 0)
+            .map(item => ({
+              id: item.id,
+              name: item.name,
+              urdu: item.urdu,
+              quantity: state.cart[item.id],
+              unitPrice: item.price,
+              lineTotal: item.price * state.cart[item.id]
+            })),
+          total: MENU_ITEMS.reduce(
+            (sum, item) => sum + item.price * (state.cart[item.id] || 0),
+            0
+          )
+        };
+
+        setPrinterStatus('printing', 'Printing...');
+        const result = await bridge.printKOT(JSON.stringify(order));
+
+        if (result !== 'SUCCESS') {
+          await syncPrinterStatusFromBridge();
+          if (result === 'FAILED') {
+            showToast('Printer off ya out of range hai', 'error');
+          } else {
+            state.uncertainToken = state.token;
+            savePersistedState();
+            showToast('Print outcome unknown. Check printer paper.', 'error');
+          }
+          return;
+        }
+
+        const printedToken = completeOrderAndAdvanceToken();
+        await syncPrinterStatusFromBridge();
+        showToast(`TOKEN #${String(printedToken).padStart(3, '0')} printed!`, 'success');
+      } catch (error) {
+        console.error('KOT printing error:', error);
+        setPrinterStatus('disconnected', 'Not connected');
+        showToast('Printer off ya out of range hai', 'error');
+      } finally {
+        isPrinting = false;
+        printButton.textContent = 'PRINT KOT ⚡';
+        updateUI();
+      }
+    }
+
+    // Manual Printer Manager Modal Logic (Only needed for first-time pairing on a new phone)
+    const printerModal = document.getElementById('printerModal');
+    const modalPrinterStateText = document.getElementById('modalPrinterStateText');
+    const modalPrinterHintText = document.getElementById('modalPrinterHintText');
+    const bondedDevicesList = document.getElementById('bondedDevicesList');
+    const testPrintBtn = document.getElementById('testPrintBtn');
+    const disconnectPrinterBtn = document.getElementById('disconnectPrinterBtn');
+
+    async function syncPrinterStatusFromBridge() {
+      const bridge = window.AndroidPOSBridge;
+      if (!bridge || !bridge.isNative()) {
+        setPrinterStatus('disconnected', 'Not connected');
+        modalPrinterStateText.textContent = 'Web Preview Mode (No Native Bluetooth)';
+        modalPrinterHintText.textContent =
+          'Build and run the Android APK to connect to the Speed-X M450 / MPT-II via Bluetooth Classic SPP.';
+        testPrintBtn.disabled = true;
+        disconnectPrinterBtn.disabled = true;
         return;
       }
 
       try {
-        showToast('🔍 Scanning for Bluetooth printer...');
-        const device = await navigator.bluetooth.requestDevice({
-          filters: [{ namePrefix: 'YD' }, { namePrefix: 'MPT' }, { namePrefix: 'RPP' }, { namePrefix: 'POS' }],
-          optionalServices: [
-            '000018f0-0000-1000-8000-00805f9b34fb',
-            'e7810a71-73ae-499d-8c15-faa9aef0c3f2',
-            '49535343-fe7d-4ae5-8fa9-9fafd205e455'
-          ]
-        });
-
-        if (!device) return;
-        state.bluetoothDevice = device;
-        localStorage.setItem('pos_printer_id', device.id);
-        localStorage.setItem('pos_printer_name', device.name || 'Thermal Printer');
-
-        showToast('Connecting GATT...');
-        const server = await device.gatt.connect();
-        state.gattServer = server;
-
-        // Resolve write characteristic
-        const services = await server.getPrimaryServices();
-        for (const s of services) {
-          const chars = await s.getCharacteristics();
-          for (const c of chars) {
-            if (c.properties.write || c.properties.writeWithoutResponse) {
-              state.writeCharacteristic = c;
-              state.printerConnected = true;
-              break;
-            }
-          }
-          if (state.writeCharacteristic) break;
+        const status = await bridge.getStatus();
+        if (status.connected) {
+          const label = status.deviceName || status.deviceAddress || 'Printer';
+          savePrinterMac(status.deviceAddress, status.deviceName);
+          setPrinterStatus('ready', label);
+          modalPrinterStateText.textContent = `Connected: ${label} (${status.deviceAddress || ''})`;
+          modalPrinterHintText.textContent = 'Saved for silent auto-connect & instant KOT printing.';
+          testPrintBtn.disabled = false;
+          disconnectPrinterBtn.disabled = false;
+        } else {
+          const savedMac = getSavedPrinterMac();
+          setPrinterStatus('disconnected', savedMac ? 'Auto-Print Ready' : 'Not connected');
+          modalPrinterStateText.textContent = status.bluetoothEnabled
+            ? (savedMac ? `Saved MAC: ${savedMac} (Standby)` : 'Not Connected (Bluetooth ON)')
+            : 'Bluetooth is Turned OFF';
+          modalPrinterHintText.textContent = savedMac
+            ? 'Printer MAC is saved. Tapping PRINT KOT will auto-connect silently in the background.'
+            : 'Pair the printer in Android Bluetooth Settings once, then tap "Refresh Paired List" below.';
+          testPrintBtn.disabled = true;
+          disconnectPrinterBtn.disabled = true;
         }
-
-        updatePrinterStatusUI('ready', device.name || 'YD583');
-        closePrinterModal();
-        showToast(`✅ ${device.name || 'Printer'} Paired (Ready)`);
       } catch (err) {
-        if (err.name !== 'NotFoundError') {
-          console.warn('Bluetooth pairing error:', err);
-          showToast('⚠️ Bluetooth pairing cancelled');
-        }
+        setPrinterStatus('error', 'Check printer');
       }
     }
 
-    function updatePrinterStatusUI(status = 'ready', name = '') {
-      const pill = document.getElementById('connectBtBtn');
-      const dot = document.getElementById('printerStatusDot');
-      const text = document.getElementById('printerBtnText');
-      const savedName = name || localStorage.getItem('pos_printer_name') || 'MPT-II';
-      const isSaved = !!localStorage.getItem('pos_printer_id');
-
-      if (!pill) return;
-      pill.classList.remove('connected', 'ready', 'disconnected', 'printing');
-
-      if (status === 'disconnected') {
-        pill.classList.add('disconnected');
-        if (dot) dot.className = 'printer-ready-dot disconnected';
-        if (text) text.textContent = '🔴 Connect';
-      } else {
-        pill.classList.add('ready');
-        if (dot) dot.className = 'printer-ready-dot ready';
-        if (text) text.textContent = `${savedName} Ready`;
+    async function loadBondedDevicesInModal() {
+      const bridge = window.AndroidPOSBridge;
+      if (!bridge || !bridge.isNative()) {
+        bondedDevicesList.innerHTML =
+          '<div class="status-card-sub">Native Android runtime required to list paired Bluetooth devices.</div>';
+        return;
       }
 
-      const modalDot = document.getElementById('modalStatusDot');
-      const modalText = document.getElementById('modalStatusText');
-      const modalDev = document.getElementById('modalDeviceName');
-      if (modalDot) modalDot.className = `ps-dot ${status === 'disconnected' ? 'disconnected' : 'ready'}`;
-      if (modalText) modalText.textContent = status === 'disconnected' ? 'Unpaired' : 'Paired & Ready';
-      if (modalDev) modalDev.textContent = isSaved ? savedName : `${savedName} 58mm Thermal`;
+      bondedDevicesList.innerHTML = '<div class="status-card-sub">Loading paired devices...</div>';
+      try {
+        const devices = await bridge.listBondedDevices();
+        if (!devices || devices.length === 0) {
+          bondedDevicesList.innerHTML =
+            '<div class="status-card-sub">No paired devices found. Tap "1. Android BT Settings" to pair your printer first.</div>';
+          return;
+        }
+
+        bondedDevicesList.innerHTML = devices.map(dev => `
+          <div class="bonded-item ${dev.isLikelyPrinter ? 'printer-match' : ''}">
+            <div class="bonded-meta">
+              <span class="bonded-name">${escapeHtml(dev.name || 'Unknown')}${dev.isLikelyPrinter ? ' (Printer)' : ''}</span>
+              <span class="bonded-mac">${escapeHtml(dev.address || '')}</span>
+            </div>
+            <button type="button" class="connect-dev-btn ${dev.connected ? 'connected' : ''}" data-address="${escapeHtml(dev.address || '')}" data-name="${escapeHtml(dev.name || '')}">
+              ${dev.connected ? 'Connected' : 'Select & Connect'}
+            </button>
+          </div>
+        `).join('');
+
+        bondedDevicesList.querySelectorAll('.connect-dev-btn').forEach(btn => {
+          btn.addEventListener('click', async () => {
+            const address = btn.dataset.address;
+            const name = btn.dataset.name;
+            if (!address) return;
+            savePrinterMac(address, name);
+            await connectToBondedPrinter(address, btn);
+          });
+        });
+      } catch (err) {
+        bondedDevicesList.innerHTML = `<div class="status-card-sub" style="color:#991B1B">${escapeHtml(err.message || 'Failed to list paired devices.')}</div>`;
+      }
+    }
+
+    async function connectToBondedPrinter(address, btnEl) {
+      const bridge = window.AndroidPOSBridge;
+      if (!bridge) return;
+
+      if (btnEl) {
+        btnEl.disabled = true;
+        btnEl.textContent = 'Connecting...';
+      }
+      setPrinterStatus('connecting', 'Connecting...');
+
+      try {
+        const res = await bridge.connect(address);
+        if (res && res.connected) {
+          savePrinterMac(res.address || address, res.name);
+          showToast(`Connected to ${res.name || address}`, 'success');
+        }
+      } catch (err) {
+        setPrinterStatus('error', 'Connect failed');
+        showToast('Printer off ya out of range hai', 'error');
+      } finally {
+        await syncPrinterStatusFromBridge();
+        await loadBondedDevicesInModal();
+      }
     }
 
     function openPrinterModal() {
-      const modal = document.getElementById('printerModalBackdrop');
-      if (modal) modal.classList.add('active');
+      printerModal.classList.add('open');
+      syncPrinterStatusFromBridge();
+      loadBondedDevicesInModal();
     }
 
     function closePrinterModal() {
-      const modal = document.getElementById('printerModalBackdrop');
-      if (modal) modal.classList.remove('active');
+      printerModal.classList.remove('open');
     }
 
-    // 11. INITIALIZATION & EVENT LISTENERS
-    function initPOS() {
-      renderSpeedGrid();
-      setupTouchDiscrimination();
-      updateBottomBar();
-      updatePrinterStatusUI();
+    function escapeHtml(str) {
+      return String(str || '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;');
+    }
 
-      // Category filter pills
-      const catBar = document.getElementById('categoryPillsBar');
-      if (catBar) {
-        catBar.addEventListener('click', (e) => {
-          const pill = e.target.closest('.cat-pill');
-          if (!pill) return;
-          const cat = pill.dataset.category;
-          if (!cat) return;
-          soundEngine.playBeep();
-          state.activeCategory = cat;
-          catBar.querySelectorAll('.cat-pill').forEach(btn => {
-            btn.classList.toggle('active', btn.dataset.category === cat);
-          });
-          renderSpeedGrid();
-        });
+    // Cart Strip & Drawer Events
+    document.getElementById('cartStrip').addEventListener('click', () => {
+      const hasItems = MENU_ITEMS.some(i => (state.cart[i.id] || 0) > 0);
+      if (!hasItems) return;
+      state.drawerOpen = !state.drawerOpen;
+      updateUI();
+    });
+
+    document.getElementById('closeCartDrawerBtn').addEventListener('click', () => {
+      state.drawerOpen = false;
+      updateUI();
+    });
+
+    document.getElementById('cartDrawerBackdrop').addEventListener('click', (e) => {
+      if (e.target.id === 'cartDrawerBackdrop') {
+        state.drawerOpen = false;
+        updateUI();
+        return;
       }
-
-      // Customer Name input listener
-      const custInput = document.getElementById('mobileCustomerInput');
-      const clearCustBtn = document.getElementById('mobileClearCustBtn');
-      if (custInput) {
-        custInput.addEventListener('input', (e) => setCustomerName(e.target.value));
-        custInput.addEventListener('keydown', (e) => {
-          if (e.key === 'Enter') {
-            e.preventDefault();
-            custInput.blur();
-            if (state.cart.length > 0) printKitchenKOT();
-          } else if (e.key === 'Escape') {
-            e.preventDefault();
-            custInput.blur();
-          }
-        });
+      const minus = e.target.closest('[data-drawer-minus]');
+      if (minus) {
+        decrementItem(minus.dataset.drawerMinus);
+        return;
       }
-      if (clearCustBtn) {
-        clearCustBtn.addEventListener('click', () => {
-          setCustomerName('');
-          if (custInput) custInput.focus();
-        });
+      const plus = e.target.closest('[data-drawer-plus]');
+      if (plus) {
+        incrementItem(plus.dataset.drawerPlus);
       }
+    });
 
-      // Checkout Button
-      const checkoutBtn = document.getElementById('mobileCheckoutBtn');
-      if (checkoutBtn) {
-        checkoutBtn.addEventListener('click', () => printKitchenKOT());
+    // Owner Hisaab Modal Listeners (Triggered by tapping TOKEN badge)
+    document.getElementById('tokenDisplay').addEventListener('click', openHisaabModal);
+    document.getElementById('closeHisaabModalBtn').addEventListener('click', closeHisaabModal);
+    hisaabModal.addEventListener('click', (e) => {
+      if (e.target === hisaabModal) closeHisaabModal();
+    });
+    document.getElementById('printSummarySlipBtn').addEventListener('click', printDailyHisaabSlip);
+    document.getElementById('sendWhatsAppBtn').addEventListener('click', sendHisaabOnWhatsApp);
+    resetDayTriggerBtn.addEventListener('click', () => {
+      resetDayTriggerBtn.style.display = 'none';
+      resetConfirmBox.classList.add('show');
+    });
+    document.getElementById('cancelResetDayBtn').addEventListener('click', () => {
+      resetConfirmBox.classList.remove('show');
+      resetDayTriggerBtn.style.display = 'block';
+    });
+    document.getElementById('confirmResetDayBtn').addEventListener('click', executeResetDayAndToken);
+
+    // Main Action Listeners
+    printButton.addEventListener('click', printKitchenKOT);
+    printerStatus.addEventListener('click', openPrinterModal);
+    document.getElementById('closePrinterModalBtn').addEventListener('click', closePrinterModal);
+    printerModal.addEventListener('click', (e) => {
+      if (e.target === printerModal) closePrinterModal();
+    });
+
+    document.getElementById('openBtSettingsBtn').addEventListener('click', async () => {
+      const bridge = window.AndroidPOSBridge;
+      if (!bridge || !bridge.isNative()) {
+        showToast('Available inside the Android app.', 'error');
+        return;
       }
-
-      // Reset Button
-      const resetBtn = document.getElementById('clearCartBtn');
-      if (resetBtn) {
-        resetBtn.addEventListener('click', clearCart);
+      try {
+        await bridge.openBluetoothSettings();
+      } catch (err) {
+        showToast(err.message || 'Could not open Bluetooth settings.', 'error');
       }
+    });
 
-      // Printer Pill
-      const printerBtn = document.getElementById('connectBtBtn');
-      if (printerBtn) {
-        printerBtn.addEventListener('click', () => {
-          if (localStorage.getItem('pos_printer_id')) {
-            openPrinterModal();
-          } else {
-            pairBluetoothPrinter();
-          }
-        });
+    document.getElementById('refreshPairedBtn').addEventListener('click', () => {
+      syncPrinterStatusFromBridge();
+      loadBondedDevicesInModal();
+    });
+
+    testPrintBtn.addEventListener('click', async () => {
+      const bridge = window.AndroidPOSBridge;
+      if (!bridge || !bridge.isNative()) return;
+      testPrintBtn.disabled = true;
+      testPrintBtn.textContent = 'Printing Test...';
+      try {
+        await bridge.printTestSlip();
+        showToast('Test slip sent to printer.', 'success');
+      } catch (err) {
+        showToast('Printer off ya out of range hai', 'error');
+      } finally {
+        testPrintBtn.textContent = 'Print Test Slip';
+        await syncPrinterStatusFromBridge();
       }
+    });
 
-      // Printer Modal listeners
-      const closeModalBtn = document.getElementById('closePrinterModalBtn');
-      if (closeModalBtn) closeModalBtn.addEventListener('click', closePrinterModal);
-      const modalBackdrop = document.getElementById('printerModalBackdrop');
-      if (modalBackdrop) {
-        modalBackdrop.addEventListener('click', (e) => {
-          if (e.target === modalBackdrop) closePrinterModal();
-        });
-      }
-      const pairNewBtn = document.getElementById('pairNewPrinterBtn');
-      if (pairNewBtn) pairNewBtn.addEventListener('click', pairBluetoothPrinter);
-      const testPrintBtn = document.getElementById('modalTestPrintBtn');
-      if (testPrintBtn) {
-        testPrintBtn.addEventListener('click', () => {
-          const testBytes = buildKitchenKotEscPos({
-            token: "000",
-            customerName: "TEST PRINT",
-            timestamp: new Date().toLocaleTimeString('en-PK'),
-            items: [{ name: "TEST SLIP SUCCESS", englishName: "TEST SLIP SUCCESS", qty: 1 }]
-          });
-          dispatchPrintJob(testBytes);
-          soundEngine.playPrinterFeed();
-          showToast('✅ Test Print Dispatched!');
-        });
-      }
+    disconnectPrinterBtn.addEventListener('click', async () => {
+      const bridge = window.AndroidPOSBridge;
+      if (!bridge || !bridge.isNative()) return;
+      await bridge.disconnect();
+      await syncPrinterStatusFromBridge();
+      await loadBondedDevicesInModal();
+      showToast('Printer disconnected.');
+    });
 
-      // Global Keyboard Shortcuts
-      document.addEventListener('keydown', (e) => {
-        if (e.target && (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA')) {
-          return;
-        }
+    document.getElementById('clearOrderBtn').addEventListener('click', clearCurrentOrder);
 
-        // Enter key fires KOT
-        if (e.key === 'Enter') {
-          if (state.cart.length > 0) {
-            e.preventDefault();
-            printKitchenKOT();
-          }
-          return;
-        }
+    document.getElementById('customerInput').addEventListener('input', (e) => {
+      state.customer = e.target.value;
+      savePersistedState();
+      updateUI();
+    });
 
-        // Escape clears cart
-        if (e.key === 'Escape') {
-          if (state.cart.length > 0 || state.customerName) {
-            clearCart();
-          }
-          return;
-        }
+    document.getElementById('retryPrintBtn').addEventListener('click', () => {
+      printKitchenKOT();
+    });
 
-        // Hotkey 1-9, 0, -, =
-        const hotkeyMap = {
-          '1': 0, '2': 1, '3': 2, '4': 3,
-          '5': 4, '6': 5, '7': 6, '8': 7,
-          '9': 8, '0': 9, '-': 10, '=': 11, '+': 11
-        };
-        if (Object.prototype.hasOwnProperty.call(hotkeyMap, e.key)) {
-          const target = SPEED_ITEMS[hotkeyMap[e.key]];
-          if (target) {
-            e.preventDefault();
-            soundEngine.playBeep();
-            addToCart(target.id);
-          }
-        }
+    document.getElementById('confirmPrintedBtn').addEventListener('click', () => {
+      const completed = completeOrderAndAdvanceToken();
+      showToast(`Marked TOKEN #${String(completed).padStart(3, '0')} as printed.`, 'success');
+    });
+
+    document.getElementById('categoryBar').addEventListener('click', (e) => {
+      const chip = e.target.closest('.cat-chip');
+      if (!chip) return;
+      const cat = chip.dataset.cat || 'all';
+      state.activeCategory = cat;
+      document.querySelectorAll('.cat-chip').forEach(c => {
+        c.classList.toggle('active', c.dataset.cat === cat);
       });
+      document.querySelectorAll('.menu-section').forEach(sec => {
+        sec.style.display = (cat === 'all' || sec.dataset.section === cat) ? 'block' : 'none';
+      });
+    });
 
-      // Native Android Bridge Auto-Connect Check
-      if (window.AndroidPOSBridge && typeof window.AndroidPOSBridge.isNative === 'function' && window.AndroidPOSBridge.isNative()) {
-        window.AndroidPOSBridge.autoConnectOnLaunch((status, label) => {
-          updatePrinterStatusUI(status, label);
+    // Physical Keyboard Hotkey Support (1-9, 0, -, =)
+    window.addEventListener('keydown', (e) => {
+      const activeTag = document.activeElement ? document.activeElement.tagName : '';
+      if (activeTag === 'INPUT' || activeTag === 'TEXTAREA') {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          document.activeElement.blur();
+          if (!printButton.disabled) printKitchenKOT();
+        }
+        return;
+      }
+
+      if (e.key === 'Escape') {
+        if (hisaabModal.classList.contains('open')) {
+          closeHisaabModal();
+          return;
+        }
+        if (printerModal.classList.contains('open')) {
+          closePrinterModal();
+          return;
+        }
+        if (state.drawerOpen) {
+          state.drawerOpen = false;
+          updateUI();
+          return;
+        }
+      }
+
+      if (printerModal.classList.contains('open') || hisaabModal.classList.contains('open')) return;
+
+      const matched = MENU_ITEMS.find(i => i.key && i.key === e.key);
+      if (matched) {
+        e.preventDefault();
+        incrementItem(matched.id);
+      } else if (e.key === 'Enter') {
+        if (!printButton.disabled) {
+          e.preventDefault();
+          printKitchenKOT();
+        }
+      }
+    });
+
+    document.addEventListener('DOMContentLoaded', async () => {
+      loadPersistedState();
+      document.getElementById('customerInput').value = state.customer || '';
+      renderMenu();
+      updateUI();
+      await syncPrinterStatusFromBridge();
+
+      // Warm up silent background connection on launch if a printer MAC is already saved
+      if (getSavedPrinterMac()) {
+        ensureSilentPrinterConnection().then(() => syncPrinterStatusFromBridge());
+      }
+
+      if (window.AndroidPOSBridge && typeof window.AndroidPOSBridge.onStateChange === 'function') {
+        window.AndroidPOSBridge.onStateChange(() => {
+          syncPrinterStatusFromBridge();
+          if (printerModal.classList.contains('open')) {
+            loadBondedDevicesInModal();
+          }
         });
       }
-    }
-
-    document.addEventListener('DOMContentLoaded', initPOS);
+    });
   </script>
 </body>
 

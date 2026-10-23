@@ -1,14 +1,13 @@
 /**
- * The Artisan Grill & Co. • PWA Service Worker
- * Standalone Offline Caching & High-Performance Resource Delivery
+ * BiteDash POS • PWA Service Worker
+ * Offline Caching for Food Cart Operations
  */
 
-const CACHE_NAME = 'artisan-pos-v1';
+const CACHE_NAME = 'bitedash-pos-v2';
 const ASSETS_TO_CACHE = [
   './',
   './index.html',
-  './style.css',
-  './app.js',
+  './android-bridge.js',
   './manifest.json',
   './assets/icons/icon.svg',
   './assets/images/wagyu_smash.jpg',
@@ -55,7 +54,6 @@ self.addEventListener('fetch', (event) => {
   event.respondWith(
     caches.match(event.request).then((cachedResponse) => {
       if (cachedResponse) {
-        // Fetch newer version in background
         fetch(event.request).then((networkResponse) => {
           if (networkResponse && networkResponse.status === 200) {
             caches.open(CACHE_NAME).then((cache) => cache.put(event.request, networkResponse));
