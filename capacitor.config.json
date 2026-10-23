@@ -1,8 +1,7 @@
 {
   "appId": "com.artisangrill.pos",
-  "appName": "Artisan POS",
-  "webDir": ".",
-  "bundledWebRuntime": false,
+  "appName": "BiteDash POS",
+  "webDir": "www",
   "server": {
     "androidScheme": "https",
     "cleartext": true

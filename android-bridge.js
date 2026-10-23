@@ -1,11 +1,15 @@
 /**
- * The Artisan Grill & Co. • Native Android POS Bluetooth Bridge
- * Architecture for Capacitor & Cordova Hybrid Android Packaging (Vyapar-Style)
+ * BiteDash POS • Native Android Bluetooth Classic SPP Printer Bridge
  *
- * Capabilities:
- * - Native Android Auto-Connection on App Launch (No User-Gesture required)
- * - Native Bluetooth Classic Serial (RFCOMM / SPP) & BLE Writable Socket Support
- * - Fallback to Standard Web Bluetooth API for Browser-based POS Terminals
+ * Target Hardware: 58mm Portable Direct Thermal Printers (e.g., Speed-X M450 / BT-450M / MPT-II)
+ * Protocol: Bluetooth Classic Serial Port Profile (SPP / RFCOMM UUID 00001101-0000-1000-8000-00805F9B34FB)
+ * Native Plugin: Capacitor `BiteDashPrinter` (com.artisangrill.pos.BiteDashPrinterPlugin)
+ *
+ * Strict Safety Guarantees:
+ * - Never fakes a connection or print success in browser/non-native environments.
+ * - Does not use Web Bluetooth inside Android WebView.
+ * - Distinguishes pre-transmission failures ('FAILED') from mid-stream/timeout errors ('UNKNOWN')
+ *   so the cashier never loses an order or prints accidental duplicates.
  */
 
 (function (root, factory) {
@@ -15,191 +19,529 @@
     root.AndroidPOSBridge = factory();
   }
 }(typeof self !== 'undefined' ? self : this, function () {
+  'use strict';
 
-  const PRINTER_PREFIXES = ['YD583', 'MPT', 'RPP', 'POS', 'ZJ', 'MTP', 'BT'];
-  let isConnecting = false;
-  let activeNativeConnection = null;
+  const PAPER_WIDTH_CHARS = 32; // Standard 58mm thermal paper (48mm printable width, Font A = 32 cols)
+  const CONNECT_TIMEOUT_MS = 12000;
+  const PRINT_TIMEOUT_MS = 12000;
+
+  // ESC/POS Command Constants
+  const ESC = 0x1B;
+  const GS = 0x1D;
+  const LF = 0x0A;
+
+  const stateListeners = new Set();
+  let nativeListenerAttached = false;
+
+  function getNativePlugin() {
+    if (typeof window === 'undefined') return null;
+    if (
+      window.Capacitor &&
+      typeof window.Capacitor.isNativePlatform === 'function' &&
+      window.Capacitor.isNativePlatform() &&
+      window.Capacitor.Plugins &&
+      window.Capacitor.Plugins.BiteDashPrinter
+    ) {
+      return window.Capacitor.Plugins.BiteDashPrinter;
+    }
+    return null;
+  }
+
+  function ensureNativeStateListener() {
+    const plugin = getNativePlugin();
+    if (!plugin || nativeListenerAttached || typeof plugin.addListener !== 'function') {
+      return;
+    }
+    nativeListenerAttached = true;
+    plugin.addListener('printerStateChanged', function (event) {
+      stateListeners.forEach(function (listener) {
+        try {
+          listener(event);
+        } catch (err) {
+          console.error('[AndroidPOSBridge] Listener error:', err);
+        }
+      });
+    });
+  }
+
+  function withTimeout(promise, ms, timeoutCode, timeoutMessage) {
+    return new Promise(function (resolve, reject) {
+      const timer = setTimeout(function () {
+        const err = new Error(timeoutMessage || 'Operation timed out');
+        err.code = timeoutCode || 'TIMEOUT';
+        reject(err);
+      }, ms);
+
+      promise
+        .then(function (val) {
+          clearTimeout(timer);
+          resolve(val);
+        })
+        .catch(function (err) {
+          clearTimeout(timer);
+          reject(err);
+        });
+    });
+  }
+
+  /**
+   * Sanitizes text to printable 7-bit ASCII (0x20 - 0x7E) for 58mm ESC/POS hardware font compatibility.
+   */
+  function toPrintableAscii(str) {
+    if (!str) return '';
+    return String(str)
+      .replace(/[\u2018\u2019]/g, "'")
+      .replace(/[\u201C\u201D]/g, '"')
+      .replace(/[\u2013\u2014]/g, '-')
+      .replace(/[^\x20-\x7E]/g, '')
+      .replace(/\s+/g, ' ')
+      .trim();
+  }
+
+  function padRight(str, len) {
+    const s = String(str || '');
+    return s.length >= len ? s.slice(0, len) : s + ' '.repeat(len - s.length);
+  }
+
+  function padLeft(str, len) {
+    const s = String(str || '');
+    return s.length >= len ? s.slice(0, len) : ' '.repeat(len - s.length) + s;
+  }
+
+  function formatColumns(left, right, width) {
+    const w = width || PAPER_WIDTH_CHARS;
+    const r = String(right || '');
+    const maxLeft = Math.max(1, w - r.length - 1);
+    const l = String(left || '').slice(0, maxLeft);
+    const spaces = Math.max(1, w - l.length - r.length);
+    return l + ' '.repeat(spaces) + r;
+  }
+
+  function uint8ToBase64(uint8Array) {
+    let binary = '';
+    const len = uint8Array.byteLength;
+    for (let i = 0; i < len; i++) {
+      binary += String.fromCharCode(uint8Array[i]);
+    }
+    return window.btoa(binary);
+  }
+
+  function formatDateTimePK(dateObj) {
+    const d = dateObj instanceof Date ? dateObj : new Date();
+    const day = String(d.getDate()).padStart(2, '0');
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const year = d.getFullYear();
+    let hours = d.getHours();
+    const mins = String(d.getMinutes()).padStart(2, '0');
+    const ampm = hours >= 12 ? 'PM' : 'AM';
+    hours = hours % 12 || 12;
+    return {
+      date: day + '/' + month + '/' + year,
+      time: String(hours).padStart(2, '0') + ':' + mins + ' ' + ampm
+    };
+  }
+
+  /**
+   * Builds a 58mm (32-char width) ESC/POS Kitchen Order Ticket byte buffer.
+   */
+  function buildKotEscPosBytes(order) {
+    const bytes = [];
+
+    function pushCmd() {
+      for (let i = 0; i < arguments.length; i++) {
+        bytes.push(arguments[i] & 0xFF);
+      }
+    }
+
+    function pushLine(text) {
+      const clean = toPrintableAscii(text);
+      for (let i = 0; i < clean.length; i++) {
+        bytes.push(clean.charCodeAt(i) & 0x7F);
+      }
+      bytes.push(LF);
+    }
+
+    const tokenNum = String(order.token || 0).padStart(3, '0');
+    const customerRaw = toPrintableAscii(order.customer || '');
+    const customerDisplay = customerRaw ? customerRaw.toUpperCase().slice(0, 22) : 'WALK-IN / COUNTER';
+    const dt = formatDateTimePK(order.timestamp ? new Date(order.timestamp) : new Date());
+    const items = Array.isArray(order.items) ? order.items : [];
+
+    // 1. Initialize printer & select standard PC437 character table
+    pushCmd(ESC, 0x40);       // ESC @ (Reset)
+    pushCmd(ESC, 0x74, 0x00); // ESC t 0 (PC437)
+
+    // 2. Centered Header
+    pushCmd(ESC, 0x61, 0x01); // Center align
+    pushCmd(ESC, 0x45, 0x01); // Bold ON
+    pushLine('BITEDASH POS - LAHORE');
+    pushCmd(ESC, 0x45, 0x00); // Bold OFF
+    pushLine('*** KITCHEN ORDER TICKET ***');
+    pushLine('================================');
+
+    // 3. Double-Width + Double-Height Token Banner
+    pushCmd(ESC, 0x45, 0x01); // Bold ON
+    pushCmd(GS, 0x21, 0x11);  // 2x width, 2x height (16 chars max per line)
+    pushLine('TOKEN #' + tokenNum);
+    pushCmd(GS, 0x21, 0x00);  // Normal size
+    pushCmd(ESC, 0x45, 0x00); // Bold OFF
+    pushLine('================================');
+
+    // 4. Left-aligned Order Metadata
+    pushCmd(ESC, 0x61, 0x00); // Left align
+    pushCmd(ESC, 0x45, 0x01); // Bold ON
+    pushLine('CUSTOMER: ' + customerDisplay);
+    pushCmd(ESC, 0x45, 0x00); // Bold OFF
+    pushLine(formatColumns('DATE: ' + dt.date, dt.time, PAPER_WIDTH_CHARS));
+    pushLine('--------------------------------');
+
+    // 5. Items Table Header
+    pushCmd(ESC, 0x45, 0x01);
+    pushLine(formatColumns('QTY  ITEM', 'AMOUNT', PAPER_WIDTH_CHARS));
+    pushCmd(ESC, 0x45, 0x00);
+    pushLine('--------------------------------');
+
+    // 6. Ordered Line Items
+    let totalUnits = 0;
+    for (let i = 0; i < items.length; i++) {
+      const item = items[i];
+      const qty = Number(item.quantity || item.qty || 0);
+      if (qty <= 0) continue;
+      totalUnits += qty;
+
+      const nameAscii = toPrintableAscii(item.name || item.englishName || item.id).toUpperCase();
+      const lineTotal = Number(item.lineTotal || (qty * Number(item.unitPrice || item.price || 0)));
+      const priceStr = lineTotal > 0 ? String(Math.round(lineTotal)) : '';
+      const qtyPrefix = padRight(qty + 'x', 5);
+      const maxNameLen = PAPER_WIDTH_CHARS - qtyPrefix.length - (priceStr ? priceStr.length + 1 : 0);
+      const truncatedName = nameAscii.slice(0, Math.max(8, maxNameLen));
+
+      // Emphasize item line for kitchen readability
+      pushCmd(ESC, 0x45, 0x01);
+      pushLine(formatColumns(qtyPrefix + truncatedName, priceStr, PAPER_WIDTH_CHARS));
+      pushCmd(ESC, 0x45, 0x00);
+    }
+
+    pushLine('--------------------------------');
+
+    // 7. Totals Summary
+    const grandTotal = Number(order.total || 0);
+    pushCmd(ESC, 0x45, 0x01);
+    pushLine(
+      formatColumns(
+        'ITEMS: ' + totalUnits,
+        'TOTAL: Rs.' + Math.round(grandTotal).toLocaleString('en-US'),
+        PAPER_WIDTH_CHARS
+      )
+    );
+    pushCmd(ESC, 0x45, 0x00);
+    pushLine('================================');
+
+    // 8. Footer & Paper Feed
+    pushCmd(ESC, 0x61, 0x01); // Center
+    pushLine('[ KITCHEN COPY - TOKEN #' + tokenNum + ' ]');
+    pushCmd(ESC, 0x61, 0x00); // Left
+    pushCmd(LF, LF, LF, LF);  // Feed 4 lines for clean manual tear-off
+    pushCmd(GS, 0x56, 0x42, 0x00); // GS V 66 0 (Partial cut if cutter present; no-op on manual tear bar)
+
+    return new Uint8Array(bytes);
+  }
+
+  /**
+   * Builds a 58mm (32-char width) ESC/POS Test Print Slip byte buffer.
+   */
+  function buildTestSlipEscPosBytes(deviceName, deviceAddress) {
+    const bytes = [];
+
+    function pushCmd() {
+      for (let i = 0; i < arguments.length; i++) {
+        bytes.push(arguments[i] & 0xFF);
+      }
+    }
+
+    function pushLine(text) {
+      const clean = toPrintableAscii(text);
+      for (let i = 0; i < clean.length; i++) {
+        bytes.push(clean.charCodeAt(i) & 0x7F);
+      }
+      bytes.push(LF);
+    }
+
+    const dt = formatDateTimePK(new Date());
+    const safeName = toPrintableAscii(deviceName || 'BT Printer').slice(0, 22);
+    const safeMac = toPrintableAscii(deviceAddress || 'N/A').slice(0, 20);
+
+    pushCmd(ESC, 0x40);       // Reset
+    pushCmd(ESC, 0x74, 0x00); // PC437
+    pushCmd(ESC, 0x61, 0x01); // Center
+    pushCmd(ESC, 0x45, 0x01); // Bold ON
+    pushCmd(GS, 0x21, 0x11);  // 2x size
+    pushLine('BITEDASH POS');
+    pushCmd(GS, 0x21, 0x00);  // Normal size
+    pushLine('58MM SPP PRINTER TEST OK');
+    pushCmd(ESC, 0x45, 0x00); // Bold OFF
+    pushLine('================================');
+
+    pushCmd(ESC, 0x61, 0x00); // Left align
+    pushLine('DEVICE : ' + safeName);
+    pushLine('MAC    : ' + safeMac);
+    pushLine('PROTO  : BT CLASSIC SPP (RFCOMM)');
+    pushLine('DATE   : ' + dt.date + ' ' + dt.time);
+    pushLine('--------------------------------');
+    pushLine('32-COL WIDTH ALIGNMENT RULER:');
+    pushLine('12345678901234567890123456789012');
+    pushLine('================================');
+    pushCmd(ESC, 0x61, 0x01); // Center
+    pushLine('READY FOR KITCHEN KOT PRINTING');
+    pushCmd(ESC, 0x61, 0x00);
+    pushCmd(LF, LF, LF, LF);
+
+    return new Uint8Array(bytes);
+  }
 
   const Bridge = {
-    // 1. Detection of Native Android Container
+    /**
+     * Returns true ONLY when running inside the native Android Capacitor app
+     * with the BiteDashPrinter native plugin registered.
+     */
     isNative: function () {
-      if (typeof window === 'undefined') return false;
-      const hasCapacitor = !!(window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform());
-      const hasCordova = !!(window.cordova && window.bluetoothSerial);
-      const hasCustomAndroidBridge = !!(window.AndroidPrinter || window.AndroidBridge);
-      return hasCapacitor || hasCordova || hasCustomAndroidBridge;
+      return getNativePlugin() !== null;
     },
 
     getNativeType: function () {
-      if (window.AndroidPrinter || window.AndroidBridge) return 'webview-interface';
-      if (window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform()) return 'capacitor';
-      if (window.cordova && window.bluetoothSerial) return 'cordova-serial';
-      return 'web-bluetooth';
+      return this.isNative() ? 'capacitor-bitedash-spp' : 'browser-unsupported';
     },
 
     /**
-     * Vyapar-Style Background Auto-Connection on Launch
-     * Native Android permits background connection to paired devices without a user prompt
+     * Subscribe to real-time native printer connection state events.
      */
-    autoConnectOnLaunch: async function (onStatusChange) {
-      if (!this.isNative()) {
-        console.log('[Android Bridge] Running in Web Browser mode. Auto-connect deferred to On-Demand gesture.');
-        return false;
-      }
-
-      console.log(`[Android Bridge] Native Android runtime detected (${this.getNativeType()}). Initiating background auto-connect...`);
-      if (onStatusChange) onStatusChange('connecting', 'Auto-Connecting...');
-
-      const savedMac = localStorage.getItem('pos_printer_mac') || localStorage.getItem('pos_printer_id');
-      const savedName = localStorage.getItem('pos_printer_name') || 'YD583';
-
-      try {
-        // Strategy A: BluetoothSerial (Capacitor/Cordova SPP RFCOMM)
-        if (window.bluetoothSerial) {
-          const isEnabled = await new Promise((res) => window.bluetoothSerial.isEnabled(res, () => res(false)));
-          if (!isEnabled) {
-            console.warn('[Android Bridge] Bluetooth is turned OFF on Android device.');
-            if (onStatusChange) onStatusChange('disconnected', 'Bluetooth Disabled');
-            return false;
-          }
-
-          // If we have a saved MAC address, connect directly:
-          if (savedMac && savedMac.includes(':')) {
-            console.log(`[Android Bridge] Connecting to saved MAC: ${savedMac}...`);
-            await new Promise((resolve, reject) => {
-              window.bluetoothSerial.connect(savedMac, resolve, reject);
-            });
-            activeNativeConnection = { type: 'serial', mac: savedMac, name: savedName };
-            if (onStatusChange) onStatusChange('ready', `${savedName} (Native)`);
-            return true;
-          }
-
-          // Otherwise, list paired devices and find a matching thermal printer:
-          const pairedDevices = await new Promise((resolve, reject) => {
-            window.bluetoothSerial.list(resolve, reject);
-          });
-
-          const matched = pairedDevices.find(dev => {
-            const name = (dev.name || '').toUpperCase();
-            return PRINTER_PREFIXES.some(prefix => name.includes(prefix));
-          }) || (pairedDevices.length > 0 ? pairedDevices[0] : null);
-
-          if (matched) {
-            console.log(`[Android Bridge] Auto-pairing to bonded printer: ${matched.name} (${matched.address})`);
-            await new Promise((resolve, reject) => {
-              window.bluetoothSerial.connect(matched.address, resolve, reject);
-            });
-            localStorage.setItem('pos_printer_mac', matched.address);
-            localStorage.setItem('pos_printer_name', matched.name);
-            activeNativeConnection = { type: 'serial', mac: matched.address, name: matched.name };
-            if (onStatusChange) onStatusChange('ready', `${matched.name} (Native)`);
-            return true;
-          }
-        }
-
-        // Strategy B: Android WebView JavascriptInterface
-        if (window.AndroidPrinter && typeof window.AndroidPrinter.autoConnect === 'function') {
-          const success = window.AndroidPrinter.autoConnect();
-          if (success) {
-            activeNativeConnection = { type: 'webview-interface', name: savedName };
-            if (onStatusChange) onStatusChange('ready', `${savedName} (Native)`);
-            return true;
-          }
-        }
-
-        // Strategy C: Capacitor BluetoothLe Plugin
-        if (window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.BluetoothLe) {
-          const Ble = window.Capacitor.Plugins.BluetoothLe;
-          await Ble.initialize();
-          if (savedMac) {
-            await Ble.connect({ deviceId: savedMac });
-            activeNativeConnection = { type: 'ble', deviceId: savedMac, name: savedName };
-            if (onStatusChange) onStatusChange('ready', `${savedName} (Native)`);
-            return true;
-          }
-        }
-
-      } catch (err) {
-        console.warn('[Android Bridge] Background auto-connect note:', err);
-        if (onStatusChange) onStatusChange('disconnected', 'Tap to Connect');
-        return false;
-      }
-
-      return false;
+    onStateChange: function (callback) {
+      if (typeof callback !== 'function') return function () {};
+      ensureNativeStateListener();
+      stateListeners.add(callback);
+      return function () {
+        stateListeners.delete(callback);
+      };
     },
 
     /**
-     * Dispatch raw ESC/POS binary data to the thermal printer
+     * Query genuine Bluetooth & socket status from the native Android layer.
      */
-    sendEscPosBytes: async function (uint8Array) {
-      if (!this.isNative()) {
-        throw new Error('Native Android runtime not active; use Web Bluetooth.');
+    getStatus: async function () {
+      const plugin = getNativePlugin();
+      if (!plugin) {
+        return {
+          nativeAvailable: false,
+          bluetoothSupported: false,
+          permissionGranted: false,
+          bluetoothEnabled: false,
+          connected: false,
+          deviceName: null,
+          deviceAddress: null
+        };
       }
-
-      // 1. BluetoothSerial SPP Socket
-      if (window.bluetoothSerial) {
-        return new Promise((resolve, reject) => {
-          // Send as ArrayBuffer or Uint8Array
-          window.bluetoothSerial.write(uint8Array.buffer, resolve, reject);
-        });
-      }
-
-      // 2. Android WebView JavascriptInterface
-      if (window.AndroidPrinter) {
-        // Base64 encode byte buffer for Android native Java interface
-        let binary = '';
-        const len = uint8Array.byteLength;
-        for (let i = 0; i < len; i++) {
-          binary += String.fromCharCode(uint8Array[i]);
-        }
-        const b64 = window.btoa(binary);
-        if (typeof window.AndroidPrinter.printBase64 === 'function') {
-          window.AndroidPrinter.printBase64(b64);
-          return true;
-        }
-      }
-
-      // 3. Capacitor BluetoothLe Plugin
-      if (window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.BluetoothLe) {
-        const Ble = window.Capacitor.Plugins.BluetoothLe;
-        const savedMac = localStorage.getItem('pos_printer_mac') || localStorage.getItem('pos_printer_id');
-        // Convert to base64 for Capacitor BLE plugin
-        let binary = '';
-        for (let i = 0; i < uint8Array.byteLength; i++) {
-          binary += String.fromCharCode(uint8Array[i]);
-        }
-        const value = window.btoa(binary);
-        return Ble.writeWithoutResponse({
-          deviceId: savedMac,
-          service: '49535343-fe7d-4ae5-8fa9-9fafd205e455',
-          characteristic: '49535343-8841-43f4-a8d4-ecbe34729bb3',
-          value: value
-        });
-      }
-
-      throw new Error('No matching native Android Bluetooth pipeline available');
+      ensureNativeStateListener();
+      const status = await plugin.getStatus();
+      return {
+        nativeAvailable: true,
+        bluetoothSupported: !!status.bluetoothSupported,
+        permissionGranted: !!status.permissionGranted,
+        bluetoothEnabled: !!status.bluetoothEnabled,
+        connected: !!status.connected,
+        deviceName: status.deviceName || null,
+        deviceAddress: status.deviceAddress || null
+      };
     },
 
     /**
-     * Query bonded/paired devices on Android
+     * Request Android 12+ BLUETOOTH_CONNECT & BLUETOOTH_SCAN runtime permissions.
+     */
+    requestPermissions: async function () {
+      const plugin = getNativePlugin();
+      if (!plugin) {
+        throw new Error('Native Android runtime is not active.');
+      }
+      return plugin.requestBluetoothPermissions();
+    },
+
+    /**
+     * Open Android System Bluetooth Settings for initial printer pairing.
+     */
+    openBluetoothSettings: async function () {
+      const plugin = getNativePlugin();
+      if (!plugin) {
+        throw new Error('Android Bluetooth Settings is only available inside the Android app.');
+      }
+      return plugin.openBluetoothSettings();
+    },
+
+    /**
+     * List Bluetooth devices already paired/bonded in Android System Settings.
+     * Sorts likely thermal printers to the top of the list.
      */
     listBondedDevices: async function () {
-      if (window.bluetoothSerial) {
-        return new Promise((resolve, reject) => window.bluetoothSerial.list(resolve, reject));
+      const plugin = getNativePlugin();
+      if (!plugin) {
+        throw new Error('Native Android printer bridge is not available in a web browser.');
       }
-      return [];
+      const res = await plugin.listBondedDevices();
+      const devices = Array.isArray(res && res.devices) ? res.devices : [];
+      return devices.sort(function (a, b) {
+        if (Boolean(a.connected) !== Boolean(b.connected)) {
+          return a.connected ? -1 : 1;
+        }
+        if (Boolean(a.isLikelyPrinter) !== Boolean(b.isLikelyPrinter)) {
+          return a.isLikelyPrinter ? -1 : 1;
+        }
+        return String(a.name || '').localeCompare(String(b.name || ''));
+      });
     },
 
     /**
-     * Disconnect socket cleanly
+     * Connect to a bonded printer's Bluetooth Classic SPP (RFCOMM) socket by MAC address.
+     */
+    connect: async function (address) {
+      const plugin = getNativePlugin();
+      if (!plugin) {
+        throw new Error('Native Android printer bridge is not available.');
+      }
+      if (!address || typeof address !== 'string') {
+        throw new Error('Printer MAC address is required.');
+      }
+      ensureNativeStateListener();
+      const result = await withTimeout(
+        plugin.connect({ address: address.trim() }),
+        CONNECT_TIMEOUT_MS,
+        'CONNECT_TIMEOUT',
+        'Connection timed out. Ensure the printer is powered ON and within range.'
+      );
+      if (result && result.connected) {
+        try {
+          localStorage.setItem('bitedash_last_printer_mac', result.address || address.trim());
+          localStorage.setItem('bitedash_last_printer_name', result.name || 'Thermal Printer');
+        } catch (e) {}
+      }
+      return result;
+    },
+
+    /**
+     * Disconnect the active Bluetooth SPP socket.
      */
     disconnect: async function () {
-      if (window.bluetoothSerial) {
-        return new Promise((resolve) => window.bluetoothSerial.disconnect(resolve, resolve));
+      const plugin = getNativePlugin();
+      if (!plugin) {
+        return { connected: false };
       }
-      activeNativeConnection = null;
-      return true;
-    }
+      return plugin.disconnect();
+    },
+
+    /**
+     * Send raw Uint8Array ESC/POS bytes to the connected printer.
+     */
+    sendEscPosBytes: async function (uint8Array) {
+      const plugin = getNativePlugin();
+      if (!plugin) {
+        const err = new Error('Native Android printer bridge is not installed.');
+        err.code = 'NOT_NATIVE';
+        throw err;
+      }
+      if (!(uint8Array instanceof Uint8Array) || uint8Array.byteLength === 0) {
+        const err = new Error('ESC/POS byte payload is empty.');
+        err.code = 'INVALID_DATA';
+        throw err;
+      }
+
+      const base64Data = uint8ToBase64(uint8Array);
+      return withTimeout(
+        plugin.writeBase64({ data: base64Data }),
+        PRINT_TIMEOUT_MS,
+        'PRINT_TIMEOUT',
+        'Print transmission timed out. Check printer paper and power before retrying.'
+      );
+    },
+
+    /**
+     * Print a 58mm verification test slip on the currently connected printer.
+     */
+    printTestSlip: async function () {
+      const status = await this.getStatus();
+      if (!status.nativeAvailable) {
+        throw new Error('Test print requires the Android app with native Bluetooth bridge.');
+      }
+      if (!status.connected) {
+        throw new Error('Printer is not connected. Select and connect a paired printer first.');
+      }
+      const bytes = buildTestSlipEscPosBytes(status.deviceName, status.deviceAddress);
+      const res = await this.sendEscPosBytes(bytes);
+      if (!res || res.status !== 'SUCCESS') {
+        throw new Error('Printer did not confirm test slip transmission.');
+      }
+      return res;
+    },
+
+    /**
+     * Print a Kitchen Order Ticket (KOT) and return:
+     * - 'SUCCESS': All ESC/POS bytes were written and flushed to the connected SPP socket.
+     * - 'FAILED': Pre-check failed before any bytes were transmitted (safe to retry immediately).
+     * - 'UNKNOWN': Transmission failed mid-stream or timed out (check physical printer before retry).
+     */
+    printKOT: async function (orderJsonOrObject) {
+      const plugin = getNativePlugin();
+      if (!plugin) {
+        return 'FAILED';
+      }
+
+      let order;
+      try {
+        order = typeof orderJsonOrObject === 'string'
+          ? JSON.parse(orderJsonOrObject)
+          : orderJsonOrObject;
+      } catch (e) {
+        console.error('[AndroidPOSBridge] Invalid order JSON:', e);
+        return 'FAILED';
+      }
+
+      if (!order || !Array.isArray(order.items) || order.items.length === 0) {
+        return 'FAILED';
+      }
+
+      // Verify socket is genuinely connected BEFORE attempting transmission
+      try {
+        const currentStatus = await plugin.getStatus();
+        if (!currentStatus || !currentStatus.connected) {
+          return 'FAILED';
+        }
+      } catch (e) {
+        return 'FAILED';
+      }
+
+      const kotBytes = buildKotEscPosBytes(order);
+
+      try {
+        const res = await this.sendEscPosBytes(kotBytes);
+        if (res && res.status === 'SUCCESS') {
+          return 'SUCCESS';
+        }
+        return 'UNKNOWN';
+      } catch (err) {
+        const code = String((err && err.code) || '');
+        const msg = String((err && err.message) || '');
+        if (
+          code === 'NOT_CONNECTED' ||
+          code === 'INVALID_DATA' ||
+          code === 'BT_DISABLED' ||
+          code === 'PERMISSION_DENIED' ||
+          msg.indexOf('not connected') !== -1
+        ) {
+          return 'FAILED';
+        }
+        console.error('[AndroidPOSBridge] Mid-stream or timeout print error:', err);
+        return 'UNKNOWN';
+      }
+    },
+
+    buildKotEscPosBytes: buildKotEscPosBytes,
+    buildTestSlipEscPosBytes: buildTestSlipEscPosBytes
   };
 
   return Bridge;
