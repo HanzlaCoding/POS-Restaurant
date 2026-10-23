@@ -1,0 +1,22 @@
+{
+  "name": "The Artisan Grill & Co. • Speed POS",
+  "short_name": "Artisan POS",
+  "description": "High-Throughput Touch POS & Thermal Bluetooth Register",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "any",
+  "theme_color": "#F8FAFC",
+  "background_color": "#F8FAFC",
+  "lang": "en",
+  "dir": "ltr",
+  "icons": [
+    {
+      "src": "assets/icons/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["business", "food", "productivity"]
+}

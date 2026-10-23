@@ -1,20 +1,9 @@
 {
-  "name": "bitedash-pos",
   "version": "1.0.0",
-  "description": "BiteDash Mobile Food Cart POS (Lahore, Pakistan) - Capacitor Android & ESC/POS Thermal Printing",
-  "private": true,
   "scripts": {
-    "start": "node server.js",
-    "prepare:www": "node scripts/prepare-www.js",
-    "cap:sync": "npm run prepare:www && npx cap sync android",
-    "cap:open": "npx cap open android",
-    "android:build:debug": "npm run cap:sync && cd android && gradlew.bat assembleDebug"
   },
   "dependencies": {
-    "@capacitor/android": "^6.2.0",
-    "@capacitor/core": "^6.2.0"
   },
   "devDependencies": {
-    "@capacitor/cli": "^6.2.0"
   }
 }

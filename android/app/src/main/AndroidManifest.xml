@@ -1,6 +1,4 @@
 <?xml version="1.0" encoding="utf-8"?>
-<manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:tools="http://schemas.android.com/tools">
 
     <application
         android:allowBackup="true"
@@ -36,26 +34,8 @@
         </provider>
     </application>
 
-    <!-- Network Permission -->
     <uses-permission android:name="android.permission.INTERNET" />
 
-    <!-- Legacy Bluetooth Permissions (Android 11 / API 30 and below) -->
-    <uses-permission
-        android:name="android.permission.BLUETOOTH"
         android:maxSdkVersion="30" />
-    <uses-permission
-        android:name="android.permission.BLUETOOTH_ADMIN"
         android:maxSdkVersion="30" />
-
-    <!-- Modern Android 12+ (API 31+) Bluetooth Runtime Permissions -->
-    <uses-permission
-        android:name="android.permission.BLUETOOTH_CONNECT" />
-    <uses-permission
-        android:name="android.permission.BLUETOOTH_SCAN"
-        android:usesPermissionFlags="neverForLocation"
-        tools:targetApi="s" />
-
-    <uses-feature
-        android:name="android.hardware.bluetooth"
-        android:required="false" />
 </manifest>
