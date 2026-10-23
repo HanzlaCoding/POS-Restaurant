@@ -85,7 +85,7 @@
   }
 
   /**
-   * Sanitizes text to printable 7-bit ASCII (0x20 - 0x7E) for 58mm ESC/POS hardware font compatibility.
+   * Sanitizes a single token/label to printable 7-bit ASCII (0x20 - 0x7E).
    */
   function toPrintableAscii(str) {
     if (!str) return '';
@@ -98,6 +98,21 @@
       .trim();
   }
 
+  /**
+   * Preserves exact column alignment spaces while stripping non-ASCII characters
+   * and clamping to 32-character 58mm thermal line width.
+   */
+  function toRawAsciiLine(str, maxWidth) {
+    const w = maxWidth || PAPER_WIDTH_CHARS;
+    if (!str) return '';
+    return String(str)
+      .replace(/[\u2018\u2019]/g, "'")
+      .replace(/[\u201C\u201D]/g, '"')
+      .replace(/[\u2013\u2014]/g, '-')
+      .replace(/[^\x20-\x7E]/g, '')
+      .slice(0, w);
+  }
+
   function padRight(str, len) {
     const s = String(str || '');
     return s.length >= len ? s.slice(0, len) : s + ' '.repeat(len - s.length);
@@ -108,13 +123,20 @@
     return s.length >= len ? s.slice(0, len) : ' '.repeat(len - s.length) + s;
   }
 
+  function formatTwoColumns(leftText, rightText, totalWidth = 32) {
+    const left = String(leftText || '').replace(/[^\x20-\x7E]/g, '');
+    const right = String(rightText || '').replace(/[^\x20-\x7E]/g, '');
+    const spacesNeeded = totalWidth - left.length - right.length;
+    if (spacesNeeded > 0) {
+      return left + ' '.repeat(spacesNeeded) + right;
+    }
+    // If too long, truncate left text to leave room for right amount
+    const maxLeft = Math.max(1, totalWidth - right.length - 1);
+    return left.substring(0, maxLeft) + ' ' + right;
+  }
+
   function formatColumns(left, right, width) {
-    const w = width || PAPER_WIDTH_CHARS;
-    const r = String(right || '');
-    const maxLeft = Math.max(1, w - r.length - 1);
-    const l = String(left || '').slice(0, maxLeft);
-    const spaces = Math.max(1, w - l.length - r.length);
-    return l + ' '.repeat(spaces) + r;
+    return formatTwoColumns(left, right, width || PAPER_WIDTH_CHARS);
   }
 
   function uint8ToBase64(uint8Array) {
@@ -154,7 +176,7 @@
     }
 
     function pushLine(text) {
-      const clean = toPrintableAscii(text);
+      const clean = toRawAsciiLine(text, PAPER_WIDTH_CHARS);
       for (let i = 0; i < clean.length; i++) {
         bytes.push(clean.charCodeAt(i) & 0x7F);
       }
@@ -260,7 +282,7 @@
     }
 
     function pushLine(text) {
-      const clean = toPrintableAscii(text);
+      const clean = toRawAsciiLine(text, PAPER_WIDTH_CHARS);
       for (let i = 0; i < clean.length; i++) {
         bytes.push(clean.charCodeAt(i) & 0x7F);
       }
@@ -557,7 +579,8 @@
     },
 
     buildKotEscPosBytes: buildKotEscPosBytes,
-    buildTestSlipEscPosBytes: buildTestSlipEscPosBytes
+    buildTestSlipEscPosBytes: buildTestSlipEscPosBytes,
+    formatTwoColumns: formatTwoColumns
   };
 
   return Bridge;

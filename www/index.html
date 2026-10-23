@@ -1901,6 +1901,18 @@
       resetDayTriggerBtn.style.display = 'block';
     }
 
+    function formatTwoColumns(leftText, rightText, totalWidth = 32) {
+      const left = String(leftText || '').replace(/[^\x20-\x7E]/g, '');
+      const right = String(rightText || '').replace(/[^\x20-\x7E]/g, '');
+      const spacesNeeded = totalWidth - left.length - right.length;
+      if (spacesNeeded > 0) {
+        return left + ' '.repeat(spacesNeeded) + right;
+      }
+      // If too long, truncate left text to leave room for right amount
+      const maxLeft = Math.max(1, totalWidth - right.length - 1);
+      return left.substring(0, maxLeft) + ' ' + right;
+    }
+
     function buildDailyHisaabEscPosBytes(summary) {
       const PAPER_WIDTH = 32;
       const ESC = 0x1B;
@@ -1914,47 +1926,47 @@
         }
       }
 
-      function toAscii(str) {
+      function toAsciiToken(str) {
         return String(str || '')
           .replace(/[^\x20-\x7E]/g, '')
           .replace(/\s+/g, ' ')
           .trim();
       }
 
-      function pushLine(text) {
-        const clean = toAscii(text);
-        for (let i = 0; i < clean.length; i++) {
-          bytes.push(clean.charCodeAt(i) & 0x7F);
-        }
-        bytes.push(LF);
+      function padRightFixed(str, len) {
+        const s = String(str || '');
+        return s.length >= len ? s.slice(0, len) : s + ' '.repeat(len - s.length);
       }
 
-      function formatCols(left, right) {
-        const r = toAscii(right);
-        const maxLeft = Math.max(1, PAPER_WIDTH - r.length - 1);
-        const l = toAscii(left).slice(0, maxLeft);
-        const spaces = Math.max(1, PAPER_WIDTH - l.length - r.length);
-        return l + ' '.repeat(spaces) + r;
+      function pushLine(text) {
+        const rawLine = String(text || '')
+          .replace(/[^\x20-\x7E]/g, '')
+          .slice(0, PAPER_WIDTH);
+        for (let i = 0; i < rawLine.length; i++) {
+          bytes.push(rawLine.charCodeAt(i) & 0x7F);
+        }
+        bytes.push(LF);
       }
 
       pushCmd(ESC, 0x40);       // Reset
       pushCmd(ESC, 0x74, 0x00); // PC437
       pushCmd(ESC, 0x61, 0x01); // Center align
       pushCmd(ESC, 0x45, 0x01); // Bold ON
-      pushLine('*** STUDENT BURGER - DAILY HISAAB ***');
+      pushLine('STUDENT BURGER & SHAWARMA');
+      pushLine('*** DAILY HISAAB REPORT ***');
       pushCmd(ESC, 0x45, 0x00); // Bold OFF
       pushLine('================================');
 
       pushCmd(ESC, 0x61, 0x00); // Left align
-      pushLine(formatCols('DATE: ' + summary.date, formatTime12Hour(new Date())));
-      pushLine(formatCols('TOTAL ORDERS:', String(summary.totalOrders)));
+      pushLine(formatTwoColumns('DATE: ' + summary.date, formatTime12Hour(new Date()), PAPER_WIDTH));
+      pushLine(formatTwoColumns('TOTAL ORDERS:', String(summary.totalOrders), PAPER_WIDTH));
       pushCmd(ESC, 0x45, 0x01);
-      pushLine(formatCols('TOTAL CASH:', 'Rs.' + summary.totalCash.toLocaleString('en-US')));
+      pushLine(formatTwoColumns('TOTAL CASH:', 'Rs.' + summary.totalCash.toLocaleString('en-US'), PAPER_WIDTH));
       pushCmd(ESC, 0x45, 0x00);
       pushLine('--------------------------------');
 
       pushCmd(ESC, 0x45, 0x01);
-      pushLine(formatCols('QTY  ITEM SOLD', 'AMOUNT'));
+      pushLine(formatTwoColumns('QTY  ITEM SOLD', 'AMOUNT', PAPER_WIDTH));
       pushCmd(ESC, 0x45, 0x00);
       pushLine('--------------------------------');
 
@@ -1962,11 +1974,10 @@
         pushLine('No orders recorded today.');
       } else {
         summary.allItems.forEach(item => {
-          const prefix = String(item.qty) + 'x ';
+          const qtyPrefix = padRightFixed(String(item.qty) + 'x', 5);
           const rightStr = 'Rs.' + item.revenue.toLocaleString('en-US');
-          const maxName = Math.max(6, PAPER_WIDTH - prefix.length - rightStr.length - 1);
-          const itemLabel = prefix + toAscii(item.name).toUpperCase().slice(0, maxName);
-          pushLine(formatCols(itemLabel, rightStr));
+          const itemLabel = qtyPrefix + toAsciiToken(item.name).toUpperCase();
+          pushLine(formatTwoColumns(itemLabel, rightStr, PAPER_WIDTH));
         });
       }
 
