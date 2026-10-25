@@ -163,6 +163,24 @@
     };
   }
 
+  function formatThreeColumns(itemText, qtyText, priceText) {
+    const cleanItem = toPrintableAscii(itemText || '');
+    const cleanQty = toPrintableAscii(qtyText || '');
+    const cleanPrice = toPrintableAscii(priceText || '');
+
+    const leftCol = cleanItem.slice(0, 16).padEnd(17, ' ');
+
+    const qtyClipped = cleanQty.slice(0, 5);
+    const padTotal = Math.max(0, 5 - qtyClipped.length);
+    const padLeft = Math.floor(padTotal / 2);
+    const padRight = padTotal - padLeft;
+    const midCol = ' '.repeat(padLeft) + qtyClipped + ' '.repeat(padRight);
+
+    const rightCol = cleanPrice.slice(0, 10).padStart(10, ' ');
+
+    return (leftCol + midCol + rightCol).slice(0, PAPER_WIDTH_CHARS);
+  }
+
   /**
    * Builds a 58mm (32-char width) ESC/POS Kitchen Order Ticket byte buffer.
    */
@@ -184,87 +202,57 @@
     }
 
     const tokenNum = String(order.token || 0).padStart(3, '0');
-    const customerRaw = toPrintableAscii(order.customer || '');
-    const customerDisplay = customerRaw ? customerRaw.toUpperCase().slice(0, 22) : 'WALK-IN / COUNTER';
+    const customerRaw = toPrintableAscii(order.customer || '').toUpperCase().slice(0, 20);
     const dt = formatDateTimePK(order.timestamp ? new Date(order.timestamp) : new Date());
     const items = Array.isArray(order.items) ? order.items : [];
+    const grandTotal = Math.round(Number(order.total || 0));
 
     // 1. Initialize printer & select standard PC437 character table
     pushCmd(ESC, 0x40);       // ESC @ (Reset)
     pushCmd(ESC, 0x74, 0x00); // ESC t 0 (PC437)
 
-    // 2. Centered Header
+    // 2. Centered Header: Bold Shop Name + Bold TOKEN #XXX + Date/Time
     pushCmd(ESC, 0x61, 0x01); // Center align
     pushCmd(ESC, 0x45, 0x01); // Bold ON
     pushLine('STUDENT BURGER & SHAWARMA');
-    pushCmd(ESC, 0x45, 0x00); // Bold OFF
-    pushLine('*** KITCHEN ORDER TICKET ***');
-    pushLine('================================');
-
-    // 3. Double-Width + Double-Height Token Banner
-    pushCmd(ESC, 0x45, 0x01); // Bold ON
     pushCmd(GS, 0x21, 0x11);  // 2x width, 2x height (16 chars max per line)
     pushLine('TOKEN #' + tokenNum);
     pushCmd(GS, 0x21, 0x00);  // Normal size
     pushCmd(ESC, 0x45, 0x00); // Bold OFF
-    pushLine('================================');
+    pushLine(dt.date + ' | ' + dt.time);
 
-    // 4. Left-aligned Order Metadata
+    // 3. Left-Aligned Table
     pushCmd(ESC, 0x61, 0x00); // Left align
-    pushCmd(ESC, 0x45, 0x01); // Bold ON
-    pushLine('CUSTOMER: ' + customerDisplay);
-    pushCmd(ESC, 0x45, 0x00); // Bold OFF
-    pushLine(formatColumns('DATE: ' + dt.date, dt.time, PAPER_WIDTH_CHARS));
+    if (customerRaw) {
+      pushLine('CUSTOMER: ' + customerRaw);
+    }
     pushLine('--------------------------------');
-
-    // 5. Items Table Header
     pushCmd(ESC, 0x45, 0x01);
-    pushLine(formatColumns('QTY  ITEM', 'AMOUNT', PAPER_WIDTH_CHARS));
+    pushLine(formatThreeColumns('ITEM', 'QTY', 'AMOUNT'));
     pushCmd(ESC, 0x45, 0x00);
     pushLine('--------------------------------');
 
-    // 6. Ordered Line Items
-    let totalUnits = 0;
+    // 4. Ordered Line Items: Left-aligned Item, Centered Qty ("x1"), Right-aligned Price ("Rs. 150")
     for (let i = 0; i < items.length; i++) {
       const item = items[i];
       const qty = Number(item.quantity || item.qty || 0);
       if (qty <= 0) continue;
-      totalUnits += qty;
 
       const nameAscii = toPrintableAscii(item.name || item.englishName || item.id).toUpperCase();
-      const lineTotal = Number(item.lineTotal || (qty * Number(item.unitPrice || item.price || 0)));
-      const priceStr = lineTotal > 0 ? String(Math.round(lineTotal)) : '';
-      const qtyPrefix = padRight(qty + 'x', 5);
-      const maxNameLen = PAPER_WIDTH_CHARS - qtyPrefix.length - (priceStr ? priceStr.length + 1 : 0);
-      const truncatedName = nameAscii.slice(0, Math.max(8, maxNameLen));
-
-      // Emphasize item line for kitchen readability
-      pushCmd(ESC, 0x45, 0x01);
-      pushLine(formatColumns(qtyPrefix + truncatedName, priceStr, PAPER_WIDTH_CHARS));
-      pushCmd(ESC, 0x45, 0x00);
+      const lineTotal = Math.round(Number(item.lineTotal || (qty * Number(item.unitPrice || item.price || 0))));
+      pushLine(formatThreeColumns(nameAscii, 'x' + qty, 'Rs. ' + lineTotal));
     }
 
-    pushLine('--------------------------------');
-
-    // 7. Totals Summary
-    const grandTotal = Number(order.total || 0);
+    // 5. Summary with Double Divider Lines
+    pushLine('================================');
     pushCmd(ESC, 0x45, 0x01);
-    pushLine(
-      formatColumns(
-        'ITEMS: ' + totalUnits,
-        'TOTAL: Rs.' + Math.round(grandTotal).toLocaleString('en-US'),
-        PAPER_WIDTH_CHARS
-      )
-    );
+    pushLine(formatColumns('TOTAL BILL:', 'Rs. ' + grandTotal.toLocaleString('en-US'), PAPER_WIDTH_CHARS));
     pushCmd(ESC, 0x45, 0x00);
     pushLine('================================');
 
-    // 8. Footer & Paper Feed
-    pushCmd(ESC, 0x61, 0x01); // Center
-    pushLine('[ KITCHEN COPY - TOKEN #' + tokenNum + ' ]');
-    pushCmd(ESC, 0x61, 0x00); // Left
-    pushCmd(LF, LF, LF, LF);  // Feed 4 lines for clean manual tear-off
-    pushCmd(GS, 0x56, 0x42, 0x00); // GS V 66 0 (Partial cut if cutter present; no-op on manual tear bar)
+    // 6. End of bill: Clean paper feed (3 blank lines) + optional partial cut
+    pushCmd(LF, LF, LF);
+    pushCmd(GS, 0x56, 0x42, 0x00);
 
     return new Uint8Array(bytes);
   }
