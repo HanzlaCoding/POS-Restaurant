@@ -2317,10 +2317,10 @@
           <div class="menu-editor-list" id="menuEditorList"></div>
         </div>
 
-        <!-- 3. JSON Backup & Restore + License Status + Silent Cloud Sync -->
+        <!-- 3. JSON Backup & Restore + License Status -->
         <div class="settings-section">
           <div class="settings-section-title">
-            <span>🔑 License, Cloud Sync &amp; Backup</span>
+            <span>🔑 License &amp; Stall Backup</span>
             <span id="settingsLicenseBadge" style="font-size:10.5px;color:#059669;">Active</span>
           </div>
           <div style="font-size:11.5px;font-weight:800;color:#334155;display:flex;justify-content:space-between;">
@@ -2330,13 +2330,6 @@
           <div class="settings-grid-2">
             <input type="text" id="settingsLicenseKeyInput" class="settings-input" maxlength="8" inputmode="numeric" placeholder="8-Digit Activation Key">
             <button type="button" class="modal-btn primary" id="settingsActivateKeyBtn" style="min-height:34px;padding:4px 10px;">🔓 Activate Key</button>
-          </div>
-          <div class="settings-field" style="margin-top:4px;">
-            <label for="cfgSyncWebhookUrl" style="display:flex;justify-content:space-between;align-items:center;">
-              <span>☁️ Cloud Sync Webhook / Supabase URL</span>
-              <span id="settingsSyncStatusBadge" style="font-size:10px;color:#0284C7;text-transform:none;">0 Pending</span>
-            </label>
-            <input type="url" id="cfgSyncWebhookUrl" class="settings-input" placeholder="https://your-project.supabase.co/functions/v1/bitedash-sync">
           </div>
           <div class="modal-btn-row">
             <button type="button" class="modal-btn" id="exportConfigJsonBtn">⬇️ Export .JSON</button>
@@ -5338,19 +5331,7 @@
     }
 
     function updateSettingsCloudSyncBadgeUI() {
-      const badgeEl = document.getElementById('settingsSyncStatusBadge');
-      if (!badgeEl) return;
-      const { totalPendingCount } = collectPendingSyncBatch();
-      const online = typeof navigator !== 'undefined' ? navigator.onLine : false;
-      if (totalPendingCount === 0) {
-        badgeEl.textContent = online ? '✅ Supabase Synced' : '📴 Offline (0 Pending)';
-        badgeEl.style.color = '#059669';
-      } else {
-        badgeEl.textContent = online
-          ? `⏳ ${totalPendingCount} Pending Sync`
-          : `📴 Offline (${totalPendingCount} Queued)`;
-        badgeEl.style.color = '#D97706';
-      }
+      // Silent background sync: no UI status banner exposed to cashier/client
     }
 
     /**
@@ -5514,12 +5495,7 @@
       document.getElementById('cfgShopAddress').value = shopConfig.address || '';
       document.getElementById('cfgFooterNote').value = shopConfig.footerNote || '';
       document.getElementById('cfgOwnerPin').value = getOwnerPin();
-      const webhookInput = document.getElementById('cfgSyncWebhookUrl');
-      if (webhookInput) {
-        webhookInput.value = getConfiguredSyncWebhookUrl();
-      }
       updateSettingsLicenseCardUI();
-      updateSettingsCloudSyncBadgeUI();
       resetMenuItemForm();
       renderMenuEditorList();
     }
@@ -5611,32 +5587,17 @@
       const address = document.getElementById('cfgShopAddress').value.trim();
       const footerNote = document.getElementById('cfgFooterNote').value.trim() || 'Thank You For Coming';
       const pinVal = document.getElementById('cfgOwnerPin').value.trim();
-      const webhookInput = document.getElementById('cfgSyncWebhookUrl');
-      const syncWebhookUrl = (webhookInput && webhookInput.value.trim()) || getConfiguredSyncWebhookUrl();
 
       if (!/^\d{4}$/.test(pinVal)) {
         showToast('Owner PIN must be exactly 4 digits (e.g. 1234).', 'error');
         return;
       }
 
-      shopConfig = { shopName, phone, address, footerNote, syncWebhookUrl };
-      try {
-        localStorage.setItem(SYNC_WEBHOOK_URL_KEY, syncWebhookUrl);
-      } catch (e) {}
+      shopConfig = { shopName, phone, address, footerNote };
       setOwnerPin(pinVal);
       saveShopConfigToStorage();
       scheduleDebouncedCloudSync(500);
       showToast('Shop settings & Owner PIN saved!', 'success');
-    });
-
-    document.getElementById('cfgSyncWebhookUrl').addEventListener('change', (e) => {
-      const val = (e.target.value || '').trim() || DEFAULT_SYNC_WEBHOOK_URL;
-      shopConfig.syncWebhookUrl = val;
-      try {
-        localStorage.setItem(SYNC_WEBHOOK_URL_KEY, val);
-      } catch (err) {}
-      saveShopConfigToStorage();
-      scheduleDebouncedCloudSync(600);
     });
 
     document.getElementById('saveMenuItemBtn').addEventListener('click', () => {
