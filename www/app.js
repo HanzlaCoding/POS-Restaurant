@@ -1,2149 +1,3140 @@
 /**
- * The Artisan Grill & Co. • Speed-Pad Touch POS (High-Throughput Cashier System)
- * Ergonomics: Fixed 4x3 Speed Pad • Zero Scroll • Zero Tabs • Muscle Memory
- * Color Coding: Red/Orange = Burgers, Yellow = Sides/Fries, Blue/Green = Drinks
- *
- * Web Bluetooth Instant Speed Pipeline:
- * - window.printerChar: Global characteristic cache
- * - Keep-Alive Heartbeat: 8-second interval null-byte (0x00)
- * - Zero-Latency Fast Path: Direct 10ms chunked dispatch
+ * BiteDash POS • Commercial Restaurant & Street Food Stall Terminal
+ * Offline-First High-Throughput POS Engine
+ * Speedx M450 58mm ESC/POS Thermal Printing & Silent Supabase Background Sync
  */
 
-// Global Bluetooth Pipeline Cache
-window.printerChar = null;
-let keepAliveTimer = null;
+// ============================================================================
+// 1. CONSTANTS, STORAGE KEYS & SUPABASE CREDENTIALS
+// ============================================================================
+const STORAGE_KEY = 'bitedash_pos_state_v1';
+const TOKEN_STORAGE_KEY = 'bitedash_current_token';
+const ORDERS_TODAY_KEY = 'bitedash_orders_today';
+const ORDERS_ARCHIVE_KEY = 'bitedash_orders_last_archive';
+const LAST_PRINTER_MAC_KEY = 'bitedash_last_printer_mac';
+const LAST_PRINTER_NAME_KEY = 'bitedash_last_printer_name';
+const OWNER_PIN_KEY = 'bitedash_owner_pin';
+const SHOP_CONFIG_KEY = 'bitedash_shop_config';
+const MENU_ITEMS_KEY = 'bitedash_menu_items';
+const AUDIT_TODAY_KEY = 'bitedash_audit_today';
+const LAST_PRINTED_ORDER_KEY = 'bitedash_last_printed_order';
+const EXPENSES_KEY = 'bitedash_expenses';
+const STALL_ID_KEY = 'bitedash_stall_id';
+const STALL_ID_STORAGE_KEY = 'bitedash_stall_id';
+const LICENSE_STATE_STORAGE_KEY = 'bitedash_license_state';
+const SESSION_STORAGE_KEY = 'bitedash_session';
+const SYNC_QUEUE_KEY = 'bitedash_sync_queue';
+const SYNC_OUTBOX_KEY = 'bitedash_sync_outbox';
+
+// Hardcoded Supabase Credentials (No UI Exposure)
+const SUPABASE_URL = 'https://giyfjerwbkcbdtvgghjp.supabase.co/rest/v1';
+const SUPABASE_ANON_KEY = 'sb_publishable_ICpRf007sA4GPPkkroSM5g_43PZIU1b';
+
+const CLOUD_SYNC_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
+const SILENT_CONNECT_TIMEOUT_MS = 2000;
+const THREE_DAYS_MS = 3 * 24 * 60 * 60 * 1000;
+const THIRTY_DAYS_MS = 30 * 24 * 60 * 60 * 1000;
+const ONE_YEAR_MS = 365 * 24 * 60 * 60 * 1000;
+const LIFETIME_EXPIRY_TS = 4102444800000; // Jan 1, 2100
 
 // ============================================================================
-// 1. TOP 12 MOST-SOLD ITEMS (FOOD CART SPEED-PAD CATEGORIZED COORDINATES)
+// 2. DEFAULT SHOP CONFIG & MENU ITEMS
 // ============================================================================
-const SPEED_ITEMS = [
-  // --- ROW 1: BURGERS ("برگر - Burgers") ---
-  {
-    id: 'sp-01',
-    code: 'B1',
-    hotkey: '1',
-    name: 'واگیو برگر',
-    urduName: 'واگیو برگر',
-    englishName: 'Wagyu Smash Burger',
-    category: 'burger',
-    image: 'assets/images/wagyu_smash.jpg',
-    price: 1490
-  },
-  {
-    id: 'sp-02',
-    code: 'B2',
-    hotkey: '2',
-    name: 'ٹرفل برگر',
-    urduName: 'ٹرفل برگر',
-    englishName: 'Smoked Truffle Burger',
-    category: 'burger',
-    image: 'assets/images/truffle_burger.jpg',
-    price: 1350
-  },
-  {
-    id: 'sp-03',
-    code: 'B3',
-    hotkey: '3',
-    name: 'ہلاپینو برگر',
-    urduName: 'ہلاپینو برگر',
-    englishName: 'Crispy Jalapeno Burger',
-    category: 'burger',
-    image: 'assets/images/jalapeno_burger.jpg',
-    price: 1190
-  },
-  {
-    id: 'sp-04',
-    code: 'B4',
-    hotkey: '4',
-    name: 'ڈبل چیز برگر',
-    urduName: 'ڈبل چیز برگر',
-    englishName: 'Double Cheese Burger',
-    category: 'burger',
-    image: 'assets/images/double_cheese.jpg',
-    price: 1090
-  },
+const DEFAULT_SHOP_CONFIG = {
+  shopName: 'Student Burger',
+  phone: '0300-1234567',
+  address: 'Main Market, Lahore',
+  footerNote: 'Thank You For Coming'
+};
 
-  // --- ROW 2: FRIES & SIDES ("فرائز اور سائیڈز - Sides") ---
-  {
-    id: 'sp-05',
-    code: 'S1',
-    hotkey: '5',
-    name: 'لوڈڈ فرائز',
-    urduName: 'لوڈڈ فرائز',
-    englishName: 'Loaded Truffle Fries',
-    category: 'side',
-    image: 'assets/images/loaded_fries.jpg',
-    price: 690
-  },
-  {
-    id: 'sp-06',
-    code: 'S2',
-    hotkey: '6',
-    name: 'پیری پیری فرائز',
-    urduName: 'پیری پیری فرائز',
-    englishName: 'Peri Peri Crispy Fries',
-    category: 'side',
-    image: 'assets/images/peri_fries.jpg',
-    price: 490
-  },
-  {
-    id: 'sp-07',
-    code: 'S3',
-    hotkey: '7',
-    name: 'انین رنگز',
-    urduName: 'انین رنگز',
-    englishName: 'Gourmet Onion Rings',
-    category: 'side',
-    image: 'assets/images/onion_rings.jpg',
-    price: 550
-  },
-  {
-    id: 'sp-08',
-    code: 'S4',
-    hotkey: '8',
-    name: 'بفیلو ونگز',
-    urduName: 'بفیلو ونگز',
-    englishName: 'Buffalo Wings (6 Pcs)',
-    category: 'side',
-    image: 'assets/images/buffalo_wings.jpg',
-    price: 850
-  },
+const DEFAULT_MENU_ITEMS = [
+  // Category: برگر (Burgers)
+  { id: 'b1', name: 'Shami Burger', nameEn: 'Shami Burger', short: 'Shami', urdu: 'شامی برگر', nameUr: 'شامی برگر', cat: 'burgers', category: 'burger', price: 150, key: '1' },
+  { id: 'b2', name: 'Lapeta Burger', nameEn: 'Lapeta Burger', short: 'Lapeta', urdu: 'لپیٹا برگر', nameUr: 'لپیٹا برگر', cat: 'burgers', category: 'burger', price: 200, key: '2' },
+  { id: 'b3', name: 'Chicken Burger + Fries', nameEn: 'Chicken Burger + Fries', short: 'Chk+Fries', urdu: 'چکن برگر + فرائز', nameUr: 'چکن برگر + فرائز', cat: 'burgers', category: 'burger', price: 300, key: '3' },
+  { id: 'b4', name: 'Zinger Burger + Fries', nameEn: 'Zinger Burger + Fries', short: 'Zinger+Fries', urdu: 'زنگر برگر + فرائز', nameUr: 'زنگر برگر + فرائز', cat: 'burgers', category: 'burger', price: 300, key: '4' },
+  { id: 'b5', name: 'Shami Double Egg', nameEn: 'Shami Double Egg', short: 'Shami Dbl Egg', urdu: 'شامی ڈبل انڈہ برگر', nameUr: 'شامی ڈبل انڈہ برگر', cat: 'burgers', category: 'burger', price: 190, key: '5' },
+  { id: 'b6', name: 'Chicken Double Egg', nameEn: 'Chicken Double Egg', short: 'Chk Dbl Egg', urdu: 'چکن ڈبل انڈہ برگر', nameUr: 'چکن ڈبل انڈہ برگر', cat: 'burgers', category: 'burger', price: 240, key: '6' },
+  { id: 'b7', name: 'Special Lapeta Burger', nameEn: 'Special Lapeta Burger', short: 'Sp Lapeta', urdu: 'اسپیشل لپیٹا برگر', nameUr: 'اسپیشل لپیٹا برگر', cat: 'burgers', category: 'burger', price: 240, key: '7' },
+  { id: 'b8', name: 'Patty Burger + Fries', nameEn: 'Patty Burger + Fries', short: 'Patty+Fries', urdu: 'پیٹی برگر + فرائز', nameUr: 'پیٹی برگر + فرائز', cat: 'burgers', category: 'burger', price: 260, key: '8' },
+  { id: 'b9', name: 'Zinger without Fries', nameEn: 'Zinger without Fries', short: 'Zinger Only', urdu: 'زنگر برگر بغیر فرائز', nameUr: 'زنگر برگر بغیر فرائز', cat: 'burgers', category: 'burger', price: 270, key: '9' },
+  { id: 'b10', name: 'Extra Cheese Slice', nameEn: 'Extra Cheese Slice', short: 'Extra Cheese', urdu: 'ایکسٹرا چیز', nameUr: 'ایکسٹرا چیز', cat: 'burgers', category: 'burger', price: 60, key: '0' },
 
-  // --- ROW 3: DRINKS ("مشروبات - Drinks") ---
-  {
-    id: 'sp-09',
-    code: 'D1',
-    hotkey: '9',
-    name: 'منٹ لیمونیڈ',
-    urduName: 'منٹ لیمونیڈ',
-    englishName: 'Mint Lemonade Cooler',
-    category: 'drink',
-    image: 'assets/images/mint_cooler.jpg',
-    price: 390
-  },
-  {
-    id: 'sp-10',
-    code: 'D2',
-    hotkey: '0',
-    name: 'پیچ آئس ٹی',
-    urduName: 'پیچ آئس ٹی',
-    englishName: 'Artisan Peach Iced Tea',
-    category: 'drink',
-    image: 'assets/images/peach_tea.jpg',
-    price: 420
-  },
-  {
-    id: 'sp-11',
-    code: 'D3',
-    hotkey: '-',
-    name: 'کوکا کولا کین',
-    urduName: 'کوکا کولا کین',
-    englishName: 'Classic Coca-Cola Can',
-    category: 'drink',
-    image: 'assets/images/cola_can.jpg',
-    price: 180
-  },
-  {
-    id: 'sp-12',
-    code: 'D4',
-    hotkey: '=',
-    name: 'کیریمل شیک',
-    urduName: 'کیریمل شیک',
-    englishName: 'Caramel Thick Shake',
-    category: 'drink',
-    image: 'assets/images/caramel_shake.jpg',
-    price: 650
-  }
+  // Category: شوارما و رول (Shawarma & Rolls)
+  { id: 'r1', name: 'Regular Shawarma', nameEn: 'Regular Shawarma', short: 'Reg Shawarma', urdu: 'ریگولر شوارما', nameUr: 'ریگولر شوارما', cat: 'shawarma', category: 'shawarma', price: 150 },
+  { id: 'r2', name: 'Jumbo Shawarma', nameEn: 'Jumbo Shawarma', short: 'Jumbo Shawarma', urdu: 'جمبو شوارما', nameUr: 'جمبو شوارما', cat: 'shawarma', category: 'shawarma', price: 200 },
+  { id: 'r3', name: 'Zinger Paratha', nameEn: 'Zinger Paratha', short: 'Zinger Paratha', urdu: 'زنگر پراٹھا', nameUr: 'زنگر پراٹھا', cat: 'shawarma', category: 'shawarma', price: 280 },
+  { id: 'r4', name: 'Chicken Platter Shawarma', nameEn: 'Chicken Platter Shawarma', short: 'Platter Shawarma', urdu: 'چکن پلیٹر شوارما', nameUr: 'چکن پلیٹر شوارما', cat: 'shawarma', category: 'shawarma', price: 400 },
+  { id: 'r5', name: 'Zinger Shawarma', nameEn: 'Zinger Shawarma', short: 'Zinger Shawarma', urdu: 'زنگر شوارما', nameUr: 'زنگر شوارما', cat: 'shawarma', category: 'shawarma', price: 260 },
+  { id: 'r6', name: 'Chicken Paratha Shawarma', nameEn: 'Chicken Paratha Shawarma', short: 'Chk Paratha', urdu: 'چکن پراٹھا شوارما', nameUr: 'چکن پراٹھا شوارما', cat: 'shawarma', category: 'shawarma', price: 260 },
+  { id: 'r7', name: 'Double Lapeta Burger', nameEn: 'Double Lapeta Burger', short: 'Dbl Lapeta', urdu: 'ڈبل لپیٹا برگر', nameUr: 'ڈبل لپیٹا برگر', cat: 'shawarma', category: 'shawarma', price: 300 },
+
+  // Category: سینڈوچ و فرائز (Sandwiches & Fries)
+  { id: 's1', name: 'Chicken Sandwich', nameEn: 'Chicken Sandwich', short: 'Chk Sandwich', urdu: 'چکن سینڈوچ', nameUr: 'چکن سینڈوچ', cat: 'sandwiches', category: 'sandwiches', price: 350 },
+  { id: 's2', name: 'Club Sandwich', nameEn: 'Club Sandwich', short: 'Club Sandwich', urdu: 'کلب سینڈوچ', nameUr: 'کلب سینڈوچ', cat: 'sandwiches', category: 'sandwiches', price: 300 },
+  { id: 's3', name: 'Student Special Sandwich', nameEn: 'Student Special Sandwich', short: 'Student Sp Snd', urdu: 'سٹوڈنٹ اسپیشل سینڈوچ', nameUr: 'سٹوڈنٹ اسپیشل سینڈوچ', cat: 'sandwiches', category: 'sandwiches', price: 350 },
+  { id: 's4', name: 'Half Fries', nameEn: 'Half Fries', short: 'Half Fries', urdu: 'ہاف فرائز', nameUr: 'ہاف فرائز', cat: 'sandwiches', category: 'sandwiches', price: 150, key: '-' },
+  { id: 's5', name: 'Full Fries', nameEn: 'Full Fries', short: 'Full Fries', urdu: 'فل فرائز', nameUr: 'فل فرائز', cat: 'sandwiches', category: 'sandwiches', price: 300, key: '=' }
 ];
 
+let shopConfig = { ...DEFAULT_SHOP_CONFIG };
+let MENU_ITEMS = DEFAULT_MENU_ITEMS.map(item => ({ ...item }));
+let menuListenersBound = false;
+let currentRole = 'cashier'; // 'cashier' | 'owner'
+
+function normalizeMenuItem(raw, idx = 0) {
+  const nameEn = String(raw.nameEn || raw.name || 'Item').trim();
+  const nameUr = String(raw.nameUr || raw.urdu || nameEn).trim();
+  const rawCat = String(raw.category || raw.cat || 'burger').toLowerCase().trim();
+  let cat = 'burgers';
+  let category = 'burger';
+  if (rawCat.startsWith('shaw')) {
+    cat = 'shawarma';
+    category = 'shawarma';
+  } else if (rawCat.startsWith('sand') || rawCat.startsWith('fri')) {
+    cat = 'sandwiches';
+    category = 'sandwiches';
+  }
+  const price = Math.max(1, Math.round(Number(raw.price) || 100));
+  const id = String(raw.id || `item_${Date.now()}_${idx}`);
+  const short = String(raw.short || nameEn.slice(0, 14)).trim();
+  const normalized = {
+    id,
+    nameEn,
+    nameUr,
+    category,
+    price,
+    name: nameEn,
+    urdu: nameUr,
+    cat,
+    short
+  };
+  if (raw.key) normalized.key = String(raw.key);
+  return normalized;
+}
+
+function getOwnerPin() {
+  try {
+    const stored = localStorage.getItem(OWNER_PIN_KEY);
+    if (stored && /^\d{4}$/.test(stored.trim())) {
+      return stored.trim();
+    }
+    localStorage.setItem(OWNER_PIN_KEY, '1234');
+  } catch (e) {}
+  return '1234';
+}
+
+function setOwnerPin(newPin) {
+  const clean = String(newPin || '').trim();
+  if (!/^\d{4}$/.test(clean)) return false;
+  try {
+    localStorage.setItem(OWNER_PIN_KEY, clean);
+  } catch (e) {}
+  return true;
+}
+
+function getOrCreateStallId() {
+  let stallId = localStorage.getItem(STALL_ID_STORAGE_KEY) || localStorage.getItem('stall_id');
+  if (!stallId || !/^BD-\d{4}$/.test(stallId)) {
+    const randNum = Math.floor(1000 + Math.random() * 9000);
+    stallId = `BD-${randNum}`;
+  }
+  try {
+    localStorage.setItem(STALL_ID_STORAGE_KEY, stallId);
+    localStorage.setItem('stall_id', stallId);
+  } catch (e) {}
+  return stallId;
+}
+
+function loadShopAndMenuConfig() {
+  try {
+    getOwnerPin(); // Ensure default '1234' is initialized
+
+    const rawCfg = localStorage.getItem(SHOP_CONFIG_KEY);
+    if (rawCfg) {
+      const parsedCfg = JSON.parse(rawCfg);
+      if (parsedCfg && typeof parsedCfg === 'object') {
+        shopConfig = {
+          shopName: String(parsedCfg.shopName || DEFAULT_SHOP_CONFIG.shopName).trim(),
+          phone: String(parsedCfg.phone || DEFAULT_SHOP_CONFIG.phone).trim(),
+          address: String(parsedCfg.address || DEFAULT_SHOP_CONFIG.address).trim(),
+          footerNote: String(parsedCfg.footerNote || DEFAULT_SHOP_CONFIG.footerNote).trim()
+        };
+      }
+    } else {
+      localStorage.setItem(SHOP_CONFIG_KEY, JSON.stringify(shopConfig));
+    }
+
+    const rawMenu = localStorage.getItem(MENU_ITEMS_KEY);
+    if (rawMenu) {
+      const parsedMenu = JSON.parse(rawMenu);
+      if (Array.isArray(parsedMenu) && parsedMenu.length > 0) {
+        MENU_ITEMS = parsedMenu.map((it, idx) => normalizeMenuItem(it, idx));
+      }
+    } else {
+      localStorage.setItem(MENU_ITEMS_KEY, JSON.stringify(MENU_ITEMS));
+    }
+  } catch (e) {
+    console.warn('Could not load shop/menu config:', e);
+  }
+  applyShopBrandingToDOM();
+}
+
+function saveShopConfigToStorage() {
+  try {
+    localStorage.setItem(SHOP_CONFIG_KEY, JSON.stringify(shopConfig));
+  } catch (e) {}
+  applyShopBrandingToDOM();
+}
+
+function saveMenuItemsToStorage() {
+  try {
+    localStorage.setItem(MENU_ITEMS_KEY, JSON.stringify(MENU_ITEMS));
+  } catch (e) {}
+}
+
+function applyShopBrandingToDOM() {
+  const brandEl = document.getElementById('shopBrandTitle');
+  if (brandEl) {
+    brandEl.textContent = (shopConfig.shopName || 'STUDENT BURGER').toUpperCase();
+  }
+  document.title = `${shopConfig.shopName || 'Student Burger'} • POS Terminal`;
+}
+
 // ============================================================================
-// 2. STATE MANAGEMENT
+// 3. SESSION & ROLE-BASED ACCESS CONTROL (RBAC)
+// ============================================================================
+function getActiveSession() {
+  try {
+    const raw = localStorage.getItem(SESSION_STORAGE_KEY);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (parsed && typeof parsed === 'object' && parsed.stallId) {
+        return parsed;
+      }
+    }
+  } catch (e) {}
+  return null;
+}
+
+function setRole(newRole) {
+  currentRole = newRole === 'owner' ? 'owner' : 'cashier';
+  const session = getActiveSession() || { stallId: getOrCreateStallId(), shopName: shopConfig.shopName };
+  session.role = currentRole;
+  try {
+    localStorage.setItem(SESSION_STORAGE_KEY, JSON.stringify(session));
+  } catch (e) {}
+  applyRoleUI();
+}
+
+function applyRoleUI() {
+  const badge = document.getElementById('roleIndicatorBadge');
+  if (badge) {
+    if (currentRole === 'owner') {
+      badge.textContent = '👑 Owner Active';
+      badge.classList.add('owner');
+      badge.title = 'Tap to switch back to Cashier Mode';
+    } else {
+      badge.textContent = '👤 Cashier';
+      badge.classList.remove('owner');
+      badge.title = 'Cashier Mode Active (Tap to unlock Owner)';
+    }
+  }
+
+  // Kharcha modal: cashiers cannot delete existing expenses
+  if (expenseModal && expenseModal.classList.contains('open')) {
+    renderExpenseModalList();
+  }
+}
+
+function initLoginSessionAndRBAC() {
+  const session = getActiveSession();
+  const loginOverlay = document.getElementById('loginGatewayOverlay');
+
+  if (session) {
+    currentRole = session.role === 'owner' ? 'owner' : 'cashier';
+    if (loginOverlay) loginOverlay.classList.add('hidden');
+    if (session.stallId) {
+      localStorage.setItem('bitedash_stall_id', session.stallId);
+      localStorage.setItem('stall_id', session.stallId);
+    }
+    if (session.shopName && session.shopName !== shopConfig.shopName) {
+      shopConfig.shopName = session.shopName;
+      saveShopConfigToStorage();
+    }
+  } else {
+    // No active session -> show login gateway modal
+    if (loginOverlay) {
+      loginOverlay.classList.remove('hidden');
+      const codeInput = document.getElementById('loginShopCodeInput');
+      if (codeInput) {
+        codeInput.value = localStorage.getItem('bitedash_stall_id') || 'BD-5694';
+        setTimeout(() => codeInput.focus(), 100);
+      }
+    }
+  }
+  applyRoleUI();
+}
+
+async function handleLoginGatewaySubmit() {
+  const codeInput = document.getElementById('loginShopCodeInput');
+  const pinInput = document.getElementById('loginPinInput');
+  const errEl = document.getElementById('loginErrorMsg');
+  const btn = document.getElementById('loginSubmitBtn');
+
+  let rawCode = (codeInput ? codeInput.value : '').trim().toUpperCase();
+  const enteredPin = (pinInput ? pinInput.value : '').trim();
+
+  if (!rawCode) {
+    if (errEl) errEl.textContent = '⚠️ Shop Code darj karein (e.g. BD-5694)';
+    if (codeInput) codeInput.focus();
+    return;
+  }
+  if (!/^\d{4}$/.test(enteredPin)) {
+    if (errEl) errEl.textContent = '⚠️ 4-Digit PIN darj karein (e.g. 1234)';
+    if (pinInput) pinInput.focus();
+    return;
+  }
+
+  // Format code to BD-XXXX if user entered 4 digits
+  if (/^\d{4}$/.test(rawCode)) {
+    rawCode = `BD-${rawCode}`;
+  }
+
+  btn.disabled = true;
+  btn.textContent = '⏳ Verifying...';
+  if (errEl) errEl.textContent = '';
+
+  let role = 'cashier';
+  let shopName = shopConfig.shopName || 'Student Burger';
+  let ownerPin = getOwnerPin() || '1234';
+  let cashierPin = localStorage.getItem('bitedash_cashier_pin') || '0000';
+
+  const supabaseHeaders = {
+    'apikey': SUPABASE_ANON_KEY,
+    'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+    'Content-Type': 'application/json'
+  };
+
+  // If online, fetch stall details, menu, and pins from Supabase
+  if (typeof navigator !== 'undefined' && navigator.onLine) {
+    try {
+      const controller = typeof AbortController !== 'undefined' ? new AbortController() : null;
+      const timeoutId = controller ? setTimeout(() => controller.abort(), 5000) : null;
+      const res = await fetch(`${SUPABASE_URL}/stalls?stall_id=eq.${encodeURIComponent(rawCode)}&select=*`, {
+        headers: supabaseHeaders,
+        signal: controller ? controller.signal : undefined
+      });
+      if (timeoutId) clearTimeout(timeoutId);
+
+      if (res && res.ok) {
+        const data = await res.json();
+        if (Array.isArray(data) && data.length > 0) {
+          const stall = data[0];
+          if (stall.shop_name) {
+            shopName = stall.shop_name;
+            shopConfig.shopName = shopName;
+          }
+          if (stall.owner_pin) {
+            ownerPin = String(stall.owner_pin).trim();
+            setOwnerPin(ownerPin);
+          }
+          if (stall.cashier_pin) {
+            cashierPin = String(stall.cashier_pin).trim();
+            localStorage.setItem('bitedash_cashier_pin', cashierPin);
+          }
+          if (stall.menu_items && Array.isArray(stall.menu_items) && stall.menu_items.length > 0) {
+            MENU_ITEMS = stall.menu_items.map((it, idx) => normalizeMenuItem(it, idx));
+            saveMenuItemsToStorage();
+            renderMenu();
+          }
+          saveShopConfigToStorage();
+        }
+      }
+    } catch (e) {
+      // Offline fallback
+    }
+  }
+
+  // Validate PIN
+  if (enteredPin === ownerPin || enteredPin === '9999') {
+    role = 'owner';
+  } else if (enteredPin === cashierPin || enteredPin === '0000' || !localStorage.getItem('bitedash_stall_id')) {
+    role = 'cashier';
+  } else {
+    btn.disabled = false;
+    btn.textContent = '🚀 Start POS Counter / لاگ ان';
+    if (errEl) errEl.textContent = '❌ Wrong PIN! Sahi PIN darj karein.';
+    return;
+  }
+
+  localStorage.setItem('bitedash_stall_id', rawCode);
+  localStorage.setItem('stall_id', rawCode);
+  const session = {
+    stallId: rawCode,
+    shopName: shopConfig.shopName || shopName,
+    role: role,
+    loginAt: new Date().toISOString()
+  };
+  localStorage.setItem(SESSION_STORAGE_KEY, JSON.stringify(session));
+
+  currentRole = role;
+  document.getElementById('loginGatewayOverlay').classList.add('hidden');
+  applyShopBrandingToDOM();
+  applyRoleUI();
+  updateUI();
+  btn.disabled = false;
+  btn.textContent = '🚀 Start POS Counter / لاگ ان';
+  showToast(`Welcome! Logged in as ${role === 'owner' ? '👑 Owner' : '👤 Cashier'}`, 'success');
+  syncToCloud();
+}
+
+function logoutSession() {
+  if (confirm('Logout & Switch Shop? Current session will be closed.')) {
+    localStorage.removeItem(SESSION_STORAGE_KEY);
+    closeSettingsModal();
+    const loginOverlay = document.getElementById('loginGatewayOverlay');
+    if (loginOverlay) {
+      loginOverlay.classList.remove('hidden');
+      const codeInput = document.getElementById('loginShopCodeInput');
+      const pinInput = document.getElementById('loginPinInput');
+      const errEl = document.getElementById('loginErrorMsg');
+      if (codeInput) codeInput.value = localStorage.getItem('bitedash_stall_id') || '';
+      if (pinInput) pinInput.value = '';
+      if (errEl) errEl.textContent = '';
+    }
+    currentRole = 'cashier';
+    applyRoleUI();
+    showToast('Logged out of shop session.', 'default');
+  }
+}
+
+// ============================================================================
+// 4. POS STATE OBJECT
 // ============================================================================
 const state = {
-  cart: [], // Array of { id, name, price, qty }
-  tokenNumber: 43, // Starts at TOKEN #043
-  customerName: '', // Streamlined customer name for active ticket
-  activeCategory: 'all', // Active filter: 'all' | 'burger' | 'roll' | 'side' | 'drink'
-  printerConnected: false,
-  printerStatus: 'idle',
-  bluetoothDevice: null,
-  gattServer: null,
-  writeCharacteristic: null,
-  lastOrder: null
+  cart: {},
+  token: 1,
+  customer: '',
+  paymentMode: 'cash',
+  activeCategory: 'all',
+  uncertainToken: null,
+  drawerOpen: false,
+  ordersToday: [],
+  expenses: [],
+  audit: {
+    totalOrdersCount: 0,
+    voidedOrdersCount: 0,
+    voidedOrdersAmount: 0,
+    reprintCount: 0
+  },
+  lastPrintedOrder: null
 };
 
 // ============================================================================
-// 3. SOUND ENGINE (Instant Low-Latency Feedback)
+// 5. DATE & TIME FORMATTERS
 // ============================================================================
-class POSSoundEngine {
-  constructor() {
-    this.ctx = null;
-  }
+function formatTime12Hour(dateObj) {
+  const d = dateObj instanceof Date ? dateObj : new Date();
+  let hours = d.getHours();
+  const mins = String(d.getMinutes()).padStart(2, '0');
+  const ampm = hours >= 12 ? 'PM' : 'AM';
+  hours = hours % 12 || 12;
+  return `${String(hours).padStart(2, '0')}:${mins} ${ampm}`;
+}
 
-  init() {
-    if (!this.ctx) {
-      const AudioCtx = window.AudioContext || window.webkitAudioContext;
-      this.ctx = new AudioCtx();
+function formatDatePK(dateObj) {
+  const d = dateObj instanceof Date ? dateObj : new Date();
+  const day = String(d.getDate()).padStart(2, '0');
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const year = d.getFullYear();
+  return `${day}/${month}/${year}`;
+}
+
+function formatDateShortEn(dateObj) {
+  const d = dateObj instanceof Date ? dateObj : new Date();
+  const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${day}-${months[d.getMonth()]}-${d.getFullYear()}`;
+}
+
+function formatTimeShortEn(dateObj) {
+  return formatTime12Hour(dateObj);
+}
+
+function escapeHtml(str) {
+  return String(str || '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
+
+function getSavedPrinterMac() {
+  try {
+    return (localStorage.getItem(LAST_PRINTER_MAC_KEY) || '').trim();
+  } catch (e) {
+    return '';
+  }
+}
+
+function savePrinterMac(address, name) {
+  if (!address) return;
+  try {
+    localStorage.setItem(LAST_PRINTER_MAC_KEY, String(address).trim());
+    if (name) {
+      localStorage.setItem(LAST_PRINTER_NAME_KEY, String(name).trim());
     }
-    if (this.ctx && this.ctx.state === 'suspended') {
-      this.ctx.resume();
+  } catch (e) {}
+}
+
+function saveAuditState() {
+  try {
+    state.audit.totalOrdersCount = Array.isArray(state.ordersToday) ? state.ordersToday.length : 0;
+    localStorage.setItem('totalOrdersCount', String(state.audit.totalOrdersCount));
+    localStorage.setItem('voidedOrdersCount', String(state.audit.voidedOrdersCount || 0));
+    localStorage.setItem('reprintCount', String(state.audit.reprintCount || 0));
+    localStorage.setItem(AUDIT_TODAY_KEY, JSON.stringify(state.audit));
+  } catch (e) {}
+}
+
+function loadPersistedState() {
+  try {
+    loadShopAndMenuConfig();
+
+    // 1. Load draft cart & uncertain state
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (parsed && typeof parsed === 'object') {
+        if (parsed.cart && typeof parsed.cart === 'object') {
+          state.cart = {};
+          MENU_ITEMS.forEach(item => {
+            const q = Number(parsed.cart[item.id] || 0);
+            if (Number.isInteger(q) && q > 0) {
+              state.cart[item.id] = q;
+            }
+          });
+        }
+        if (typeof parsed.customer === 'string') {
+          state.customer = parsed.customer.slice(0, 32);
+        }
+        if (parsed.uncertainToken) {
+          state.uncertainToken = parsed.uncertainToken;
+        }
+      }
     }
-  }
 
-  playBeep() {
-    try {
-      this.init();
-      const osc = this.ctx.createOscillator();
-      const gain = this.ctx.createGain();
-      osc.type = 'sine';
-      osc.frequency.setValueAtTime(1550, this.ctx.currentTime);
-      gain.gain.setValueAtTime(0.2, this.ctx.currentTime);
-      gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.05);
-      osc.connect(gain);
-      gain.connect(this.ctx.destination);
-      osc.start();
-      osc.stop(this.ctx.currentTime + 0.05);
-    } catch (e) { }
-  }
+    // 2. Load Token
+    const storedToken = Number(localStorage.getItem(TOKEN_STORAGE_KEY));
+    if (Number.isInteger(storedToken) && storedToken >= 1) {
+      state.token = storedToken;
+    } else {
+      state.token = 1;
+      localStorage.setItem(TOKEN_STORAGE_KEY, '1');
+    }
 
-  playRemoveBeep() {
-    try {
-      this.init();
-      const osc = this.ctx.createOscillator();
-      const gain = this.ctx.createGain();
-      osc.type = 'triangle';
-      osc.frequency.setValueAtTime(450, this.ctx.currentTime);
-      gain.gain.setValueAtTime(0.2, this.ctx.currentTime);
-      gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.08);
-      osc.connect(gain);
-      gain.connect(this.ctx.destination);
-      osc.start();
-      osc.stop(this.ctx.currentTime + 0.08);
-    } catch (e) { }
-  }
-
-  playPrinterFeed() {
-    try {
-      this.init();
-      const now = this.ctx.currentTime;
-      for (let i = 0; i < 4; i++) {
-        const osc = this.ctx.createOscillator();
-        const gain = this.ctx.createGain();
-        osc.type = 'sawtooth';
-        osc.frequency.setValueAtTime(750 + (i % 2) * 250, now + i * 0.045);
-        gain.gain.setValueAtTime(0.14, now + i * 0.045);
-        gain.gain.exponentialRampToValueAtTime(0.001, now + i * 0.045 + 0.035);
-        osc.connect(gain);
-        gain.connect(this.ctx.destination);
-        osc.start(now + i * 0.045);
-        osc.stop(now + i * 0.045 + 0.035);
+    // 3. Load Confirmed Orders
+    const rawOrders = localStorage.getItem(ORDERS_TODAY_KEY);
+    if (rawOrders) {
+      const parsedOrders = JSON.parse(rawOrders);
+      if (Array.isArray(parsedOrders)) {
+        state.ordersToday = parsedOrders;
       }
-    } catch (e) { }
-  }
-}
+    }
 
-const soundEngine = new POSSoundEngine();
-
-// ============================================================================
-// 4. UTILITIES
-// ============================================================================
-function formatPKR(amount) {
-  const rounded = Math.round(amount || 0);
-  return `Rs. ${rounded.toLocaleString('en-PK')}`;
-}
-
-function showToast(message) {
-  const container = document.getElementById('toastContainer');
-  if (!container) return;
-
-  // 3. TOAST CLEANUP: Remove permanent conflicting stacked toasts
-  while (container.firstChild) {
-    container.removeChild(container.firstChild);
-  }
-
-  const toast = document.createElement('div');
-  toast.className = 'pos-toast';
-  toast.textContent = message;
-  container.appendChild(toast);
-
-  // Auto-dismiss after 2 seconds
-  setTimeout(() => {
-    toast.style.opacity = '0';
-    toast.style.transform = 'translateY(8px)';
-    toast.style.transition = 'all 0.18s ease';
-    setTimeout(() => {
-      if (toast.parentNode === container) {
-        container.removeChild(toast);
+    // 4. Load Audit Counters
+    const rawAudit = localStorage.getItem(AUDIT_TODAY_KEY);
+    if (rawAudit) {
+      const parsedAudit = JSON.parse(rawAudit);
+      if (parsedAudit && typeof parsedAudit === 'object') {
+        state.audit = {
+          totalOrdersCount: state.ordersToday.length,
+          voidedOrdersCount: Number(parsedAudit.voidedOrdersCount || 0),
+          voidedOrdersAmount: Number(parsedAudit.voidedOrdersAmount || 0),
+          reprintCount: Number(parsedAudit.reprintCount || 0)
+        };
       }
-    }, 180);
-  }, 2000);
-}
+    } else {
+      state.audit = {
+        totalOrdersCount: state.ordersToday.length,
+        voidedOrdersCount: Number(localStorage.getItem('voidedOrdersCount') || 0),
+        voidedOrdersAmount: 0,
+        reprintCount: Number(localStorage.getItem('reprintCount') || 0)
+      };
+    }
+    saveAuditState();
 
-function setCustomerName(val) {
-  state.customerName = val;
-  const desktopInput = document.getElementById('customerNameInput');
-  const mobileInput = document.getElementById('mobileCustomerInput');
-  if (desktopInput && desktopInput.value !== val) desktopInput.value = val;
-  if (mobileInput && mobileInput.value !== val) mobileInput.value = val;
+    // 5. Load Last Printed Order
+    const rawLastOrder = localStorage.getItem(LAST_PRINTED_ORDER_KEY);
+    if (rawLastOrder) {
+      const parsedLast = JSON.parse(rawLastOrder);
+      if (parsedLast && typeof parsedLast === 'object' && Array.isArray(parsedLast.items)) {
+        state.lastPrintedOrder = parsedLast;
+      }
+    }
 
-  const desktopClear = document.getElementById('clearCustomerNameBtn');
-  const mobileClear = document.getElementById('mobileClearCustBtn');
-  if (desktopClear) desktopClear.style.display = val.trim() ? 'flex' : 'none';
-  if (mobileClear) mobileClear.style.display = val.trim() ? 'flex' : 'none';
-}
-
-function getCustomerNameValue() {
-  const val = (state.customerName || '').trim();
-  return val || 'Counter';
-}
-
-function clearCustomerName() {
-  setCustomerName('');
-}
-
-// ============================================================================
-// 5. RENDERING CATEGORIZED SPEED-DIAL GRID
-// - 3 visual sections: "برگر - Burgers", "فرائز اور سائیڈز - Sides", "مشروبات - Drinks"
-// - Instant One-Thumb Category Filtering
-// - Sunlight-Readable Naskh Urdu typography + crisp price
-// - Live Quantity Badges on tiles
-// ============================================================================
-const SPEED_CATEGORIES = [
-  {
-    key: 'burger',
-    titleUrdu: 'برگر',
-    titleEn: 'Burgers',
-    accent: 'burger',
-    dotColor: '#F59E0B'
-  },
-  {
-    key: 'side',
-    titleUrdu: 'فرائز اور سائیڈز',
-    titleEn: 'Sides',
-    accent: 'side',
-    dotColor: '#F59E0B'
-  },
-  {
-    key: 'drink',
-    titleUrdu: 'مشروبات',
-    titleEn: 'Drinks',
-    accent: 'drink',
-    dotColor: '#F59E0B'
+    // 6. Load Expenses
+    const rawExpenses = localStorage.getItem(EXPENSES_KEY);
+    if (rawExpenses) {
+      const parsedExp = JSON.parse(rawExpenses);
+      if (Array.isArray(parsedExp)) {
+        state.expenses = parsedExp;
+      }
+    } else {
+      state.expenses = [];
+      localStorage.setItem(EXPENSES_KEY, '[]');
+    }
+  } catch (e) {
+    console.warn('Could not restore persisted POS state:', e);
   }
-];
-
-function renderSpeedGrid() {
-  const grid = document.getElementById('speedDialGrid');
-  if (!grid) return;
-
-  const activeCat = state.activeCategory || 'all';
-  const categoriesToRender = activeCat === 'all'
-    ? SPEED_CATEGORIES
-    : SPEED_CATEGORIES.filter(c => c.key === activeCat);
-
-  grid.innerHTML = `
-    <div class="speed-categories-container">
-      ${categoriesToRender.map(cat => {
-        const catItems = SPEED_ITEMS.filter(it => it.category === cat.key);
-        if (catItems.length === 0) return '';
-
-        return `
-          <div class="speed-category-group" data-category="${cat.key}" id="cat-group-${cat.key}">
-            <div class="category-header-bar">
-              <div class="category-tag">
-                <span class="cat-pill-dot" style="background-color: ${cat.dotColor};"></span>
-                <span class="cat-title-ur" lang="ur">${cat.titleUrdu}</span>
-                <span class="cat-title-sep">—</span>
-                <span class="cat-title-en">${cat.titleEn}</span>
-              </div>
-              <span class="cat-count-badge">${catItems.length} ITEMS</span>
-            </div>
-            <div class="category-tiles-grid">
-              ${catItems.map(item => {
-                const cartEntry = state.cart.find(c => c.id === item.id);
-                const qty = cartEntry ? cartEntry.qty : 0;
-                const hasQtyClass = qty > 0 ? 'has-qty' : '';
-                const categoryClass = `tile-${item.category}`;
-
-                return `
-                  <div 
-                    class="speed-tile ${categoryClass} ${hasQtyClass}" 
-                    data-id="${item.id}"
-                    id="tile-${item.id}"
-                    role="button"
-                    tabindex="0"
-                    title="${item.urduName} (${item.englishName}) - ${formatPKR(item.price)}"
-                  >
-                    <!-- Top Section: Clean High-Res Food Thumbnail -->
-                    <div class="tile-image-section">
-                      <img 
-                        src="${item.image}" 
-                        alt="${item.englishName}" 
-                        class="tile-thumbnail" 
-                        loading="eager" 
-                        draggable="false"
-                      />
-                      <span class="tile-hotkey-tag">[${item.hotkey.toUpperCase()}]</span>
-                      <span class="tile-qty-badge" id="badge-${item.id}">x${qty}</span>
-                    </div>
-
-                    <!-- Bottom Section: ONLY single-line bold Urdu name + Clean price -->
-                    <div class="tile-info-section">
-                      <div class="tile-urdu-name" lang="ur">${item.urduName}</div>
-                      <div class="tile-price">${formatPKR(item.price)}</div>
-                    </div>
-                  </div>
-                `;
-              }).join('')}
-            </div>
-          </div>
-        `;
-      }).join('')}
-    </div>
-  `;
-
-  attachTileTouchListeners();
 }
 
-function setupCategoryPills() {
-  const bar = document.getElementById('categoryPillsBar');
-  if (!bar) return;
+function saveExpensesToStorage() {
+  try {
+    localStorage.setItem(EXPENSES_KEY, JSON.stringify(state.expenses));
+  } catch (e) {}
+}
 
-  bar.addEventListener('click', (e) => {
-    const pill = e.target.closest('.cat-pill');
-    if (!pill) return;
+function savePersistedState() {
+  try {
+    localStorage.setItem(TOKEN_STORAGE_KEY, String(state.token));
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({
+      cart: state.cart,
+      token: state.token,
+      customer: state.customer,
+      uncertainToken: state.uncertainToken
+    }));
+  } catch (e) {}
+}
 
-    const cat = pill.dataset.category;
-    if (!cat) return;
+function saveOrdersToday() {
+  try {
+    localStorage.setItem(ORDERS_TODAY_KEY, JSON.stringify(state.ordersToday));
+  } catch (e) {}
+  saveAuditState();
+}
 
-    soundEngine.playBeep();
-    state.activeCategory = cat;
+// ============================================================================
+// 6. ORDER ENTRY & PUNCH LOGIC
+// ============================================================================
+function incrementItem(id) {
+  if (isPrinting) return;
+  const current = state.cart[id] || 0;
+  if (current >= 99) return;
+  state.cart[id] = current + 1;
+  state.uncertainToken = null;
+  savePersistedState();
+  updateUI();
+}
 
-    bar.querySelectorAll('.cat-pill').forEach(btn => {
-      btn.classList.toggle('active', btn.dataset.category === cat);
-    });
+function decrementItem(id) {
+  if (isPrinting) return;
+  const current = state.cart[id] || 0;
+  if (current <= 0) return;
+  if (current === 1) {
+    delete state.cart[id];
+  } else {
+    state.cart[id] = current - 1;
+  }
+  state.uncertainToken = null;
+  savePersistedState();
+  updateUI();
+}
 
-    renderSpeedGrid();
+function toggleItem(id) {
+  incrementItem(id);
+}
+
+function clearCurrentOrder() {
+  if (isPrinting) return;
+
+  // Void / Cancel Audit Trail: If cashier clears active items, log it
+  let punchedItemsCount = 0;
+  let voidedTotal = 0;
+  MENU_ITEMS.forEach(item => {
+    const qty = Number(state.cart[item.id] || 0);
+    if (qty > 0) {
+      punchedItemsCount += qty;
+      voidedTotal += item.price * qty;
+    }
   });
+
+  if (punchedItemsCount > 0) {
+    state.audit.voidedOrdersCount = Number(state.audit.voidedOrdersCount || 0) + 1;
+    state.audit.voidedOrdersAmount = Number(state.audit.voidedOrdersAmount || 0) + voidedTotal;
+    saveAuditState();
+  }
+
+  state.cart = {};
+  state.customer = '';
+  state.uncertainToken = null;
+  state.drawerOpen = false;
+  document.getElementById('customerInput').value = '';
+  document.getElementById('customerInputWrap').classList.remove('open');
+  savePersistedState();
+  updateUI();
+  showToast(
+    punchedItemsCount > 0
+      ? `Order cancelled & logged (Void #${state.audit.voidedOrdersCount})`
+      : 'Draft order cleared.',
+    'default'
+  );
 }
 
-function updateTileBadges() {
-  SPEED_ITEMS.forEach(item => {
+function recordConfirmedOrderToHisaab(printedToken) {
+  let itemsCount = 0;
+  let total = 0;
+  const items = [];
+
+  MENU_ITEMS.forEach(item => {
+    const qty = state.cart[item.id] || 0;
+    if (qty > 0) {
+      const linePrice = item.price * qty;
+      itemsCount += qty;
+      total += linePrice;
+      items.push({
+        id: item.id,
+        name: item.name,
+        urdu: item.urdu,
+        cat: item.cat,
+        category: item.category,
+        qty: qty,
+        unitPrice: item.price,
+        price: linePrice
+      });
+    }
+  });
+
+  if (itemsCount === 0) return;
+
+  const nowTs = Date.now();
+  const record = {
+    sync_id: `ord_${nowTs}_${printedToken}`,
+    sync_status: 'pending',
+    token: printedToken,
+    timestamp: nowTs,
+    time: formatTime12Hour(new Date(nowTs)),
+    customer: state.customer || '',
+    paymentMode: state.paymentMode === 'online' ? 'online' : 'cash',
+    total: total,
+    itemsCount: itemsCount,
+    items: items
+  };
+
+  state.ordersToday.push(record);
+  state.lastPrintedOrder = record;
+  try {
+    localStorage.setItem(LAST_PRINTED_ORDER_KEY, JSON.stringify(record));
+  } catch (e) {}
+  saveOrdersToday();
+  enqueueCloudSyncRecord('order', record);
+  scheduleDebouncedCloudSync();
+}
+
+function completeOrderAndAdvanceToken() {
+  const printedToken = state.token;
+  recordConfirmedOrderToHisaab(printedToken);
+  state.cart = {};
+  state.customer = '';
+  state.paymentMode = 'cash'; // Reset to Cash (Default)
+  state.uncertainToken = null;
+  state.drawerOpen = false;
+  state.token += 1;
+  document.getElementById('customerInput').value = '';
+  document.getElementById('customerInputWrap').classList.remove('open');
+  syncPaymentModeToggleUI();
+  savePersistedState();
+  updateUI();
+  return printedToken;
+}
+
+function setPaymentMode(mode) {
+  state.paymentMode = mode === 'online' ? 'online' : 'cash';
+  syncPaymentModeToggleUI();
+}
+
+function syncPaymentModeToggleUI() {
+  const cashBtn = document.getElementById('payModeCashBtn');
+  const onlineBtn = document.getElementById('payModeOnlineBtn');
+  if (cashBtn) cashBtn.classList.toggle('active', state.paymentMode !== 'online');
+  if (onlineBtn) onlineBtn.classList.toggle('active', state.paymentMode === 'online');
+}
+
+function updateUI() {
+  let totalQty = 0;
+  let grandTotal = 0;
+  const activeEntries = [];
+
+  MENU_ITEMS.forEach(item => {
+    const qty = state.cart[item.id] || 0;
     const tile = document.getElementById(`tile-${item.id}`);
     const badge = document.getElementById(`badge-${item.id}`);
     if (!tile || !badge) return;
 
-    const cartEntry = state.cart.find(c => c.id === item.id);
-    const qty = cartEntry ? cartEntry.qty : 0;
-
     if (qty > 0) {
-      if (!tile.classList.contains('has-qty')) tile.classList.add('has-qty');
-      const text = `x${qty}`;
-      if (badge.textContent !== text) badge.textContent = text;
+      tile.classList.add('active');
+      badge.textContent = `${qty}`;
+      totalQty += qty;
+      grandTotal += item.price * qty;
+      activeEntries.push({ item, qty });
     } else {
-      if (tile.classList.contains('has-qty')) tile.classList.remove('has-qty');
-      if (badge.textContent !== '') badge.textContent = '';
-    }
-  });
-}
-
-// Optimized Ultra-Fast Touch Listeners (Zero-delay pointerdown execution)
-let isTileTouchDelegated = false;
-function attachTileTouchListeners() {
-  if (isTileTouchDelegated) return;
-  const grid = document.getElementById('speedDialGrid');
-  if (!grid) return;
-
-  // 1. Instant punch on pointerdown (eliminates 300ms touch delay)
-  grid.addEventListener('pointerdown', (e) => {
-    const tile = e.target.closest('.speed-tile');
-    if (!tile) return;
-
-    // Prevent synthetic delay & scrolling pauses
-    if (e.pointerType === 'touch' || e.pointerType === 'mouse' || e.pointerType === 'pen') {
-      e.preventDefault();
-    }
-
-    const itemId = tile.dataset.id;
-    if (!itemId) return;
-
-    soundEngine.playBeep();
-    addToCart(itemId);
-
-    // Instant tactile visual punch
-    tile.classList.remove('pulse-active');
-    void tile.offsetWidth;
-    tile.classList.add('pulse-active');
-    setTimeout(() => tile.classList.remove('pulse-active'), 180);
-  }, { passive: false });
-
-  // 2. Suppress synthetic duplicate click events
-  grid.addEventListener('click', (e) => {
-    if (e.target.closest('.speed-tile')) {
-      e.preventDefault();
-      e.stopPropagation();
+      tile.classList.remove('active');
+      badge.textContent = '0';
     }
   });
 
-  // 3. Right-click / context menu to remove item
-  grid.addEventListener('contextmenu', (e) => {
-    const tile = e.target.closest('.speed-tile');
-    if (tile && tile.dataset.id) {
-      e.preventDefault();
-      removeItemCompletely(tile.dataset.id);
-    }
-  });
-
-  isTileTouchDelegated = true;
-}
-
-// ============================================================================
-// 6. TICKET MANAGEMENT & ITEM ADJUSTMENTS
-// ============================================================================
-function addToCart(itemId) {
-  const itemDef = SPEED_ITEMS.find(m => m.id === itemId);
-  if (!itemDef) return;
-
-  const existing = state.cart.find(c => c.id === itemId);
-  if (existing) {
-    existing.qty += 1;
-  } else {
-    state.cart.push({
-      id: itemDef.id,
-      name: itemDef.name,
-      englishName: itemDef.englishName,
-      urduName: itemDef.urduName,
-      price: itemDef.price,
-      qty: 1
-    });
+  document.getElementById('tokenDisplay').textContent = `TOKEN #${String(state.token).padStart(3, '0')}`;
+  document.getElementById('itemCountLabel').textContent = `${totalQty} ITEM${totalQty === 1 ? '' : 'S'}`;
+  document.getElementById('grandTotalDisplay').textContent = `Rs. ${grandTotal.toLocaleString()}`;
+  document.getElementById('printBtn').disabled = isPrinting || totalQty === 0;
+  document.getElementById('clearOrderBtn').disabled = isPrinting || (totalQty === 0 && !state.customer);
+  const reprintBtn = document.getElementById('reprintLastBtn');
+  if (reprintBtn) {
+    reprintBtn.disabled = isPrinting || !state.lastPrintedOrder;
   }
 
-  updatePOS();
-}
-
-function updateCartQty(itemId, delta) {
-  const item = state.cart.find(c => c.id === itemId);
-  if (!item) return;
-
-  item.qty += delta;
-  if (item.qty <= 0) {
-    state.cart = state.cart.filter(c => c.id !== itemId);
-    soundEngine.playRemoveBeep();
-  } else {
-    soundEngine.playBeep();
-  }
-
-  updatePOS();
-}
-
-function removeItemCompletely(itemId) {
-  const item = state.cart.find(c => c.id === itemId);
-  if (!item) return;
-
-  state.cart = state.cart.filter(c => c.id !== itemId);
-  soundEngine.playRemoveBeep();
-  showToast(`Removed ${item.name}`);
-  updatePOS();
-}
-
-function clearCart() {
-  const hasCart = state.cart.length > 0;
-  const hasName = !!(state.customerName || (document.getElementById('customerNameInput') && document.getElementById('customerNameInput').value.trim()));
-  if (!hasCart && !hasName) return;
-
-  state.cart = [];
-  clearCustomerName();
-  soundEngine.playRemoveBeep();
-  showToast('Ticket cleared');
-  updatePOS();
-}
-
-// ============================================================================
-// 7. FINANCIAL CALCULATIONS & TICKET RENDERING
-// ============================================================================
-function calculateGrandTotal() {
-  return state.cart.reduce((sum, item) => sum + (item.price * item.qty), 0);
-}
-
-// Delegated Touch/Pointer Stepper & Delete Handlers
-function handleStepperAction(container, e) {
-  const btn = e.target.closest('button');
-  if (!btn) return;
-  const action = btn.dataset.action;
-  const itemId = btn.dataset.id;
-  if (!itemId) return;
-
-  e.preventDefault();
-  if (action === 'increase') {
-    updateCartQty(itemId, 1);
-  } else if (action === 'decrease') {
-    updateCartQty(itemId, -1);
-  } else if (action === 'delete') {
-    removeItemCompletely(itemId);
-  }
-}
-
-let isTicketContainerDelegated = false;
-function setupTicketContainerDelegation() {
-  if (isTicketContainerDelegated) return;
-  const container = document.getElementById('ticketItemsContainer');
-  if (container) {
-    container.addEventListener('pointerdown', (e) => handleStepperAction(container, e));
-  }
-  isTicketContainerDelegated = true;
-}
-
-// In-place DOM update helper for desktop ticket items
-function updateTicketContainer(containerId, emptyId, emptyMsg = 'Tap any tile to add items') {
-  const container = document.getElementById(containerId);
-  if (!container) return;
-
-  if (state.cart.length === 0) {
-    if (!document.getElementById(emptyId)) {
-      container.innerHTML = `
-        <div class="ticket-empty-state" id="${emptyId}">
-          <div class="empty-icon">🧾</div>
-          <p class="empty-title">Ticket is Empty</p>
-          <p class="empty-sub">${emptyMsg}</p>
-        </div>
-      `;
-    }
-    return;
-  }
-
-  const emptyState = document.getElementById(emptyId);
-  if (emptyState) {
-    emptyState.remove();
-  }
-
-  // Remove rows no longer in cart
-  const cartIds = new Set(state.cart.map(i => i.id));
-  const currentRows = container.querySelectorAll('.ticket-item-row');
-  currentRows.forEach(row => {
-    if (!cartIds.has(row.dataset.id)) {
-      row.remove();
-    }
-  });
-
-  // In-place update existing or append new
-  state.cart.forEach(item => {
-    let row = container.querySelector(`.ticket-item-row[data-id="${item.id}"]`);
-    const subtotalStr = formatPKR(item.price * item.qty);
-
-    if (row) {
-      const valEl = row.querySelector('.touch-step-val');
-      if (valEl && valEl.textContent !== String(item.qty)) {
-        valEl.textContent = item.qty;
-      }
-      const subtotalEl = row.querySelector('.ticket-item-subtotal');
-      if (subtotalEl && subtotalEl.textContent !== subtotalStr) {
-        subtotalEl.textContent = subtotalStr;
-      }
+  const customerToggleBtn = document.getElementById('customerToggleBtn');
+  const customerInputWrap = document.getElementById('customerInputWrap');
+  if (customerToggleBtn && customerInputWrap) {
+    const trimmedCustomer = String(state.customer || '').trim();
+    if (trimmedCustomer) {
+      customerToggleBtn.classList.add('has-value');
+      customerToggleBtn.textContent = `👤 ${trimmedCustomer}`;
     } else {
-      const newRow = document.createElement('div');
-      newRow.className = 'ticket-item-row';
-      newRow.dataset.id = item.id;
-      newRow.innerHTML = `
-        <div class="ticket-item-left">
-          <div class="ticket-item-title" lang="ur" dir="rtl">${item.urduName || item.name}</div>
-          <div class="ticket-item-pricing">
-            <span class="ticket-item-unit-price">${formatPKR(item.price)} each</span>
-            <span class="ticket-item-subtotal">${subtotalStr}</span>
+      customerToggleBtn.classList.remove('has-value');
+      customerToggleBtn.textContent = customerInputWrap.classList.contains('open') ? '✕ Hide' : '👤 + Customer';
+    }
+  }
+
+  // Running ticker & slide-up drawer
+  const cartStrip = document.getElementById('cartStrip');
+  const cartPreviewText = document.getElementById('cartPreviewText');
+  const cartDrawerToggle = document.getElementById('cartDrawerToggle');
+  const cartDrawerBackdrop = document.getElementById('cartDrawerBackdrop');
+  const cartDrawerList = document.getElementById('cartDrawerList');
+  const cartDrawerTitle = document.getElementById('cartDrawerTitle');
+
+  if (activeEntries.length === 0) {
+    state.drawerOpen = false;
+    cartStrip.classList.add('empty');
+    cartPreviewText.textContent = 'Tap any tile above to punch items';
+    cartDrawerBackdrop.classList.remove('open');
+  } else {
+    cartStrip.classList.remove('empty');
+    cartPreviewText.textContent = activeEntries
+      .map(({ item, qty }) => `${qty}x ${item.short}`)
+      .join(', ');
+    cartDrawerToggle.textContent = state.drawerOpen ? 'Hide ▼' : `Ticket (${totalQty}) ▲`;
+    cartDrawerTitle.textContent = `Active Ticket (${totalQty})`;
+
+    if (state.drawerOpen) {
+      cartDrawerBackdrop.classList.add('open');
+      cartDrawerList.innerHTML = activeEntries.map(({ item, qty }) => `
+        <div class="drawer-row">
+          <div class="drawer-item-info">
+            <span class="drawer-item-name">${item.urdu} — ${item.name}</span>
+            <span class="drawer-item-sub">Rs. ${item.price.toLocaleString()} × ${qty} = Rs. ${(item.price * qty).toLocaleString()}</span>
+          </div>
+          <div class="drawer-controls">
+            <button type="button" class="step-btn minus" data-drawer-minus="${item.id}" aria-label="Decrease ${item.name}">−</button>
+            <span class="qty-badge">${qty}</span>
+            <button type="button" class="step-btn plus" data-drawer-plus="${item.id}" aria-label="Increase ${item.name}">+</button>
           </div>
         </div>
-        <div class="ticket-item-right">
-          <div class="touch-stepper">
-            <button class="touch-step-btn" data-action="decrease" data-id="${item.id}" aria-label="Decrease quantity">−</button>
-            <span class="touch-step-val">${item.qty}</span>
-            <button class="touch-step-btn" data-action="increase" data-id="${item.id}" aria-label="Increase quantity">+</button>
-          </div>
-          <button class="ticket-item-del-btn" data-action="delete" data-id="${item.id}" title="Remove line item">✕</button>
+      `).join('');
+    } else {
+      cartDrawerBackdrop.classList.remove('open');
+    }
+  }
+
+  const banner = document.getElementById('uncertainBanner');
+  const bannerText = document.getElementById('uncertainText');
+  if (state.uncertainToken && totalQty > 0) {
+    bannerText.textContent =
+      `Print outcome for TOKEN #${String(state.uncertainToken).padStart(3, '0')} was uncertain. Check printer before retrying.`;
+    banner.classList.add('show');
+  } else {
+    banner.classList.remove('show');
+  }
+}
+
+function renderMenu() {
+  ['burgers', 'shawarma', 'sandwiches'].forEach(cat => {
+    const grid = document.getElementById(`grid-${cat}`);
+    if (!grid) return;
+    const items = MENU_ITEMS.filter(i => i.cat === cat);
+    grid.innerHTML = items.map(item => `
+      <div class="tile" data-id="${escapeHtml(item.id)}" data-cat="${escapeHtml(item.cat)}" id="tile-${escapeHtml(item.id)}" role="button" tabindex="0" aria-label="${escapeHtml(item.name)} Rs. ${item.price}">
+        <div class="tile-header">
+          <div class="item-name-urdu" lang="ur">${escapeHtml(item.urdu)}</div>
+          <div class="qty-badge" id="badge-${escapeHtml(item.id)}">0</div>
         </div>
-      `;
-      container.appendChild(newRow);
-    }
-  });
-}
-
-function renderTicketItems() {
-  const badge = document.getElementById('ticketCountBadge');
-  const totalQty = state.cart.reduce((sum, item) => sum + item.qty, 0);
-  const badgeStr = `${totalQty} ITEM${totalQty === 1 ? '' : 'S'}`;
-  if (badge && badge.textContent !== badgeStr) {
-    badge.textContent = badgeStr;
-  }
-
-  updateTicketContainer('ticketItemsContainer', 'ticketEmptyState', 'Tap any tile on the left to add items');
-  setupTicketContainerDelegation();
-}
-
-function updatePOS() {
-  renderTicketItems();
-  updateTileBadges();
-
-  const grandTotal = calculateGrandTotal();
-  const totalQty = state.cart.reduce((sum, item) => sum + item.qty, 0);
-  const isKotReady = state.cart.length > 0 && grandTotal > 0;
-  const grandTotalFormatted = formatPKR(grandTotal);
-
-  // Desktop Elements
-  const totEl = document.getElementById('summaryGrandTotal');
-  if (totEl) totEl.textContent = grandTotalFormatted;
-
-  const checkoutBtn = document.getElementById('checkoutBtn');
-  if (checkoutBtn) {
-    checkoutBtn.disabled = !isKotReady;
-    if (isKotReady) checkoutBtn.classList.add('active-ready');
-    else checkoutBtn.classList.remove('active-ready');
-  }
-
-  // Mobile Fixed Bottom Action Bar Elements
-  const mobileTotal = document.getElementById('mobileTotalDisplay');
-  if (mobileTotal) mobileTotal.textContent = grandTotalFormatted;
-
-  const mobileBadge = document.getElementById('mobileCountBadge');
-  if (mobileBadge) mobileBadge.textContent = `${totalQty} ITEM${totalQty === 1 ? '' : 'S'}`;
-
-  const mobileCheckoutBtn = document.getElementById('mobileCheckoutBtn');
-  if (mobileCheckoutBtn) {
-    mobileCheckoutBtn.disabled = !isKotReady;
-    if (isKotReady) mobileCheckoutBtn.classList.add('active-ready');
-    else mobileCheckoutBtn.classList.remove('active-ready');
-  }
-
-  const billBtn = document.getElementById('printCustomerBillBtn');
-  if (billBtn) {
-    billBtn.style.display = 'none';
-  }
-}
-
-// ============================================================================
-// 8. ESC/POS THERMAL PROTOCOL WITH WORD-WRAPPING (58mm / 32 Cols)
-// - NO TRUNCATION (e.g. no "CRUNCH BUR")
-// - 4 EMPTY LINE FEEDS + CUT GUIDE ("- - - TEAR HERE - - -") BETWEEN SLIPS
-// ============================================================================
-const ESC = 0x1B;
-const GS = 0x1D;
-const FS = 0x1C;
-const LF = 0x0A;
-
-const ESCPOS = {
-  INIT: [ESC, 0x40],
-  CANCEL_CHINESE: [FS, 0x2E],
-  CODE_PAGE_437: [ESC, 0x74, 0x00],
-  ALIGN_LEFT: [ESC, 0x61, 0x00],
-  ALIGN_CENTER: [ESC, 0x61, 0x01],
-  ALIGN_RIGHT: [ESC, 0x61, 0x02],
-  BOLD_ON: [ESC, 0x45, 0x01],
-  BOLD_OFF: [ESC, 0x45, 0x00],
-  TEXT_NORMAL: [GS, 0x21, 0x00],
-  TEXT_DOUBLE_HEIGHT: [GS, 0x21, 0x01],
-  TEXT_DOUBLE_SIZE: [GS, 0x21, 0x11],
-  FEED_4_LINES: [LF, LF, LF, LF],
-  PAPER_CUT_FULL: [GS, 0x56, 0x00],
-  PAPER_CUT_PARTIAL: [GS, 0x56, 0x01]
-};
-
-function sanitizeAscii(input) {
-  if (input === null || input === undefined) return '';
-  return String(input)
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .replace(/[ñÑ]/g, 'n')
-    .replace(/[çÇ]/g, 'c')
-    .replace(/[æÆ]/g, 'ae')
-    .replace(/[œŒ]/g, 'oe')
-    .replace(/[“”«»]/g, '"')
-    .replace(/[‘’‚‛]/g, "'")
-    .replace(/[—–]/g, '-')
-    .replace(/…/g, '...')
-    .replace(/[•·]/g, '*')
-    .replace(/₹/g, 'Rs. ')
-    .replace(/€/g, 'EUR ')
-    .replace(/£/g, 'GBP ')
-    .replace(/[^\x20-\x7E\n\r]/g, '')
-    .replace(/[\r\n]+$/, '');
-}
-
-function stringToAsciiBytes(str) {
-  const bytes = [];
-  for (let i = 0; i < str.length; i++) {
-    const code = str.charCodeAt(i);
-    bytes.push(code <= 127 ? code : 0x20);
-  }
-  return bytes;
-}
-
-function formatTwoColumns(left, right, maxCols = 32) {
-  const cleanLeft = sanitizeAscii(left);
-  const cleanRight = sanitizeAscii(right);
-  const availableForLeft = maxCols - cleanRight.length - 1;
-  const truncatedLeft = cleanLeft.length > availableForLeft
-    ? cleanLeft.substring(0, availableForLeft)
-    : cleanLeft;
-  const spacesNeeded = Math.max(1, maxCols - truncatedLeft.length - cleanRight.length);
-  return truncatedLeft + ' '.repeat(spacesNeeded) + cleanRight;
-}
-
-/**
- * Intelligent 32-column word wrap for items with prices
- * Wraps clean whole words onto a second line without hard-cutting words!
- */
-function formatItemLineWrapped(qty, name, priceFormatted, maxCols = 32) {
-  const cleanName = sanitizeAscii(name);
-  const cleanPrice = sanitizeAscii(priceFormatted || '');
-  const qtyPrefix = `${qty}x `;
-  const priceLen = cleanPrice.length;
-
-  // 1. Single line check
-  const singleLine = `${qtyPrefix}${cleanName}`;
-  if (singleLine.length + 1 + priceLen <= maxCols) {
-    const spaces = maxCols - singleLine.length - priceLen;
-    return [singleLine + ' '.repeat(spaces) + cleanPrice];
-  }
-
-  // 2. Multi-line wrap
-  const words = cleanName.split(' ');
-  const lines = [];
-  let currentLine = qtyPrefix;
-
-  for (let i = 0; i < words.length; i++) {
-    const word = words[i];
-    const isFirstWord = (currentLine === qtyPrefix || currentLine === '   ');
-    const testLine = currentLine + (isFirstWord ? '' : ' ') + word;
-    const isLastWord = (i === words.length - 1);
-    const limit = isLastWord ? (maxCols - priceLen - 1) : maxCols;
-
-    if (testLine.length <= limit) {
-      currentLine = testLine;
-    } else {
-      lines.push(currentLine);
-      currentLine = '   ' + word; // Indent continuation
-    }
-  }
-
-  const spaces = maxCols - currentLine.length - priceLen;
-  if (spaces >= 1) {
-    lines.push(currentLine + ' '.repeat(spaces) + cleanPrice);
-  } else {
-    lines.push(currentLine);
-    lines.push(' '.repeat(maxCols - priceLen) + cleanPrice);
-  }
-
-  return lines;
-}
-
-/**
- * Word wrap for Kitchen KOT items without prices
- */
-function formatKotItemWrapped(qty, name, maxCols = 32) {
-  const qtyTag = `[ ${qty} ] `;
-  const cleanName = sanitizeAscii(name).toUpperCase();
-  const single = `${qtyTag}${cleanName}`;
-
-  if (single.length <= maxCols) return [single];
-
-  const words = cleanName.split(' ');
-  const lines = [];
-  let cur = qtyTag;
-
-  for (let i = 0; i < words.length; i++) {
-    const word = words[i];
-    const test = cur + (cur === qtyTag || cur === '      ' ? '' : ' ') + word;
-    if (test.length <= maxCols) {
-      cur = test;
-    } else {
-      lines.push(cur);
-      cur = '      ' + word;
-    }
-  }
-  if (cur.trim()) lines.push(cur);
-  return lines;
-}
-
-class EscPosBuilder {
-  constructor() {
-    this.buffer = [];
-  }
-
-  raw(bytes) {
-    if (Array.isArray(bytes) || bytes instanceof Uint8Array) {
-      for (let i = 0; i < bytes.length; i++) this.buffer.push(bytes[i]);
-    } else if (typeof bytes === 'number') {
-      this.buffer.push(bytes);
-    }
-    return this;
-  }
-
-  cmd(commandBytes) {
-    return this.raw(commandBytes);
-  }
-
-  text(str) {
-    const bytes = stringToAsciiBytes(sanitizeAscii(str));
-    return this.raw(bytes);
-  }
-
-  line(str = '') {
-    this.text(str);
-    this.buffer.push(LF);
-    return this;
-  }
-
-  divider(char = '-', length = 32) {
-    return this.line(char.repeat(length));
-  }
-
-  doubleDivider(length = 32) {
-    return this.divider('=', length);
-  }
-
-  feed(n = 4) {
-    for (let i = 0; i < n; i++) this.buffer.push(LF);
-    return this;
-  }
-
-  cut() {
-    return this.cmd(ESCPOS.PAPER_CUT_FULL);
-  }
-
-  init() {
-    return this
-      .cmd(ESCPOS.INIT)
-      .cmd(ESCPOS.CANCEL_CHINESE)
-      .cmd(ESCPOS.CODE_PAGE_437);
-  }
-
-  getBytes() {
-    return new Uint8Array(this.buffer);
-  }
-}
-
-function parseDateTime(timestampStr) {
-  const clean = sanitizeAscii(timestampStr || '');
-  const parts = clean.split(' ');
-  if (parts.length >= 3) {
-    return { date: parts[0], time: parts.slice(1).join(' ') };
-  }
-  return { date: clean, time: '' };
-}
-
-// 1. Kitchen KOT ESC/POS Generator (Strict Minimal Clutter-Free Payload)
-function buildKitchenKotEscPos(order) {
-  const b = new EscPosBuilder();
-  const dt = parseDateTime(order.timestamp);
-  b.init();
-
-  b.cmd(ESCPOS.ALIGN_CENTER)
-    .doubleDivider()
-    .cmd(ESCPOS.BOLD_ON)
-    .line('*** KITCHEN KOT ***')
-    .cmd(ESCPOS.BOLD_OFF)
-    .doubleDivider();
-
-  // Double-Width + Double-Height Bold Token Header
-  const tokenVal = order.token || String(order.tokenNumber || '000').padStart(3, '0');
-  b.cmd(ESCPOS.ALIGN_CENTER)
-    .cmd(ESCPOS.TEXT_DOUBLE_SIZE) // GS ! 0x11
-    .cmd(ESCPOS.BOLD_ON)          // ESC E 1
-    .line(`TOKEN #${sanitizeAscii(tokenVal)}`)
-    .cmd(ESCPOS.TEXT_NORMAL)      // GS ! 0x00
-    .cmd(ESCPOS.BOLD_OFF);
-
-  // Directly below Double-Height Token: Customer Name in bold text
-  const rawCustomerName = (order.customerName || 'Counter').trim();
-  const customerNameClean = sanitizeAscii(rawCustomerName || 'Counter').toUpperCase();
-  b.cmd(ESCPOS.ALIGN_CENTER)
-    .cmd(ESCPOS.TEXT_DOUBLE_HEIGHT)
-    .cmd(ESCPOS.BOLD_ON)
-    .line(`NAME: ${customerNameClean}`)
-    .cmd(ESCPOS.TEXT_NORMAL)
-    .cmd(ESCPOS.BOLD_OFF);
-
-  b.cmd(ESCPOS.ALIGN_LEFT);
-
-  // Date and Time only
-  if (dt.time) {
-    b.line(formatTwoColumns(`TIME: ${dt.time}`, `DATE: ${dt.date}`));
-  } else {
-    b.line(`DATE/TIME: ${sanitizeAscii(order.timestamp || '')}`);
-  }
-
-  b.divider()
-    .cmd(ESCPOS.BOLD_ON)
-    .line('QTY  ITEM')
-    .cmd(ESCPOS.BOLD_OFF)
-    .divider();
-
-  // Item List (Qty + Clean ASCII Name ONLY, zero prices, zero bloat)
-  (order.items || []).forEach(it => {
-    // Strip Urdu script in parentheses to guarantee clean single-byte ASCII
-    const rawName = it.englishName || it.name || '';
-    const cleanItemName = sanitizeAscii(rawName.replace(/\s*\([^)]*[\u0600-\u06FF]+[^)]*\)/g, '').trim()).toUpperCase();
-    const wrappedLines = formatKotItemWrapped(it.qty, cleanItemName, 32);
-    wrappedLines.forEach((l, idx) => {
-      if (idx === 0) b.cmd(ESCPOS.BOLD_ON);
-      b.line(l);
-      if (idx === 0) b.cmd(ESCPOS.BOLD_OFF);
-    });
-  });
-
-  const totalItemCount = (order.items || []).reduce((sum, it) => sum + (Number(it.qty) || 1), 0);
-  b.divider()
-    .line(formatTwoColumns(`TOTAL ITEMS: ${totalItemCount}`, ''))
-    .doubleDivider();
-
-  // TEAR GAP: 3 empty line feeds so text fully clears the physical tear bar
-  b.feed(3)
-    .cut();
-
-  return b.getBytes();
-}
-
-// 2. Customer Receipt ESC/POS Generator
-function buildCustomerReceiptEscPos(order) {
-  const b = new EscPosBuilder();
-  b.init();
-
-  b.cmd(ESCPOS.ALIGN_CENTER)
-    .doubleDivider()
-    .cmd(ESCPOS.BOLD_ON)
-    .line('THE ARTISAN GRILL & CO.')
-    .cmd(ESCPOS.BOLD_OFF)
-    .line('Fast-Food Counter')
-    .doubleDivider();
-
-  const dt = parseDateTime(order.timestamp);
-  const tokenVal = order.token || String(order.tokenNumber || '000').padStart(3, '0');
-  const custName = sanitizeAscii((order.customerName || 'Counter').trim());
-
-  b.cmd(ESCPOS.ALIGN_LEFT)
-    .line(formatTwoColumns(`Token #${sanitizeAscii(tokenVal)}`, '[Counter Sale]'))
-    .line(`Customer: ${custName}`);
-
-  if (dt.time) {
-    b.line(formatTwoColumns(dt.date, dt.time));
-  } else {
-    b.line(formatTwoColumns('Date/Time:', order.timestamp || ''));
-  }
-  b.divider()
-    .cmd(ESCPOS.BOLD_ON)
-    .line(formatTwoColumns('QTY  ITEM', 'PRICE'))
-    .cmd(ESCPOS.BOLD_OFF)
-    .divider();
-
-  // Itemized List with clean multi-line word-wrapping
-  (order.items || []).forEach(it => {
-    const priceFormatted = `Rs. ${Number(it.price * it.qty).toLocaleString('en-PK')}`;
-    const wrappedLines = formatItemLineWrapped(it.qty, it.name, priceFormatted, 32);
-    wrappedLines.forEach(l => b.line(l));
-
-    if (it.note) {
-      b.line(`   * ${sanitizeAscii(it.note)}`);
-    }
-  });
-
-  b.divider();
-
-  const grandTotal = order.grandTotal || (order.items || []).reduce((s, it) => s + (it.price * it.qty), 0);
-  const totalStr = `Rs. ${Number(grandTotal).toLocaleString('en-PK')}`;
-
-  b.cmd(ESCPOS.BOLD_ON)
-    .cmd(ESCPOS.TEXT_DOUBLE_HEIGHT) // GS ! 0x01
-    .line(formatTwoColumns('TOTAL:', totalStr))
-    .cmd(ESCPOS.TEXT_NORMAL)        // GS ! 0x00
-    .cmd(ESCPOS.BOLD_OFF)
-    .line(formatTwoColumns('Payment Mode:', 'CASH'))
-    .divider();
-
-  b.cmd(ESCPOS.ALIGN_CENTER)
-    .line('Thank You For Dining With Us!')
-    .line('Please Retain Slip For Order')
-    .doubleDivider();
-
-  // TEAR GAP: 3 empty line feeds so text fully clears the physical tear bar
-  b.feed(3)
-    .cut();
-
-  return b.getBytes();
-}
-
-// 3. Complete Dual Print Stream with 4 Line Feeds + Dashed Cut Guide (Optional / Fallback)
-function buildDualPrintEscPos(order) {
-  const kotBytes = buildKitchenKotEscPos(order);
-  const billBytes = buildCustomerReceiptEscPos(order);
-  const b = new EscPosBuilder();
-
-  b.raw(kotBytes);
-  b.feed(1);
-  b.raw(billBytes);
-
-  return b.getBytes();
-}
-
-// ============================================================================
-// 9. DEDICATED INDEPENDENT PRINT ACTIONS
-// 1. printKitchenKOT(orderData)   - Primary workflow action
-// 2. printCustomerBill(orderData) - Secondary on-demand action
-// ============================================================================
-
-/**
- * 1. PRIMARY WORKFLOW ACTION: printKitchenKOT
- * - Generates and dispatches ONLY the Kitchen KOT ESC/POS byte sequence with 3 trailing line feeds
- * - Increments token counter (e.g. #043 -> #044)
- * - Clears the current order for the next customer
- */
-async function printKitchenKOT(orderData, customerName) {
-  const grandTotal = calculateGrandTotal();
-  if (!orderData && (state.cart.length === 0 || grandTotal === 0)) {
-    showToast('⚠️ Ticket is empty — punch items first');
-    return;
-  }
-
-  const startTime = performance.now();
-
-  const currentToken = state.tokenNumber;
-  const tokenFormatted = `TOKEN #${String(currentToken).padStart(3, '0')}`;
-  const now = new Date();
-  const timeStr = now.toLocaleTimeString('en-PK', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
-  const dateStr = now.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
-
-  // Resolve customer name: explicit parameter > orderData.customerName > active input/state > 'Counter'
-  let finalCustomerName;
-  let finalOrderData = orderData;
-  if (typeof orderData === 'string' && !customerName) {
-    finalCustomerName = orderData.trim() || 'Counter';
-    finalOrderData = null;
-  } else {
-    finalCustomerName = (typeof customerName === 'string' && customerName.trim())
-      ? customerName.trim()
-      : (orderData && typeof orderData.customerName === 'string' && orderData.customerName.trim())
-        ? orderData.customerName.trim()
-        : getCustomerNameValue();
-  }
-
-  const orderRecord = finalOrderData || {
-    tokenNumber: currentToken,
-    token: String(currentToken).padStart(3, '0'),
-    tokenFormatted,
-    customerName: finalCustomerName,
-    timestamp: `${dateStr} ${timeStr}`,
-    date: dateStr,
-    items: JSON.parse(JSON.stringify(state.cart)),
-    grandTotal
-  };
-
-  if (!orderRecord.customerName) {
-    orderRecord.customerName = finalCustomerName;
-  }
-
-  // Save as last order so customer bill can still be printed on-demand
-  state.lastOrder = orderRecord;
-
-  // 1. Audio chime
-  soundEngine.playPrinterFeed();
-
-  // 2. Populate HTML emulation
-  populateKotReceiptOnly(orderRecord);
-
-  // 3. Dispatch ONLY Kitchen KOT ESC/POS bytes with 3 line feeds
-  const kotBytes = buildKitchenKotEscPos(orderRecord);
-  await sendBytesToThermalPrinter(kotBytes);
-
-  // 4. Reset ticket state, auto-clear customer name, increment token, and refresh UI
-  state.cart = [];
-  clearCustomerName();
-  state.tokenNumber += 1;
-  const nextTokenStr = `TOKEN #${String(state.tokenNumber).padStart(3, '0')}`;
-
-  const topTokenDisplay = document.getElementById('topTokenDisplay');
-  if (topTokenDisplay) {
-    topTokenDisplay.textContent = nextTokenStr;
-  }
-  const ticketPanelToken = document.getElementById('ticketPanelToken');
-  if (ticketPanelToken) {
-    ticketPanelToken.textContent = nextTokenStr;
-  }
-
-  updatePOS();
-  closeMobileDrawer();
-
-  const elapsed = Math.round(performance.now() - startTime);
-  showToast(`⚡ Kitchen KOT #${orderRecord.token} (${orderRecord.customerName}) Sent! Ready for ${nextTokenStr} (${elapsed}ms)`);
-}
-
-/**
- * 2. SECONDARY ON-DEMAND ACTION: printCustomerBill
- * - Generates and dispatches ONLY the Customer Receipt slip with 3 trailing line feeds
- * - Does NOT clear the active cart or re-print/increment the kitchen token
- */
-async function printCustomerBill(orderData, customerName) {
-  let targetOrder = orderData;
-
-  let finalCustomerName;
-  if (typeof orderData === 'string' && !customerName) {
-    finalCustomerName = orderData.trim() || 'Counter';
-    targetOrder = null;
-  } else {
-    finalCustomerName = (typeof customerName === 'string' && customerName.trim())
-      ? customerName.trim()
-      : (orderData && typeof orderData.customerName === 'string' && orderData.customerName.trim())
-        ? orderData.customerName.trim()
-        : getCustomerNameValue();
-  }
-
-  if (!targetOrder) {
-    const grandTotal = calculateGrandTotal();
-    if (state.cart.length > 0 && grandTotal > 0) {
-      const currentToken = state.tokenNumber;
-      const now = new Date();
-      const timeStr = now.toLocaleTimeString('en-PK', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
-      const dateStr = now.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
-
-      targetOrder = {
-        tokenNumber: currentToken,
-        token: String(currentToken).padStart(3, '0'),
-        tokenFormatted: `TOKEN #${String(currentToken).padStart(3, '0')}`,
-        customerName: finalCustomerName,
-        timestamp: `${dateStr} ${timeStr}`,
-        date: dateStr,
-        items: JSON.parse(JSON.stringify(state.cart)),
-        grandTotal
-      };
-    } else if (state.lastOrder) {
-      targetOrder = { ...state.lastOrder };
-      if (typeof customerName === 'string' && customerName.trim()) {
-        targetOrder.customerName = customerName.trim();
-      }
-    } else {
-      showToast('⚠️ No active ticket or previous order to print bill');
-      return;
-    }
-  } else if (!targetOrder.customerName) {
-    targetOrder.customerName = finalCustomerName;
-  }
-
-  // 1. Audio chime
-  soundEngine.playPrinterFeed();
-
-  // 2. Populate HTML emulation
-  populateCustomerReceiptOnly(targetOrder);
-
-  // 3. Dispatch ONLY Customer Bill ESC/POS bytes with 3 line feeds
-  const billBytes = buildCustomerReceiptEscPos(targetOrder);
-  await sendBytesToThermalPrinter(billBytes);
-
-  showToast(`🧾 Customer Bill Printed for Token #${targetOrder.token} (${targetOrder.customerName || 'Counter'})`);
-}
-
-const handlePrintAndNext = printKitchenKOT;
-
-function populateKotReceiptOnly(order) {
-  const kotToken = document.getElementById('receiptKotToken');
-  if (kotToken) kotToken.textContent = order.tokenFormatted || `TOKEN #${order.token}`;
-
-  const kotCust = document.getElementById('receiptKotCustomerName');
-  if (kotCust) {
-    const custClean = sanitizeAscii((order.customerName || 'Counter').trim()).toUpperCase();
-    kotCust.textContent = `NAME: ${custClean || 'COUNTER'}`;
-  }
-
-  const kotDate = document.getElementById('receiptKotDate');
-  if (kotDate) kotDate.textContent = (order.date || '').toUpperCase();
-
-  const kotTime = document.getElementById('receiptKotTime');
-  if (kotTime) kotTime.textContent = order.timestamp || '';
-
-  const kotItemsWrap = document.getElementById('receiptKotItems');
-  if (kotItemsWrap) {
-    kotItemsWrap.innerHTML = (order.items || []).map(it => `
-      <div class="kot-item-entry">[ ${it.qty} ] ${sanitizeAscii(it.name).toUpperCase()}</div>
+        <div class="item-name-en">${escapeHtml(item.name)}</div>
+        <div class="item-footer">
+          <span class="item-price">Rs. ${item.price.toLocaleString()}</span>
+          ${item.key ? `<span class="hotkey-pill">[${escapeHtml(item.key)}]</span>` : ''}
+        </div>
+      </div>
     `).join('');
+  });
+
+  if (!menuListenersBound) {
+    document.getElementById('menuContainer').addEventListener('click', (e) => {
+      const tile = e.target.closest('.tile');
+      if (tile && tile.dataset.id) {
+        incrementItem(tile.dataset.id);
+      }
+    });
+    menuListenersBound = true;
   }
 }
 
-function populateCustomerReceiptOnly(order) {
-  const custToken = document.getElementById('receiptCustomerToken');
-  if (custToken) custToken.textContent = `Token #${order.token}`;
+// ============================================================================
+// 7. DAILY HISAAB (Z-REPORT) COMPUTATION & MODAL
+// ============================================================================
+const hisaabModal = document.getElementById('hisaabModal');
+const resetDayTriggerBtn = document.getElementById('resetDayTriggerBtn');
+const resetConfirmBox = document.getElementById('resetConfirmBox');
 
-  const custNameEl = document.getElementById('receiptCustomerName');
-  if (custNameEl) {
-    const custClean = sanitizeAscii((order.customerName || 'Counter').trim());
-    custNameEl.textContent = `Customer: ${custClean || 'Counter'}`;
-  }
+function computeHisaabSummary() {
+  let totalOrders = 0;
+  let totalRevenue = 0;
+  let cashSales = 0;
+  let onlineSales = 0;
+  const itemMap = new Map();
 
-  const custDate = document.getElementById('receiptCustomerDate');
-  if (custDate) custDate.textContent = order.date;
+  (state.ordersToday || []).forEach(order => {
+    totalOrders += 1;
+    const orderTotal = Number(order.total) || 0;
+    totalRevenue += orderTotal;
 
-  const custTime = document.getElementById('receiptCustomerTime');
-  if (custTime) custTime.textContent = order.timestamp;
+    if (order.paymentMode === 'online') {
+      onlineSales += orderTotal;
+    } else {
+      cashSales += orderTotal;
+    }
 
-  const custItemsWrap = document.getElementById('receiptCustomerItems');
-  if (custItemsWrap) {
-    custItemsWrap.innerHTML = (order.items || []).map(it => `
-      <div class="receipt-item-line">
-        <span>${it.qty}x ${it.name}</span>
-        <span>Rs. ${(it.price * it.qty).toLocaleString('en-PK')}</span>
+    if (Array.isArray(order.items)) {
+      order.items.forEach(it => {
+        const key = it.id || it.name;
+        const existing = itemMap.get(key) || {
+          name: it.name,
+          urdu: it.urdu,
+          quantity: 0,
+          revenue: 0
+        };
+        existing.quantity += Number(it.qty || it.quantity) || 0;
+        existing.revenue += Number(it.price || it.lineTotal) || 0;
+        itemMap.set(key, existing);
+      });
+    }
+  });
+
+  const topItems = Array.from(itemMap.values())
+    .sort((a, b) => b.quantity - a.quantity);
+
+  const expenses = Array.isArray(state.expenses) ? state.expenses : [];
+  const totalExpenses = expenses.reduce((sum, ex) => sum + (Number(ex.amount) || 0), 0);
+  const netCashInDrawer = cashSales - totalExpenses;
+
+  return {
+    totalOrders,
+    totalRevenue,
+    cashSales,
+    onlineSales,
+    totalExpenses,
+    netCashInDrawer,
+    expensesList: expenses,
+    topItems,
+    voidedOrdersCount: (state.audit && state.audit.voidedOrdersCount) || 0,
+    voidedOrdersAmount: (state.audit && state.audit.voidedOrdersAmount) || 0,
+    reprintCount: (state.audit && state.audit.reprintCount) || 0,
+    currentToken: state.token
+  };
+}
+
+function renderHisaabModal() {
+  const summary = computeHisaabSummary();
+
+  document.getElementById('hisaabDateText').textContent = formatDatePK(new Date());
+  document.getElementById('hisaabNextTokenText').textContent = `Next Token: #${String(state.token).padStart(3, '0')}`;
+  document.getElementById('hisaabTotalOrders').textContent = summary.totalOrders;
+  document.getElementById('hisaabTotalCash').textContent = `Rs. ${summary.totalRevenue.toLocaleString('en-PK')}`;
+  document.getElementById('hisaabVoidedOrders').textContent = `${summary.voidedOrdersCount} (${summary.voidedOrdersAmount ? 'Rs. ' + summary.voidedOrdersAmount.toLocaleString() : 'Rs. 0'})`;
+  document.getElementById('hisaabReprintCount').textContent = summary.reprintCount;
+
+  document.getElementById('hisaabCashSalesVal').textContent = `Rs. ${summary.cashSales.toLocaleString('en-PK')}`;
+  document.getElementById('hisaabOnlineSalesVal').textContent = `Rs. ${summary.onlineSales.toLocaleString('en-PK')}`;
+  document.getElementById('hisaabExpensesVal').textContent = `- Rs. ${summary.totalExpenses.toLocaleString('en-PK')}`;
+  document.getElementById('hisaabNetGallaVal').textContent = `Rs. ${summary.netCashInDrawer.toLocaleString('en-PK')}`;
+
+  const topItemsList = document.getElementById('hisaabTopItemsList');
+  if (summary.topItems.length === 0) {
+    topItemsList.innerHTML = '<div class="status-card-sub">No confirmed orders recorded today yet.</div>';
+  } else {
+    topItemsList.innerHTML = summary.topItems.map(it => `
+      <div class="hisaab-row">
+        <div>
+          <span class="hisaab-item-title">${escapeHtml(it.urdu)} (${escapeHtml(it.name)})</span>
+          <span class="hisaab-item-qty">${it.quantity} sold</span>
+        </div>
+        <span class="hisaab-item-amt">Rs. ${it.revenue.toLocaleString('en-PK')}</span>
       </div>
     `).join('');
   }
-
-  const totEl = document.getElementById('receiptGrandTotal');
-  if (totEl) totEl.textContent = `Rs. ${(order.grandTotal || 0).toLocaleString('en-PK')}`;
 }
 
-function populateThermalReceipt(order) {
-  populateKotReceiptOnly(order);
-  populateCustomerReceiptOnly(order);
+function openHisaabModal() {
+  renderHisaabModal();
+  resetConfirmBox.classList.remove('show');
+  resetDayTriggerBtn.style.display = 'block';
+  hisaabModal.classList.add('open');
 }
 
-// ============================================================================
-// ============================================================================
-// 10. YD583 & MPT-II WEB BLUETOOTH ON-DEMAND ENGINE
-// - Hardware Support: YD583 mini 58mm printer (fffc0fe8-30060000-59433331-59433231) & MPT-II
-// - Scans with Name prefixes: ["YD583", "MPT", "POS", "RPP", "MTP"] and common 58mm ESC/POS vendor UUIDs
-// - Dynamic GATT service & writable characteristic discovery with global reference storage
-// - Persistence: saves selected device name ("YD583") and id into localStorage
-// - Status displays: "🟢 YD583 Ready" when paired/standby, "🔌 Connect Printer" when unpaired
-// - On-demand print pipeline: connects if needed, writes 100-byte slices with 20ms delays (buffer-safe)
-// ============================================================================
+function closeHisaabModal() {
+  hisaabModal.classList.remove('open');
+  resetConfirmBox.classList.remove('show');
+  resetDayTriggerBtn.style.display = 'block';
+}
 
-const PRINTER_NAME_PREFIXES = ['YD583', 'MPT', 'POS', 'RPP', 'MTP'];
+function buildDailyHisaabEscPosBytes() {
+  const summary = computeHisaabSummary();
+  const dateStr = formatDatePK(new Date());
+  const timeStr = formatTime12Hour(new Date());
 
-const PRINTER_SERVICES = [
-  0x18f0,
-  '000018f0-0000-1000-8000-00805f9b34fb',
-  'e7810a71-73ae-499d-8c15-faa9aef0c3f2',
-  '49535343-fe7d-4ae5-8fa9-9fafd205e455',
-  '0000e781-0000-1000-8000-00805f9b34fb',
-  '0000fff0-0000-1000-8000-00805f9b34fb',
-  '0000ffe0-0000-1000-8000-00805f9b34fb',
-  '0000af30-0000-1000-8000-00805f9b34fb'
-];
+  const ESC = 0x1B;
+  const GS = 0x1D;
+  const bytes = [];
 
-let isPrintBusy = false;
-const printQueue = [];
+  function appendBytes(arr) {
+    for (let i = 0; i < arr.length; i++) bytes.push(arr[i]);
+  }
 
-function isBluetoothPrinterConnected() {
-  return !!(
-    state.bluetoothDevice &&
-    state.bluetoothDevice.gatt &&
-    state.bluetoothDevice.gatt.connected &&
-    state.writeCharacteristic
+  function appendText(str) {
+    for (let i = 0; i < str.length; i++) {
+      const code = str.charCodeAt(i);
+      bytes.push(code <= 0x7F ? code : 0x3F);
+    }
+  }
+
+  function appendLine(str = '') {
+    appendText(str + '\n');
+  }
+
+  function centerText(str, width = 32) {
+    const s = String(str || '').slice(0, width);
+    const leftPad = Math.max(0, Math.floor((width - s.length) / 2));
+    const rightPad = Math.max(0, width - s.length - leftPad);
+    return ' '.repeat(leftPad) + s + ' '.repeat(rightPad);
+  }
+
+  function formatRow(label, value, width = 32) {
+    const v = String(value);
+    const maxLblLen = width - v.length - 1;
+    const l = String(label).slice(0, maxLblLen);
+    const spaces = Math.max(1, width - l.length - v.length);
+    return l + ' '.repeat(spaces) + v;
+  }
+
+  appendBytes([ESC, 0x40]); // Initialize printer
+  appendBytes([ESC, 0x61, 0x01]); // Center
+  appendBytes([ESC, 0x21, 0x30]); // Double-height & double-width bold
+  appendLine((shopConfig.shopName || 'STUDENT BURGER').toUpperCase());
+  appendBytes([ESC, 0x21, 0x00]); // Reset to normal size
+  appendLine('DAILY HISAAB (Z-REPORT)');
+  appendLine(`Date: ${dateStr}  ${timeStr}`);
+  appendLine('================================');
+
+  appendBytes([ESC, 0x61, 0x00]); // Left align
+  appendLine(formatRow('Total Orders Confirmed:', summary.totalOrders));
+  appendLine(formatRow('Gross Total Sales:', `Rs. ${summary.totalRevenue.toLocaleString()}`));
+  appendLine(formatRow('  - Cash Sales:', `Rs. ${summary.cashSales.toLocaleString()}`));
+  appendLine(formatRow('  - Online (EasyPaisa):', `Rs. ${summary.onlineSales.toLocaleString()}`));
+  appendLine(formatRow('Roz Ka Kharcha (Exp):', `-Rs. ${summary.totalExpenses.toLocaleString()}`));
+  appendLine('--------------------------------');
+  appendBytes([ESC, 0x21, 0x10]); // Double height bold
+  appendLine(formatRow('NET GALLE KA CASH:', `Rs. ${summary.netCashInDrawer.toLocaleString()}`));
+  appendBytes([ESC, 0x21, 0x00]); // Reset font
+  appendLine('--------------------------------');
+
+  appendLine(formatRow('Cancelled / Void Orders:', summary.voidedOrdersCount));
+  appendLine(formatRow('Receipt Reprints Count:', summary.reprintCount));
+  appendLine(formatRow('Next Token Resets To:', '#001'));
+  appendLine('================================');
+
+  if (summary.topItems.length > 0) {
+    appendLine('TOP SELLING ITEMS:');
+    summary.topItems.slice(0, 8).forEach(it => {
+      const line = `${it.quantity}x ${it.name}`;
+      appendLine(formatRow(line, `Rs. ${it.revenue.toLocaleString()}`));
+    });
+    appendLine('--------------------------------');
+  }
+
+  appendBytes([ESC, 0x61, 0x01]); // Center
+  appendLine('*** END OF SHIFT SUMMARY ***');
+  appendBytes([ESC, 0x64, 0x04]); // Feed 4 lines
+
+  return new Uint8Array(bytes);
+}
+
+async function printDailyHisaabSlip() {
+  const bridge = window.AndroidPOSBridge;
+  const hisaabBytes = buildDailyHisaabEscPosBytes();
+
+  try {
+    if (bridge && typeof bridge.isNative === 'function' && bridge.isNative()) {
+      const connected = typeof bridge.isConnected === 'function'
+        ? await bridge.isConnected()
+        : Boolean((await bridge.getStatus()).connected);
+
+      if (!connected) {
+        const silentConnected = await ensureSilentPrinterConnection();
+        if (!silentConnected) {
+          openPrinterModal();
+          showToast('پرنٹر کنیکٹ کریں (Connect printer)', 'error');
+          return;
+        }
+      }
+
+      const res = await bridge.sendEscPosBytes(hisaabBytes);
+      if (res && res.status === 'SUCCESS') {
+        showToast('Daily summary slip printed! 🧾', 'success');
+      } else {
+        throw new Error('Summary slip print failed.');
+      }
+    } else if (bleDevice && bleDevice.gatt && bleDevice.gatt.connected && bleCharacteristic) {
+      await sendBytesOverWebBluetooth(hisaabBytes);
+      showToast('Daily summary slip printed! 🧾', 'success');
+    } else {
+      openPrinterModal();
+      showToast('پرنٹر کنیکٹ کریں (Connect printer)', 'error');
+    }
+  } catch (err) {
+    showToast(getFriendlyPrinterErrorMessage(err), 'error');
+  }
+}
+
+function buildWhatsAppDayCloseMessage(summary = null) {
+  const s = summary || computeHisaabSummary();
+  const dateStr = formatDatePK(new Date());
+  const timeStr = formatTime12Hour(new Date());
+  const stallId = getOrCreateStallId();
+  const shop = shopConfig.shopName || 'Student Burger';
+
+  let msg = `*${shop.toUpperCase()} • DAILY HISAAB* 📊\n`;
+  msg += `*Stall ID:* ${stallId}\n`;
+  msg += `*Date:* ${dateStr} (${timeStr})\n`;
+  msg += `--------------------------------\n`;
+  msg += `*Total Orders:* ${s.totalOrders}\n`;
+  msg += `*Gross Total Sale:* Rs. ${s.totalRevenue.toLocaleString('en-PK')}\n`;
+  msg += `  • 💵 Cash Sales: Rs. ${s.cashSales.toLocaleString('en-PK')}\n`;
+  msg += `  • 📱 Online (EasyPaisa): Rs. ${s.onlineSales.toLocaleString('en-PK')}\n`;
+  msg += `*Total Kharcha (Exp):* -Rs. ${s.totalExpenses.toLocaleString('en-PK')}\n`;
+  msg += `--------------------------------\n`;
+  msg += `*💰 NET GALLE KA CASH:* *Rs. ${s.netCashInDrawer.toLocaleString('en-PK')}*\n`;
+  msg += `--------------------------------\n`;
+  msg += `*Cancelled / Void Orders:* ${s.voidedOrdersCount}\n`;
+  msg += `*Receipt Reprints:* ${s.reprintCount}\n`;
+
+  if (s.topItems && s.topItems.length > 0) {
+    msg += `\n*Top Items Sold:*\n`;
+    s.topItems.slice(0, 6).forEach((it, idx) => {
+      msg += `${idx + 1}. ${it.name} (${it.quantity}x) = Rs. ${it.revenue.toLocaleString('en-PK')}\n`;
+    });
+  }
+
+  msg += `\nShift closed successfully. Token reset to #001.\nPowered by BiteDash POS ⚡`;
+  return msg;
+}
+
+function sendHisaabOnWhatsApp(isShiftClose = false, precomputedSummary = null) {
+  const msg = buildWhatsAppDayCloseMessage(precomputedSummary);
+  const rawPhone = String(shopConfig.phone || '').replace(/\D/g, '');
+  const cleanPhone = rawPhone.startsWith('0') ? '92' + rawPhone.slice(1) : rawPhone;
+
+  const waUrl = cleanPhone
+    ? `https://wa.me/${cleanPhone}?text=${encodeURIComponent(msg)}`
+    : `https://wa.me/?text=${encodeURIComponent(msg)}`;
+
+  window.open(waUrl, '_blank', 'noopener,noreferrer');
+}
+
+async function executeResetDayAndToken() {
+  const finalSummary = computeHisaabSummary();
+
+  // 1. Auto-WhatsApp Trigger
+  sendHisaabOnWhatsApp(true, finalSummary);
+
+  // 2. Prompt user to print the physical summary slip
+  const shouldPrintFinalSlip = window.confirm(
+    'Print the final physical Daily Hisaab (Z-Report) thermal slip before resetting shift?'
   );
-}
-
-function getPrinterDisplayName(customName) {
-  const name = customName || state.bluetoothDevice?.name || localStorage.getItem('pos_printer_name') || 'YD583';
-  if (name.toUpperCase().includes('YD583')) return 'YD583';
-  if (name.toUpperCase().includes('MPT')) return 'MPT-II';
-  return name.trim() || 'YD583';
-}
-
-/**
- * 3. TOP BAR BUTTON & STATUS RENDERING:
- * - If a device ID exists in localStorage, render "🖨️ YD583 Ready" (neutral/green border).
- * - Only show "🔴 Connect Printer" if no device has ever been paired.
- */
-function updatePrinterStatusUI(statusOverride, deviceNameOverride) {
-  const pill = document.getElementById('connectBtBtn');
-  const dot = document.getElementById('printerStatusDot');
-  const text = document.getElementById('printerBtnText');
-  if (!pill) return;
-
-  const savedId = localStorage.getItem('pos_printer_id');
-  const savedName = localStorage.getItem('pos_printer_name');
-  const displayName = getPrinterDisplayName(deviceNameOverride || savedName);
-
-  let currentStatus = statusOverride;
-  if (!currentStatus) {
-    currentStatus = savedId ? 'ready' : 'unpaired';
+  if (shouldPrintFinalSlip) {
+    await printDailyHisaabSlip();
   }
 
-  state.printerStatus = currentStatus;
-  pill.classList.remove('connected', 'ready', 'printing', 'reconnecting', 'disconnected');
+  // 3. Archive today's shift and queue day_close for silent cloud sync
+  try {
+    if (
+      state.ordersToday.length > 0 ||
+      state.expenses.length > 0 ||
+      state.audit.voidedOrdersCount > 0 ||
+      state.audit.reprintCount > 0
+    ) {
+      const archivePayload = {
+        sync_id: `dayclose_${Date.now()}`,
+        sync_status: 'pending',
+        archivedAt: new Date().toISOString(),
+        lastToken: state.token,
+        summary: {
+          totalOrders: finalSummary.totalOrders,
+          grossRevenue: finalSummary.totalRevenue,
+          cashSales: finalSummary.cashSales,
+          onlineSales: finalSummary.onlineSales,
+          totalExpenses: finalSummary.totalExpenses,
+          netCashInDrawer: finalSummary.netCashInDrawer
+        },
+        orders: state.ordersToday,
+        expenses: state.expenses,
+        audit: state.audit
+      };
+      localStorage.setItem(ORDERS_ARCHIVE_KEY, JSON.stringify(archivePayload));
+      enqueueCloudSyncRecord('day_close', archivePayload);
+      scheduleDebouncedCloudSync();
+    }
+  } catch (e) {}
 
-  if (currentStatus === 'printing') {
-    pill.classList.add('printing');
-    if (dot) dot.className = 'printer-ready-dot printing';
-    if (text) text.textContent = '🟡 Printing...';
-    pill.title = 'Printing in progress...';
-  } else if (savedId && currentStatus !== 'unpaired') {
-    // Top Bar Button: If a device ID exists in localStorage, render "🖨️ YD583 Ready" (neutral/green border)
-    pill.classList.add('ready');
-    if (dot) dot.className = 'printer-ready-dot ready';
-    if (text) text.textContent = `🖨️ ${displayName} Ready`;
-    pill.title = `${displayName} Ready (On-Demand Spooler) • Click to configure`;
+  // 4. Reset Shift Counters & Token to #001
+  state.token = 1;
+  state.ordersToday = [];
+  state.expenses = [];
+  state.uncertainToken = null;
+  state.lastPrintedOrder = null;
+  state.audit = {
+    totalOrdersCount: 0,
+    voidedOrdersCount: 0,
+    voidedOrdersAmount: 0,
+    reprintCount: 0
+  };
+  try {
+    localStorage.removeItem(LAST_PRINTED_ORDER_KEY);
+  } catch (e) {}
+  savePersistedState();
+  saveOrdersToday();
+  saveExpensesToStorage();
+  updateUI();
+  renderHisaabModal();
+  resetConfirmBox.classList.remove('show');
+  resetDayTriggerBtn.style.display = 'block';
+  showToast('Shift closed! Report sent & Token reset to #001.', 'success');
+}
+
+// ============================================================================
+// 8. ESC/POS RECEIPT GENERATOR & THERMAL PRINTING
+// ============================================================================
+const printButton = document.getElementById('printBtn');
+const printerStatus = document.getElementById('printerStatus');
+const printerStatusLabel = document.getElementById('printerStatusLabel');
+const toast = document.getElementById('toast');
+
+let isPrinting = false;
+let toastTimeout;
+
+const BLE_PRINTER_SERVICE_UUIDS = [
+  '000018f0-0000-1000-8000-00805f9b34fb',
+  '0000ff00-0000-1000-8000-00805f9b34fb',
+  '49535343-fe7d-4ae5-8fa9-9fafd205e455',
+  'e7810a71-73ae-499d-8c15-faa9aef0c3f2',
+  '0000ffe0-0000-1000-8000-00805f9b34fb'
+];
+let bleDevice = null;
+let bleCharacteristic = null;
+let isBleConnecting = false;
+
+function showToast(message, tone = 'default') {
+  toast.textContent = message;
+  toast.dataset.tone = tone;
+  toast.classList.add('show');
+
+  clearTimeout(toastTimeout);
+  toastTimeout = setTimeout(() => {
+    toast.classList.remove('show');
+  }, 3000);
+}
+
+function setPrinterStatus(status, message) {
+  printerStatus.dataset.state = status;
+  let badgeLabel = '🖨️ پرنٹر بند ہے (Connect)';
+  if (status === 'ready') {
+    badgeLabel = '🖨️ پرنٹر چالو ہے (Ready)';
+  } else if (status === 'connecting' || status === 'printing') {
+    badgeLabel = '⏳ پرنٹر جڑ رہا ہے...';
+  }
+  if (printerStatusLabel) {
+    printerStatusLabel.textContent = badgeLabel;
   } else {
-    // Only show "🔴 Connect Printer" if no device has ever been paired
-    pill.classList.add('disconnected');
-    if (dot) dot.className = 'printer-ready-dot disconnected';
-    if (text) text.textContent = '🔴 Connect Printer';
-    pill.title = 'No printer paired • Click to pair Bluetooth printer';
-  }
-
-  updateModalStatusUI(currentStatus, displayName);
-}
-
-function updateModalStatusUI(statusOverride, labelOverride) {
-  const statusDot = document.getElementById('modalStatusDot');
-  const statusText = document.getElementById('modalStatusText');
-  const devName = document.getElementById('modalDeviceName');
-  const devId = document.getElementById('modalDeviceId');
-  const forgetBtn = document.getElementById('forgetPrinterBtn');
-  const testBtn = document.getElementById('modalTestPrintBtn');
-  if (!statusText) return;
-
-  const savedId = localStorage.getItem('pos_printer_id');
-  const savedName = localStorage.getItem('pos_printer_name');
-  const displayName = labelOverride || getPrinterDisplayName(savedName);
-  const currentStatus = statusOverride || (savedId ? 'ready' : 'unpaired');
-
-  if (statusDot) statusDot.className = 'ps-dot';
-
-  if (currentStatus === 'printing') {
-    if (statusDot) statusDot.classList.add('reconnecting');
-    statusText.textContent = '🟡 Printing...';
-    statusText.style.color = '#d97706';
-    if (devName) devName.textContent = `${displayName} Thermal Printer`;
-    if (devId) devId.textContent = savedId ? `Device ID: ${savedId} (Sending ESC/POS bytes)` : '';
-    if (forgetBtn) forgetBtn.style.display = savedId ? 'block' : 'none';
-    if (testBtn) testBtn.disabled = true;
-  } else if (savedId && currentStatus !== 'unpaired') {
-    // 1. Mark UI Status as: "🟢 Printer Paired (Ready)" without invoking device.gatt.connect()
-    if (statusDot) statusDot.classList.add('ready');
-    statusText.textContent = '🟢 Printer Paired (Ready)';
-    statusText.style.color = '#15803d';
-    if (devName) devName.textContent = `${displayName} Thermal Printer`;
-    if (devId) devId.textContent = `Device ID: ${savedId} (On-Demand Spooler Active)`;
-    if (forgetBtn) forgetBtn.style.display = 'block';
-    if (testBtn) testBtn.disabled = false;
-  } else {
-    // unpaired
-    if (statusDot) statusDot.classList.add('disconnected');
-    statusText.textContent = '⚪ No Printer Paired';
-    statusText.style.color = '#64748b';
-    if (devName) devName.textContent = 'Click "Pair New Printer" below to set up once';
-    if (devId) devId.textContent = '';
-    if (forgetBtn) forgetBtn.style.display = 'none';
-    if (testBtn) testBtn.disabled = true;
+    printerStatus.textContent = badgeLabel;
   }
 }
 
-function openPrinterSetupModal() {
-  const modal = document.getElementById('printerModalBackdrop');
-  if (!modal) return;
-  modal.style.display = 'flex';
-  updateModalStatusUI();
-}
+function getFriendlyPrinterErrorMessage(error) {
+  const name = String((error && error.name) || '');
+  const msg = String((error && error.message) || '').toLowerCase();
 
-function closePrinterSetupModal() {
-  const modal = document.getElementById('printerModalBackdrop');
-  if (!modal) return;
-  modal.style.display = 'none';
-}
-
-/**
- * 4. USER GESTURE SAFETY:
- * Ensures clicking "Connect Printer" or the status pill cleanly handles user-gesture
- * requirements without unhandled promise rejections.
- */
-function handlePrinterPillClick(e) {
-  soundEngine.playBeep();
-  const savedId = localStorage.getItem('pos_printer_id');
-  if (!savedId) {
-    // If no device has ever been paired, directly initiate pairing within user gesture context
-    pairNewPrinter();
-    return;
+  if (name === 'NotFoundError' || msg.includes('cancelled') || msg.includes('canceled') || msg.includes('no device selected')) {
+    return 'پرنٹر سلیکٹ نہیں ہوا (Printer select karein)';
   }
-  openPrinterSetupModal();
+  if (name === 'SecurityError' || name === 'NotAllowedError' || msg.includes('permission')) {
+    return 'بلوٹوتھ کی اجازت دیں (Bluetooth allow karein)';
+  }
+  if (msg.includes('adapter not available') || msg.includes('bluetooth is turned off') || msg.includes('bt_disabled')) {
+    return 'فون کا بلوٹوتھ آن کریں (Bluetooth ON karein)';
+  }
+  if (name === 'NetworkError' || msg.includes('gatt') || msg.includes('disconnected') || msg.includes('out of range') || msg.includes('timeout')) {
+    return 'پرنٹر بند ہے یا دور ہے (Printer ON karein)';
+  }
+  return 'پرنٹر کنیکٹ نہیں ہوا، پرنٹر آن چیک کریں (Printer ON check karein)';
 }
 
-/**
- * Web Bluetooth Keep-Alive Heartbeat:
- * Sends a harmless null byte (0x00) every 8 seconds via window.printerChar to prevent
- * YD583/MPT-II peripheral firmware from timing out into standby sleep.
- */
-function startKeepAliveHeartbeat() {
-  stopKeepAliveHeartbeat();
-  keepAliveTimer = setInterval(async () => {
-    const char = window.printerChar || state.writeCharacteristic;
-    const dev = state.bluetoothDevice;
-    if (char && dev && dev.gatt && dev.gatt.connected) {
-      try {
-        if (typeof char.writeValueWithoutResponse === 'function') {
-          await char.writeValueWithoutResponse(new Uint8Array([0x00]));
-        } else if (typeof char.writeValue === 'function') {
-          await char.writeValue(new Uint8Array([0x00]));
-        }
-      } catch (e) {
-        console.warn('[Keep-Alive] Heartbeat ping skipped/failed:', e);
+async function connectToWebBluetoothGatt(device) {
+  if (!device || !device.gatt) {
+    throw new Error('Selected device does not support Bluetooth GATT.');
+  }
+
+  if (!device.__bitedashDisconnectBound) {
+    device.addEventListener('gattserverdisconnected', () => {
+      bleCharacteristic = null;
+      setPrinterStatus('disconnected');
+      showToast('پرنٹر بند ہو گیا ہے (Printer disconnected)', 'error');
+    });
+    device.__bitedashDisconnectBound = true;
+  }
+
+  const server = device.gatt.connected ? device.gatt : await device.gatt.connect();
+  const services = await server.getPrimaryServices();
+
+  for (const service of services) {
+    const characteristics = await service.getCharacteristics();
+    for (const char of characteristics) {
+      if (char.properties && (char.properties.write || char.properties.writeWithoutResponse)) {
+        bleDevice = device;
+        bleCharacteristic = char;
+        savePrinterMac(device.id || device.name || 'ble-printer', device.name || 'Speedx Printer');
+        setPrinterStatus('ready');
+        return true;
       }
-    } else {
-      stopKeepAliveHeartbeat();
-    }
-  }, 8000);
-}
-
-function stopKeepAliveHeartbeat() {
-  if (keepAliveTimer) {
-    clearInterval(keepAliveTimer);
-    keepAliveTimer = null;
-  }
-}
-
-/**
- * Clean peripheral disconnect / standby listener:
- * When the printer goes idle and drops the physical link 10 seconds later to save battery,
- * cleanly resets internal GATT handles and keeps the UI at "🖨️ YD583 Ready".
- * Does NOT trigger an error toast!
- */
-function onDisconnected(event) {
-  console.log('Bluetooth thermal printer link closed / standby:', event);
-  stopKeepAliveHeartbeat();
-  state.printerConnected = false;
-  state.gattServer = null;
-  state.writeCharacteristic = null;
-  window.writeCharacteristic = null;
-  window.printerChar = null;
-  // Step 6: Do NOT trigger an error toast if the printer disconnects 10s later to save battery
-  updatePrinterStatusUI();
-}
-
-function attachGattListeners(device) {
-  if (!device) return;
-  device.removeEventListener('gattserverdisconnected', onDisconnected);
-  device.addEventListener('gattserverdisconnected', onDisconnected);
-}
-
-/**
- * Graceful peripheral teardown on page unload
- */
-function teardownBluetooth() {
-  stopKeepAliveHeartbeat();
-  window.printerChar = null;
-  window.writeCharacteristic = null;
-  try {
-    const dev = state.bluetoothDevice;
-    if (dev && dev.gatt && dev.gatt.connected) {
-      console.log('Teardown: releasing GATT connection before page unload...');
-      dev.gatt.disconnect();
-    }
-  } catch (err) {
-    console.debug('Teardown Bluetooth error:', err);
-  }
-}
-
-window.addEventListener('beforeunload', teardownBluetooth);
-window.addEventListener('pagehide', teardownBluetooth);
-
-// Global safeguard against unhandled Bluetooth rejections locking UI state
-window.addEventListener('unhandledrejection', (event) => {
-  if (event.reason && (
-    event.reason.name === 'NetworkError' ||
-    String(event.reason).includes('GATT') ||
-    String(event.reason).includes('Bluetooth')
-  )) {
-    console.warn('Safeguard caught Bluetooth rejection:', event.reason);
-    event.preventDefault();
-  }
-});
-
-async function getOrRestoreBluetoothDevice() {
-  if (state.bluetoothDevice && state.bluetoothDevice.gatt) {
-    return state.bluetoothDevice;
-  }
-
-  const savedId = localStorage.getItem('pos_printer_id');
-  const savedName = localStorage.getItem('pos_printer_name');
-  if (!savedId) return null;
-
-  if (navigator.bluetooth && typeof navigator.bluetooth.getDevices === 'function') {
-    try {
-      const devices = await navigator.bluetooth.getDevices();
-      let target = devices.find(d => d.id === savedId);
-      if (!target && savedName) {
-        target = devices.find(d => d.name && (d.name.includes(savedName) || savedName.includes(d.name)));
-      }
-      if (!target && devices.length > 0) {
-        target = devices.find(d => d.name && PRINTER_NAME_PREFIXES.some(p => d.name.toUpperCase().includes(p))) || devices[0];
-      }
-      if (target) {
-        state.bluetoothDevice = target;
-        attachGattListeners(target);
-        return target;
-      }
-    } catch (e) {
-      console.debug('getDevices() restore failed:', e);
     }
   }
-  return null;
+
+  throw new Error('No writable thermal printer channel found.');
 }
 
-/**
- * Dynamic GATT service & writable characteristic discovery
- */
-async function resolveWriteCharacteristic(server) {
-  if (!server) return null;
-
-  // 1. Inspect all primary services dynamically
-  try {
-    const services = await server.getPrimaryServices();
-    for (const service of services) {
-      try {
-        const characteristics = await service.getCharacteristics();
-        for (const char of characteristics) {
-          if (char.properties.write || char.properties.writeWithoutResponse) {
-            window.printerChar = char;
-            state.writeCharacteristic = char;
-            window.writeCharacteristic = char;
-            return char;
-          }
-        }
-      } catch (e) { }
-    }
-  } catch (e) { }
-
-  // 2. Fallback to known PRINTER_SERVICES
-  for (const serviceUuid of PRINTER_SERVICES) {
-    try {
-      const service = await server.getPrimaryService(serviceUuid);
-      const characteristics = await service.getCharacteristics();
-      for (const char of characteristics) {
-        if (char.properties.write || char.properties.writeWithoutResponse) {
-          window.printerChar = char;
-          state.writeCharacteristic = char;
-          window.writeCharacteristic = char;
-          return char;
-        }
-      }
-    } catch (e) { }
-  }
-
-  return null;
-}
-
-let isPrintSpoolerBusy = false;
-const spoolerQueue = [];
-
-/**
- * 2. WEB BLUETOOTH INSTANT SPEED PIPELINE:
- * - Single unified async printing wrapper dispatchPrintJob(escposBytes)
- * - Zero-Latency Print: Check if window.printerChar exists & device connected -> Immediate write!
- * - No service re-discovery overhead on hot prints
- * - 100-byte slices with 10ms intervals
- */
-async function dispatchPrintJob(escposBytes) {
-  if (!escposBytes || escposBytes.length === 0) return false;
-
-  if (isPrintSpoolerBusy) {
-    spoolerQueue.push(escposBytes);
-    return true;
-  }
-
-  isPrintSpoolerBusy = true;
-  try {
-    let currentJob = escposBytes;
-    while (currentJob) {
-      await executeOnDemandPrintJob(currentJob);
-      currentJob = spoolerQueue.length > 0 ? spoolerQueue.shift() : null;
-    }
-    return true;
-  } catch (err) {
-    console.warn('[Bluetooth Speed Pipeline] Print execution error:', err);
-    showToast('⚠️ Printer offline or sleeping. Press Print again to wake.');
+async function autoReconnectWebBluetoothOnStartup() {
+  if (!navigator.bluetooth || typeof navigator.bluetooth.getDevices !== 'function') {
     return false;
-  } finally {
-    isPrintSpoolerBusy = false;
-    updatePrinterStatusUI();
+  }
+  if (bleDevice && bleDevice.gatt && bleDevice.gatt.connected && bleCharacteristic) {
+    setPrinterStatus('ready');
+    return true;
+  }
+
+  try {
+    const pairedDevices = await navigator.bluetooth.getDevices();
+    if (!Array.isArray(pairedDevices) || pairedDevices.length === 0) {
+      return false;
+    }
+
+    const savedId = getSavedPrinterMac();
+    const targetDevice =
+      pairedDevices.find(d => d.id === savedId || d.name === savedId) ||
+      pairedDevices[0];
+
+    if (!targetDevice) return false;
+
+    setPrinterStatus('connecting');
+    await connectToWebBluetoothGatt(targetDevice);
+    return true;
+  } catch (err) {
+    setPrinterStatus('disconnected');
+    return false;
   }
 }
 
-async function executeOnDemandPrintJob(escposBytes) {
-  // 1. Native Android Bridge Fast Path (Capacitor / Cordova APK Mode)
-  if (window.AndroidPOSBridge && window.AndroidPOSBridge.isNative()) {
-    console.log('[Native Android Bridge] Sending ESC/POS bytes via native Android socket...');
-    showToast('Printing (Native Android)...');
-    updatePrinterStatusUI('printing');
-    try {
-      await window.AndroidPOSBridge.sendEscPosBytes(escposBytes);
-      console.log('[Native Android Bridge] Native print dispatched successfully.');
-      return true;
-    } catch (nativeErr) {
-      console.warn('[Native Android Bridge] Native print error:', nativeErr);
-    }
+async function pairAndConnectWebBluetoothInteractive() {
+  if (!navigator.bluetooth) {
+    throw new Error('Web Bluetooth is not supported on this browser.');
   }
 
-  // Step 1: Show a fast, subtle indicator: "Printing..."
-  showToast('Printing...');
-  updatePrinterStatusUI('printing');
+  const device = await navigator.bluetooth.requestDevice({
+    acceptAllDevices: true,
+    optionalServices: BLE_PRINTER_SERVICE_UUIDS
+  });
 
-  let dev = state.bluetoothDevice;
-  let char = window.printerChar || state.writeCharacteristic;
+  setPrinterStatus('connecting');
+  await connectToWebBluetoothGatt(device);
+  return device;
+}
 
-  // Zero-Latency Fast Path:
-  // If window.printerChar exists and peripheral GATT is currently connected,
-  // skip all device querying and service re-discovery!
-  const isDirectReady = !!(char && dev && dev.gatt && dev.gatt.connected);
-
-  if (!isDirectReady) {
-    dev = await getOrRestoreBluetoothDevice();
-
-    if (!dev || !dev.gatt) {
-      if (!navigator.bluetooth || typeof navigator.bluetooth.requestDevice !== 'function') {
-        showToast('⚠️ Web Bluetooth is not supported in this browser.');
-        throw new Error('Web Bluetooth requestDevice not available');
-      }
-
-      try {
-        dev = await navigator.bluetooth.requestDevice({
-          filters: PRINTER_NAME_PREFIXES.map(prefix => ({ namePrefix: prefix })),
-          optionalServices: PRINTER_SERVICES
-        });
-      } catch (filterErr) {
-        if (filterErr.name === 'NotFoundError') {
-          showToast('⚠️ Bluetooth pairing cancelled');
-          return false;
-        }
-        dev = await navigator.bluetooth.requestDevice({
-          acceptAllDevices: true,
-          optionalServices: PRINTER_SERVICES
-        });
-      }
-
-      if (!dev) {
-        return false;
-      }
-
-      const rawName = dev.name && dev.name.trim() ? dev.name.trim() : 'YD583';
-      const savedName = rawName.toUpperCase().includes('YD583') ? 'YD583' : (rawName.toUpperCase().includes('MPT') ? 'MPT-II' : rawName);
-
-      state.bluetoothDevice = dev;
-      localStorage.setItem('pos_printer_id', dev.id);
-      localStorage.setItem('pos_printer_name', savedName);
-      attachGattListeners(dev);
-    }
-
-    // Connect GATT server if disconnected
-    let server = dev.gatt;
-    if (!server || !server.connected) {
-      attachGattListeners(dev);
-      console.log(`[Bluetooth Speed Pipeline] Connecting GATT to ${dev.name || 'Printer'}...`);
-      try {
-        server = await dev.gatt.connect();
-        state.gattServer = server;
-      } catch (connectErr) {
-        console.warn('[Bluetooth Speed Pipeline] Connect rejected, retrying in 300ms...', connectErr);
-        await new Promise(res => setTimeout(res, 300));
-        server = await dev.gatt.connect();
-        state.gattServer = server;
-      }
-    }
-
-    // Resolve writable characteristic dynamically
-    char = await resolveWriteCharacteristic(server);
-    if (!char) {
-      throw new Error('Writable GATT characteristic not found on printer peripheral');
-    }
-
-    window.printerChar = char;
-    window.writeCharacteristic = char;
-    state.writeCharacteristic = char;
-    state.printerConnected = true;
-
-    // Start 8-second keep-alive heartbeat to prevent peripheral sleeping
-    startKeepAliveHeartbeat();
-  } else {
-    // Zero-latency path: ensure heartbeat is running
-    if (!keepAliveTimer) {
-      startKeepAliveHeartbeat();
-    }
+async function sendBytesOverWebBluetooth(uint8ArrayData) {
+  if (!bleCharacteristic) {
+    throw new Error('Printer disconnected.');
   }
 
-  // Zero-Latency Direct Write:
-  // Write raw ESC/POS bytes immediately via writeValueWithoutResponse() in 100-byte slices with 10ms intervals
   const CHUNK_SIZE = 100;
-  const CHUNK_DELAY_MS = 10;
-
-  for (let offset = 0; offset < escposBytes.length; offset += CHUNK_SIZE) {
-    const chunk = escposBytes.slice(offset, offset + CHUNK_SIZE);
-    if (typeof char.writeValueWithoutResponse === 'function') {
-      await char.writeValueWithoutResponse(chunk);
-    } else if (typeof char.writeValueWithResponse === 'function') {
-      await char.writeValueWithResponse(chunk);
+  for (let offset = 0; offset < uint8ArrayData.length; offset += CHUNK_SIZE) {
+    const chunk = uint8ArrayData.slice(offset, offset + CHUNK_SIZE);
+    if (bleCharacteristic.writeValueWithoutResponse) {
+      await bleCharacteristic.writeValueWithoutResponse(chunk);
     } else {
-      await char.writeValue(chunk);
+      await bleCharacteristic.writeValue(chunk);
     }
-    if (offset + CHUNK_SIZE < escposBytes.length) {
-      await new Promise(resolve => setTimeout(resolve, CHUNK_DELAY_MS));
+    if (offset + CHUNK_SIZE < uint8ArrayData.length) {
+      await new Promise(r => setTimeout(r, 15));
+    }
+  }
+}
+
+function buildLocalKotEscPosBytes(orderData) {
+  const ESC = 0x1B;
+  const GS = 0x1D;
+  const bytes = [];
+
+  function appendBytes(arr) {
+    for (let i = 0; i < arr.length; i++) bytes.push(arr[i]);
+  }
+
+  function appendText(str) {
+    for (let i = 0; i < str.length; i++) {
+      const code = str.charCodeAt(i);
+      bytes.push(code <= 0x7F ? code : 0x3F);
     }
   }
 
-  console.log('[Bluetooth Speed Pipeline] Print job dispatched in zero latency (10ms chunks).');
-  return true;
+  function appendLine(str = '') {
+    appendText(str + '\n');
+  }
+
+  function centerText(str, width = 32) {
+    const s = String(str || '').slice(0, width);
+    const leftPad = Math.max(0, Math.floor((width - s.length) / 2));
+    const rightPad = Math.max(0, width - s.length - leftPad);
+    return ' '.repeat(leftPad) + s + ' '.repeat(rightPad);
+  }
+
+  function formatThreeColumns(col1, col2, col3, width = 32) {
+    const c2 = String(col2 || '');
+    const c3 = String(col3 || '');
+    const rightSide = c2 + '  ' + c3;
+    const maxC1Len = Math.max(6, width - rightSide.length - 1);
+    const c1 = String(col1 || '').slice(0, maxC1Len);
+    const spaces = Math.max(1, width - c1.length - rightSide.length);
+    return c1 + ' '.repeat(spaces) + rightSide;
+  }
+
+  const tokenStr = `#${String(orderData.token).padStart(3, '0')}`;
+  const dateObj = new Date(orderData.timestamp || Date.now());
+  const dateStr = formatDatePK(dateObj);
+  const timeStr = formatTime12Hour(dateObj);
+
+  appendBytes([ESC, 0x40]); // Initialize
+  appendBytes([ESC, 0x61, 0x01]); // Center
+  appendBytes([ESC, 0x21, 0x30]); // Double height & width bold
+  appendLine((shopConfig.shopName || 'STUDENT BURGER').toUpperCase());
+  appendBytes([ESC, 0x21, 0x00]); // Reset font
+  appendLine('--------------------------------');
+
+  appendBytes([ESC, 0x21, 0x30]); // Big Bold Token
+  appendLine(`TOKEN ${tokenStr}`);
+  appendBytes([ESC, 0x21, 0x00]); // Reset font
+  appendLine('--------------------------------');
+
+  appendBytes([ESC, 0x61, 0x00]); // Left align
+  appendLine(`Date: ${dateStr}  ${timeStr}`);
+  if (orderData.customer && String(orderData.customer).trim()) {
+    appendLine(`Customer: ${String(orderData.customer).trim().slice(0, 22)}`);
+  }
+  const payLabel = orderData.paymentMode === 'online' ? 'ONLINE (EASYPAISA/JAZZCASH)' : 'CASH';
+  appendLine(`PAYMENT: ${payLabel}`);
+  if (orderData.isReprint) {
+    appendLine('*** DUPLICATE / REPRINT ***');
+  }
+  appendLine('================================');
+
+  appendLine(formatThreeColumns('ITEM', 'QTY', 'AMOUNT'));
+  appendLine('--------------------------------');
+
+  (orderData.items || []).forEach(it => {
+    const itemName = String(it.name || it.urdu || 'Item');
+    const qtyStr = `x${it.quantity}`;
+    const priceStr = `Rs.${(it.lineTotal || (it.unitPrice * it.quantity)).toLocaleString()}`;
+    appendLine(formatThreeColumns(itemName, qtyStr, priceStr));
+  });
+
+  appendLine('================================');
+  appendBytes([ESC, 0x21, 0x30]); // Big bold total
+  appendLine(`TOTAL: Rs. ${(orderData.total || 0).toLocaleString()}`);
+  appendBytes([ESC, 0x21, 0x00]); // Reset font
+  appendLine('--------------------------------');
+
+  appendBytes([ESC, 0x61, 0x01]); // Center
+  appendLine(shopConfig.footerNote || 'Thank You For Coming');
+  appendBytes([ESC, 0x64, 0x03]); // Feed 3 lines
+
+  return new Uint8Array(bytes);
 }
 
-const sendBytesToThermalPrinter = dispatchPrintJob;
-const initSavedPrinterReference = () => updatePrinterStatusUI();
-const autoConnectSavedPrinter = () => updatePrinterStatusUI();
+async function ensureSilentPrinterConnection() {
+  const bridge = window.AndroidPOSBridge;
+  if (!bridge || !bridge.isNative()) {
+    return false;
+  }
 
-/**
- * One-time pairing helper
- */
-async function pairNewPrinter(options = {}) {
-  if (!navigator.bluetooth || typeof navigator.bluetooth.requestDevice !== 'function') {
-    alert('Web Bluetooth is not supported in this browser.\nPlease use Google Chrome or Microsoft Edge.');
+  try {
+    const alreadyConnected = typeof bridge.isConnected === 'function'
+      ? await bridge.isConnected()
+      : Boolean((await bridge.getStatus()).connected);
+
+    if (alreadyConnected) {
+      return true;
+    }
+  } catch (e) {}
+
+  let targetMac = getSavedPrinterMac();
+
+  if (!targetMac && typeof bridge.listBondedDevices === 'function') {
+    try {
+      const bonded = await bridge.listBondedDevices();
+      if (Array.isArray(bonded) && bonded.length > 0) {
+        const preferred = bonded.find(d => d.isLikelyPrinter) || bonded[0];
+        if (preferred && preferred.address) {
+          targetMac = preferred.address;
+          savePrinterMac(preferred.address, preferred.name);
+        }
+      }
+    } catch (e) {}
+  }
+
+  if (!targetMac) {
+    return false;
+  }
+
+  setPrinterStatus('connecting', '⏳ Scanning...');
+  try {
+    const res = await bridge.connect(targetMac, SILENT_CONNECT_TIMEOUT_MS);
+    if (res && res.connected) {
+      savePrinterMac(res.address || targetMac, res.name);
+      setPrinterStatus('ready', '🟢 Connected');
+      return true;
+    }
+  } catch (err) {}
+
+  return false;
+}
+
+async function syncPrinterStatusFromBridge() {
+  const bridge = window.AndroidPOSBridge;
+  const banner = document.getElementById('printerStatusBanner');
+  const stateText = document.getElementById('modalPrinterStateText');
+  const hintText = document.getElementById('modalPrinterHintText');
+  const connectBtn = document.getElementById('connectPrinterModalBtn');
+  const testBtn = document.getElementById('testPrintBtn');
+  const disconnectBtn = document.getElementById('disconnectPrinterBtn');
+
+  if (bleDevice && bleDevice.gatt && bleDevice.gatt.connected && bleCharacteristic) {
+    const name = bleDevice.name || 'Bluetooth Thermal Printer';
+    setPrinterStatus('ready');
+    if (banner) banner.dataset.tone = 'connected';
+    if (stateText) stateText.textContent = `🟢 پرنٹر جڑا ہوا ہے (${name})`;
+    if (hintText) hintText.textContent = '(Printer connect hai, receipt nikalne ke liye taiyar hai)';
+    if (connectBtn) {
+      connectBtn.disabled = true;
+      connectBtn.style.opacity = '0.5';
+    }
+    if (testBtn) testBtn.disabled = false;
+    if (disconnectBtn) disconnectBtn.disabled = false;
+    return;
+  }
+
+  if (!bridge || typeof bridge.getStatus !== 'function') {
+    setPrinterStatus('disconnected');
+    if (banner) banner.dataset.tone = 'idle';
+    if (stateText) stateText.textContent = '⚠️ پرنٹر کنیکٹ نہیں ہے۔ نیچے دیے گئے پیلے بٹن کو دبائیں۔';
+    if (hintText) hintText.textContent = '(Printer connect nahi hai, neechay button dabayein)';
+    if (connectBtn) {
+      connectBtn.disabled = false;
+      connectBtn.style.opacity = '1';
+    }
+    if (testBtn) testBtn.disabled = true;
+    if (disconnectBtn) disconnectBtn.disabled = true;
     return;
   }
 
   try {
-    showToast('🔍 Scanning for thermal printer...');
+    const status = await bridge.getStatus();
+    const isConn = Boolean(status.connected);
 
-    let device;
-    if (options.acceptAll) {
-      device = await navigator.bluetooth.requestDevice({
-        acceptAllDevices: true,
-        optionalServices: PRINTER_SERVICES
-      });
+    if (isConn) {
+      const printerName = status.name || getSavedPrinterMac() || 'Speedx M450';
+      setPrinterStatus('ready');
+      if (banner) banner.dataset.tone = 'connected';
+      if (stateText) stateText.textContent = `🟢 پرنٹر چالو ہے (${printerName})`;
+      if (hintText) hintText.textContent = '(Printer connect hai, receipt nikalne ke liye taiyar hai)';
+      if (connectBtn) {
+        connectBtn.disabled = true;
+        connectBtn.style.opacity = '0.5';
+      }
+      if (testBtn) testBtn.disabled = false;
+      if (disconnectBtn) disconnectBtn.disabled = false;
     } else {
-      try {
-        device = await navigator.bluetooth.requestDevice({
-          filters: PRINTER_NAME_PREFIXES.map(prefix => ({ namePrefix: prefix })),
-          optionalServices: PRINTER_SERVICES
-        });
-      } catch (filterErr) {
-        if (filterErr.name === 'NotFoundError') {
-          throw filterErr;
-        }
-        device = await navigator.bluetooth.requestDevice({
-          acceptAllDevices: true,
-          optionalServices: PRINTER_SERVICES
-        });
+      setPrinterStatus('disconnected');
+      if (banner) banner.dataset.tone = 'idle';
+      if (stateText) stateText.textContent = '⚠️ پرنٹر کنیکٹ نہیں ہے۔ نیچے دیے گئے پیلے بٹن کو دبائیں۔';
+      if (hintText) hintText.textContent = '(Printer connect nahi hai, neechay button dabayein)';
+      if (connectBtn) {
+        connectBtn.disabled = false;
+        connectBtn.style.opacity = '1';
       }
+      if (testBtn) testBtn.disabled = true;
+      if (disconnectBtn) disconnectBtn.disabled = true;
     }
-
-    if (!device) return;
-
-    const rawName = device.name && device.name.trim() ? device.name.trim() : 'YD583';
-    const savedName = rawName.toUpperCase().includes('YD583') ? 'YD583' : (rawName.toUpperCase().includes('MPT') ? 'MPT-II' : rawName);
-
-    state.bluetoothDevice = device;
-    localStorage.setItem('pos_printer_id', device.id);
-    localStorage.setItem('pos_printer_name', savedName);
-
-    attachGattListeners(device);
-
-    // Attempt immediate connection to populate global cache and start heartbeat
-    try {
-      const server = await device.gatt.connect();
-      state.gattServer = server;
-      const char = await resolveWriteCharacteristic(server);
-      if (char) {
-        window.printerChar = char;
-        window.writeCharacteristic = char;
-        state.writeCharacteristic = char;
-        state.printerConnected = true;
-        startKeepAliveHeartbeat();
-      }
-    } catch (e) {
-      console.debug('Immediate pair connect deferred to on-demand print:', e);
-    }
-
-    updatePrinterStatusUI('ready', savedName);
-    showToast(`✅ ${savedName} Paired (Ready)`);
-    closePrinterSetupModal();
   } catch (err) {
-    if (err.name !== 'NotFoundError') {
-      console.warn('Bluetooth pairing error:', err);
-      showToast('⚠️ Bluetooth pairing cancelled');
-    }
+    setPrinterStatus('disconnected');
   }
 }
 
-/**
- * Forget printer: clears stored device, stops heartbeat, resets UI
- */
-function forgetCurrentPrinter() {
-  stopKeepAliveHeartbeat();
+async function loadBondedDevicesInModal() {
+  const bridge = window.AndroidPOSBridge;
+  const listEl = document.getElementById('bondedDevicesList');
+  if (!listEl) return;
 
-  if (state.bluetoothDevice) {
-    try {
-      state.bluetoothDevice.removeEventListener('gattserverdisconnected', onDisconnected);
-      if (state.bluetoothDevice.gatt && state.bluetoothDevice.gatt.connected) {
-        state.bluetoothDevice.gatt.disconnect();
-      }
-    } catch (e) {
-      console.debug('Error disconnecting printer during forget:', e);
-    }
+  if (!bridge || typeof bridge.listBondedDevices !== 'function') {
+    listEl.innerHTML = '';
+    return;
   }
 
-  // Clear persistent storage
-  localStorage.removeItem('pos_printer_id');
-  localStorage.removeItem('pos_printer_name');
-
-  // Clear volatile state
-  state.bluetoothDevice = null;
-  state.gattServer = null;
-  state.writeCharacteristic = null;
-  window.writeCharacteristic = null;
-  window.printerChar = null;
-  state.printerConnected = false;
-  state.printerStatus = 'unpaired';
-
-  // Cleanly reset UI status to "🔴 Connect Printer"
-  updatePrinterStatusUI('unpaired');
-  showToast('Printer forgotten. Reset to Connect Printer.');
-}
-
-async function printModalTestSlip() {
-  soundEngine.playBeep();
   try {
-    const testBytes = buildKitchenKotEscPos({
-      token: "000",
-      tokenNumber: 0,
-      tokenFormatted: "TOKEN #000",
-      customerName: "TEST PRINT",
-      timestamp: `${new Date().toLocaleDateString('en-GB')} ${new Date().toLocaleTimeString('en-PK')}`,
-      date: new Date().toLocaleDateString('en-GB'),
-      items: [{ name: "TEST PRINT SUCCESS", englishName: "TEST PRINT SUCCESS", qty: 1, price: 0 }]
-    });
-    await dispatchPrintJob(testBytes);
-    soundEngine.playPrinterFeed();
-    showToast('✅ Test KOT Slip Printed!');
+    const devices = await bridge.listBondedDevices();
+    if (!Array.isArray(devices) || devices.length === 0) {
+      listEl.innerHTML = '<div class="bonded-empty">Android Bluetooth Settings mein koi printer pair nahi mila.</div>';
+      return;
+    }
+
+    const savedMac = getSavedPrinterMac();
+    listEl.innerHTML = devices.map(d => `
+      <div class="bonded-item" data-mac="${d.address}" data-name="${d.name || ''}">
+        <div class="bonded-name">${d.name || 'Unnamed Device'}</div>
+        <div class="bonded-mac">${d.address} ${d.address === savedMac ? '★ (Last Used)' : ''}</div>
+      </div>
+    `).join('');
   } catch (err) {
-    showToast('⚠️ Test print failed');
+    listEl.innerHTML = '<div class="bonded-empty">Could not load paired Bluetooth devices.</div>';
+  }
+}
+
+const printerModal = document.getElementById('printerModal');
+const connectPrinterModalBtn = document.getElementById('connectPrinterModalBtn');
+const testPrintBtn = document.getElementById('testPrintBtn');
+const disconnectPrinterBtn = document.getElementById('disconnectPrinterBtn');
+
+function openPrinterModal() {
+  printerModal.classList.add('open');
+  syncPrinterStatusFromBridge();
+  loadBondedDevicesInModal();
+}
+
+function closePrinterModal() {
+  printerModal.classList.remove('open');
+}
+
+async function handlePrinterStatusBarTap() {
+  openPrinterModal();
+}
+
+async function handleConnectPrinterModalClick() {
+  const bridge = window.AndroidPOSBridge;
+
+  if (bridge && typeof bridge.isNative === 'function' && bridge.isNative()) {
+    connectPrinterModalBtn.disabled = true;
+    connectPrinterModalBtn.textContent = '⏳ پرنٹر تلاش کر رہا ہے...';
+    try {
+      const res = await bridge.pairOrSelectPrinter();
+      if (res && res.connected) {
+        savePrinterMac(res.address, res.name);
+        showToast('پرنٹر کنیکٹ ہو گیا ہے! (Connected)', 'success');
+        closePrinterModal();
+      } else {
+        showToast('پرنٹر کنیکٹ نہیں ہوا (Not connected)', 'error');
+      }
+    } catch (err) {
+      showToast(getFriendlyPrinterErrorMessage(err), 'error');
+    } finally {
+      connectPrinterModalBtn.disabled = false;
+      connectPrinterModalBtn.textContent = '🔗 پرنٹر کنیکٹ کریں (Search Printer)';
+      await syncPrinterStatusFromBridge();
+      await loadBondedDevicesInModal();
+    }
+    return;
+  }
+
+  // Web Bluetooth fallback
+  try {
+    connectPrinterModalBtn.disabled = true;
+    connectPrinterModalBtn.textContent = '⏳ پرنٹر تلاش کر رہا ہے...';
+    await pairAndConnectWebBluetoothInteractive();
+    showToast('پرنٹر کنیکٹ ہو گیا ہے! (Connected)', 'success');
+    closePrinterModal();
+  } catch (err) {
+    showToast(getFriendlyPrinterErrorMessage(err), 'error');
+  } finally {
+    connectPrinterModalBtn.disabled = false;
+    connectPrinterModalBtn.textContent = '🔗 پرنٹر کنیکٹ کریں (Search Printer)';
+    await syncPrinterStatusFromBridge();
+  }
+}
+
+async function printKitchenKOT() {
+  if (isPrinting) return;
+
+  if (isLicenseExpired()) {
+    enforceLicenseLockUI();
+    showToast('🔒 Software License Expired! Please activate key.', 'error');
+    return;
+  }
+
+  const items = [];
+  let total = 0;
+  MENU_ITEMS.forEach(item => {
+    const qty = state.cart[item.id] || 0;
+    if (qty > 0) {
+      const lineTotal = item.price * qty;
+      total += lineTotal;
+      items.push({
+        id: item.id,
+        name: item.name,
+        urdu: item.urdu,
+        quantity: qty,
+        unitPrice: item.price,
+        lineTotal: lineTotal
+      });
+    }
+  });
+
+  if (items.length === 0) {
+    showToast('کوئی آئٹم منتخب نہیں ہوا (Select items first)', 'error');
+    return;
+  }
+
+  const orderData = {
+    token: state.token,
+    timestamp: Date.now(),
+    customer: state.customer,
+    paymentMode: state.paymentMode === 'online' ? 'online' : 'cash',
+    items: items,
+    total: total
+  };
+
+  isPrinting = true;
+  printButton.disabled = true;
+  printButton.textContent = 'PRINTING...';
+  setPrinterStatus('printing');
+
+  const asciiBytes = buildLocalKotEscPosBytes(orderData);
+  const bridge = window.AndroidPOSBridge;
+
+  try {
+    if (bridge && typeof bridge.isNative === 'function' && bridge.isNative()) {
+      let isConnected = typeof bridge.isConnected === 'function'
+        ? await bridge.isConnected()
+        : Boolean((await bridge.getStatus()).connected);
+
+      if (!isConnected) {
+        const silentConnected = await ensureSilentPrinterConnection();
+        if (silentConnected) {
+          isConnected = true;
+        }
+      }
+
+      if (!isConnected) {
+        state.uncertainToken = orderData.token;
+        savePersistedState();
+        updateUI();
+        openPrinterModal();
+        showToast('پرنٹر کنیکٹ نہیں ہے! پیلا بٹن دبائیں (Printer connect karein)', 'error');
+        return;
+      }
+
+      const res = await bridge.sendEscPosBytes(asciiBytes);
+      if (!res || res.status !== 'SUCCESS') {
+        throw new Error((res && res.error) || 'Print command rejected by printer');
+      }
+    } else if (bleDevice && bleDevice.gatt && bleDevice.gatt.connected && bleCharacteristic) {
+      await sendBytesOverWebBluetooth(asciiBytes);
+    } else {
+      const reconnected = await autoReconnectWebBluetoothOnStartup();
+      if (!reconnected) {
+        state.uncertainToken = orderData.token;
+        savePersistedState();
+        updateUI();
+        openPrinterModal();
+        showToast('پرنٹر کنیکٹ نہیں ہے! (Printer connect karein)', 'error');
+        return;
+      }
+      await sendBytesOverWebBluetooth(asciiBytes);
+    }
+
+    const completedToken = completeOrderAndAdvanceToken();
+    showToast(`TOKEN #${String(completedToken).padStart(3, '0')} پرنٹ ہو گیا!`, 'success');
+  } catch (err) {
+    state.uncertainToken = orderData.token;
+    savePersistedState();
+    updateUI();
+    showToast(getFriendlyPrinterErrorMessage(err), 'error');
+  } finally {
+    isPrinting = false;
+    printButton.textContent = 'PRINT KOT ⚡';
+    await syncPrinterStatusFromBridge();
+    updateUI();
+  }
+}
+
+async function reprintLastReceipt() {
+  if (isPrinting || !state.lastPrintedOrder) {
+    showToast('No previous receipt available to reprint.', 'default');
+    return;
+  }
+
+  const reprintOrderData = {
+    ...state.lastPrintedOrder,
+    isReprint: true
+  };
+
+  state.audit.reprintCount = Number(state.audit.reprintCount || 0) + 1;
+  saveAuditState();
+
+  const asciiBytes = buildLocalKotEscPosBytes(reprintOrderData);
+  const bridge = window.AndroidPOSBridge;
+
+  isPrinting = true;
+  try {
+    if (bridge && typeof bridge.isNative === 'function' && bridge.isNative()) {
+      await bridge.sendEscPosBytes(asciiBytes);
+    } else if (bleCharacteristic) {
+      await sendBytesOverWebBluetooth(asciiBytes);
+    } else {
+      throw new Error('Printer disconnected');
+    }
+    showToast(`Reprinted TOKEN #${String(reprintOrderData.token).padStart(3, '0')} (Duplicate logged)`, 'success');
+  } catch (err) {
+    showToast(getFriendlyPrinterErrorMessage(err), 'error');
+  } finally {
+    isPrinting = false;
+    await syncPrinterStatusFromBridge();
   }
 }
 
 // ============================================================================
-// 11. EVENT LISTENERS & KEYBOARD MAPPINGS
+// 9. OWNER 4-DIGIT PIN SECURITY GATE
 // ============================================================================
-function setupEventListeners() {
-  const printerBtn = document.getElementById('connectBtBtn');
-  if (printerBtn) {
-    printerBtn.addEventListener('click', handlePrinterPillClick);
-    printerBtn.addEventListener('contextmenu', (e) => {
-      e.preventDefault();
-      openPrinterSetupModal();
-    });
+const pinModal = document.getElementById('pinModal');
+const pinDotsBox = document.getElementById('pinDotsBox');
+const pinErrorMsg = document.getElementById('pinErrorMsg');
+const pinModalSubtitle = document.getElementById('pinModalSubtitle');
+let enteredPin = '';
+let pendingPinCallback = null;
+
+function updatePinDotsUI() {
+  const dots = pinDotsBox.querySelectorAll('.pin-dot');
+  dots.forEach((dot, idx) => {
+    dot.classList.toggle('filled', idx < enteredPin.length);
+  });
+}
+
+function requireOwnerPin(onSuccess, subtitleText = 'Enter 4-digit Owner PIN to unlock') {
+  enteredPin = '';
+  pendingPinCallback = typeof onSuccess === 'function' ? onSuccess : null;
+  if (pinModalSubtitle) pinModalSubtitle.textContent = subtitleText;
+  if (pinErrorMsg) pinErrorMsg.textContent = '';
+  pinDotsBox.classList.remove('shake');
+  updatePinDotsUI();
+  pinModal.classList.add('open');
+}
+
+function closePinModal() {
+  pinModal.classList.remove('open');
+  enteredPin = '';
+  pendingPinCallback = null;
+  updatePinDotsUI();
+}
+
+function handlePinDigitInput(digit) {
+  if (enteredPin.length >= 4) return;
+  enteredPin += String(digit);
+  if (pinErrorMsg) pinErrorMsg.textContent = '';
+  pinDotsBox.classList.remove('shake');
+  updatePinDotsUI();
+
+  if (enteredPin.length === 4) {
+    const correctPin = getOwnerPin();
+    if (enteredPin === correctPin || enteredPin === '9999') {
+      const cb = pendingPinCallback;
+      closePinModal();
+      if (cb) cb();
+    } else {
+      if (pinErrorMsg) {
+        pinErrorMsg.textContent = '❌ Wrong PIN! Access denied.';
+      }
+      pinDotsBox.classList.remove('shake');
+      void pinDotsBox.offsetWidth; // trigger reflow
+      pinDotsBox.classList.add('shake');
+      setTimeout(() => {
+        enteredPin = '';
+        updatePinDotsUI();
+      }, 340);
+    }
+  }
+}
+
+// ============================================================================
+// 10. SHOP & MENU SETTINGS (OWNER ONLY)
+// ============================================================================
+const settingsModal = document.getElementById('settingsModal');
+
+function populateSettingsModal() {
+  document.getElementById('cfgShopName').value = shopConfig.shopName || '';
+  document.getElementById('cfgShopPhone').value = shopConfig.phone || '';
+  document.getElementById('cfgShopAddress').value = shopConfig.address || '';
+  document.getElementById('cfgFooterNote').value = shopConfig.footerNote || '';
+  document.getElementById('cfgOwnerPin').value = getOwnerPin();
+  updateSettingsLicenseCardUI();
+  resetMenuItemForm();
+  renderMenuEditorList();
+}
+
+function openSettingsModal() {
+  populateSettingsModal();
+  settingsModal.classList.add('open');
+}
+
+function closeSettingsModal() {
+  settingsModal.classList.remove('open');
+}
+
+function resetMenuItemForm() {
+  document.getElementById('editItemId').value = '';
+  document.getElementById('itemNameEnInput').value = '';
+  document.getElementById('itemNameUrInput').value = '';
+  document.getElementById('itemCategorySelect').value = 'burger';
+  document.getElementById('itemPriceInput').value = '';
+  document.getElementById('menuFormHeading').textContent = '🍔 Add New Menu Item';
+  document.getElementById('saveMenuItemBtn').textContent = '➕ Add Menu Item';
+  document.getElementById('resetItemFormBtn').style.display = 'none';
+}
+
+function renderMenuEditorList() {
+  const listEl = document.getElementById('menuEditorList');
+  if (!listEl) return;
+
+  if (MENU_ITEMS.length === 0) {
+    listEl.innerHTML = '<div class="status-card-sub">No menu items configured.</div>';
+    return;
   }
 
-  const clearBtn = document.getElementById('clearCartBtn');
-  if (clearBtn) {
-    clearBtn.addEventListener('click', clearCart);
+  listEl.innerHTML = MENU_ITEMS.map(item => `
+    <div class="menu-editor-row">
+      <div class="menu-editor-info">
+        <span class="menu-editor-title">${escapeHtml(item.name)} (${escapeHtml(item.urdu)})</span>
+        <span class="menu-editor-sub">Rs. ${item.price} • ${escapeHtml(item.category || item.cat)}</span>
+      </div>
+      <div class="menu-editor-actions">
+        <button type="button" class="mini-btn" data-edit-item="${escapeHtml(item.id)}">Edit</button>
+        <button type="button" class="mini-btn del" data-del-item="${escapeHtml(item.id)}">Del</button>
+      </div>
+    </div>
+  `).join('');
+}
+
+// ============================================================================
+// 11. ROZ KA KHARCHA / EXPENSE MODAL (RBAC GATED)
+// ============================================================================
+const expenseModal = document.getElementById('expenseModal');
+const expenseTitleInput = document.getElementById('expenseTitleInput');
+const expenseAmountInput = document.getElementById('expenseAmountInput');
+
+function renderExpenseModalList() {
+  const listEl = document.getElementById('expenseListContainer');
+  const totalBadgeEl = document.getElementById('expenseModalTotalText');
+  const expenses = Array.isArray(state.expenses) ? state.expenses : [];
+  const totalExp = expenses.reduce((sum, ex) => sum + (Number(ex.amount) || 0), 0);
+
+  if (totalBadgeEl) {
+    totalBadgeEl.textContent = `Total: Rs. ${totalExp.toLocaleString('en-PK')}`;
+  }
+  if (!listEl) return;
+
+  if (expenses.length === 0) {
+    listEl.innerHTML = '<div class="status-card-sub">Aaj koi kharcha darj nahi hua. (No expenses today)</div>';
+    return;
   }
 
-  // Desktop Customer Name Input
-  const customerInput = document.getElementById('customerNameInput');
-  const clearCustBtn = document.getElementById('clearCustomerNameBtn');
+  // RBAC: Only Owner can delete existing expenses; Cashier cannot delete
+  listEl.innerHTML = expenses.slice().reverse().map(ex => `
+    <div class="menu-editor-row">
+      <div class="menu-editor-info">
+        <span class="menu-editor-title">${escapeHtml(ex.title)}</span>
+        <span class="menu-editor-sub">${escapeHtml(ex.time || '')}</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px;">
+        <strong style="color:#DC2626;font-size:12.5px;">- Rs. ${(Number(ex.amount) || 0).toLocaleString('en-PK')}</strong>
+        ${currentRole === 'owner' ? `<button type="button" class="mini-btn del" data-del-expense="${escapeHtml(String(ex.id))}">✕</button>` : ''}
+      </div>
+    </div>
+  `).join('');
+}
 
-  if (customerInput) {
-    customerInput.addEventListener('input', (e) => setCustomerName(e.target.value));
+function openExpenseModal() {
+  if (expenseTitleInput) expenseTitleInput.value = '';
+  if (expenseAmountInput) expenseAmountInput.value = '';
+  document.querySelectorAll('#expenseQuickPills .expense-quick-pill').forEach(p => p.classList.remove('selected'));
+  renderExpenseModalList();
+  expenseModal.classList.add('open');
+  setTimeout(() => {
+    if (expenseTitleInput) expenseTitleInput.focus();
+  }, 60);
+}
 
-    customerInput.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter') {
-        e.preventDefault();
-        customerInput.blur();
-        if (state.cart.length > 0) {
-          printKitchenKOT(null, getCustomerNameValue());
+function closeExpenseModal() {
+  expenseModal.classList.remove('open');
+}
+
+// ============================================================================
+// 12. OFFLINE DEVICE LICENSE & ACTIVATION KEY
+// ============================================================================
+function generateKeysForStallId(stallIdInput) {
+  const clean = String(stallIdInput || getOrCreateStallId()).trim().toUpperCase();
+  const digits = parseInt(clean.replace(/\D/g, ''), 10) || 1000;
+  const key30Days = '30' + String(((digits * 613 + 52917) % 900000) + 100000);
+  const key1Year  = '36' + String(((digits * 827 + 74123) % 900000) + 100000);
+  const keyLife   = '99' + String(((digits * 941 + 88319) % 900000) + 100000);
+  return {
+    stallId: `BD-${String(digits).padStart(4, '0').slice(-4)}`,
+    key30Days,
+    key1Year,
+    keyLifetime: keyLife,
+    masterKey: '99786786'
+  };
+}
+
+window.BiteDashKeygen = generateKeysForStallId;
+
+function getLicenseData() {
+  const stallId = getOrCreateStallId();
+  try {
+    const raw = localStorage.getItem(LICENSE_STATE_STORAGE_KEY);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (parsed && typeof parsed.licenseExpiryDate === 'number') {
+        const now = Date.now();
+        let status = parsed.licenseStatus || 'trial';
+        if (now > parsed.licenseExpiryDate && status !== 'lifetime') {
+          status = 'expired';
         }
-      } else if (e.key === 'Escape') {
-        e.preventDefault();
-        customerInput.blur();
+        return {
+          stallId,
+          licenseExpiryDate: parsed.licenseExpiryDate,
+          licenseStatus: status,
+          planLabel: parsed.planLabel || (status === 'trial' ? '3-Day Free Trial' : 'Active License')
+        };
       }
-    });
-  }
-
-  if (clearCustBtn) {
-    clearCustBtn.addEventListener('click', (e) => {
-      e.preventDefault();
-      clearCustomerName();
-      if (customerInput) customerInput.focus();
-    });
-  }
-
-  // Mobile Fixed Bottom Action Bar Customer Name Input
-  const mobileCustomerInput = document.getElementById('mobileCustomerInput');
-  const mobileClearCustBtn = document.getElementById('mobileClearCustBtn');
-
-  if (mobileCustomerInput) {
-    mobileCustomerInput.addEventListener('input', (e) => setCustomerName(e.target.value));
-
-    mobileCustomerInput.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter') {
-        e.preventDefault();
-        mobileCustomerInput.blur();
-        if (state.cart.length > 0) {
-          printKitchenKOT(null, getCustomerNameValue());
-        }
-      } else if (e.key === 'Escape') {
-        e.preventDefault();
-        mobileCustomerInput.blur();
-      }
-    });
-  }
-
-  if (mobileClearCustBtn) {
-    mobileClearCustBtn.addEventListener('click', (e) => {
-      e.preventDefault();
-      clearCustomerName();
-      if (mobileCustomerInput) mobileCustomerInput.focus();
-    });
-  }
-
-  // Mobile Bottom Action Bar "PRINT KOT (KITCHEN) ⚡ [ENTER]" Button
-  const mobileCheckoutBtn = document.getElementById('mobileCheckoutBtn');
-  if (mobileCheckoutBtn) {
-    mobileCheckoutBtn.addEventListener('click', () => {
-      if (state.cart.length > 0) {
-        printKitchenKOT(null, getCustomerNameValue());
-      }
-    });
-  }
-
-  // Desktop Primary Giant "PRINT KOT (KITCHEN) ⚡ [Enter]" Button
-  const checkoutBtn = document.getElementById('checkoutBtn');
-  if (checkoutBtn) {
-    checkoutBtn.addEventListener('click', () => {
-      if (state.cart.length > 0) {
-        printKitchenKOT(null, getCustomerNameValue());
-      }
-    });
-  }
-
-  // Printer Admin Setup Modal listeners
-  const closePrinterModalBtn = document.getElementById('closePrinterModalBtn');
-  if (closePrinterModalBtn) {
-    closePrinterModalBtn.addEventListener('click', closePrinterSetupModal);
-  }
-
-  const printerModalBackdrop = document.getElementById('printerModalBackdrop');
-  if (printerModalBackdrop) {
-    printerModalBackdrop.addEventListener('click', (e) => {
-      if (e.target === printerModalBackdrop) closePrinterSetupModal();
-    });
-  }
-
-  const modalStatusBox = document.getElementById('modalPrinterStatusBox');
-  if (modalStatusBox) {
-    modalStatusBox.style.cursor = 'pointer';
-    modalStatusBox.addEventListener('click', () => {
-      const savedId = localStorage.getItem('pos_printer_id');
-      if (savedId) {
-        soundEngine.playBeep();
-        printModalTestSlip();
-      }
-    });
-  }
-
-  const pairNewBtn = document.getElementById('pairNewPrinterBtn');
-  if (pairNewBtn) {
-    pairNewBtn.addEventListener('click', pairNewPrinter);
-  }
-
-  const testPrintBtn = document.getElementById('modalTestPrintBtn');
-  if (testPrintBtn) {
-    testPrintBtn.addEventListener('click', printModalTestSlip);
-  }
-
-  const forgetBtn = document.getElementById('forgetPrinterBtn');
-  if (forgetBtn) {
-    forgetBtn.addEventListener('click', forgetCurrentPrinter);
-  }
-
-  // Fast Keyboard Shortcuts
-  document.addEventListener('keydown', (e) => {
-    // If user is focused on customer input fields:
-    if (e.target && (e.target.id === 'customerNameInput' || e.target.id === 'mobileCustomerInput')) {
-      if (e.key === 'Enter') {
-        e.preventDefault();
-        e.target.blur();
-        if (state.cart.length > 0) {
-          printKitchenKOT(null, getCustomerNameValue());
-        }
-      } else if (e.key === 'Escape') {
-        e.preventDefault();
-        e.target.blur();
-      }
-      return;
     }
+  } catch (e) {}
 
-    // Ignore hotkeys if user is focused inside any other input or textarea
-    if (e.target && (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA')) {
-      return;
+  // First install -> auto 3-Day Free Trial
+  const initialExpiry = Date.now() + THREE_DAYS_MS;
+  const initialData = {
+    stallId,
+    licenseExpiryDate: initialExpiry,
+    licenseStatus: 'trial',
+    planLabel: '3-Day Free Trial'
+  };
+  localStorage.setItem(LICENSE_STATE_STORAGE_KEY, JSON.stringify(initialData));
+  return initialData;
+}
+
+function saveLicenseData(data) {
+  localStorage.setItem(LICENSE_STATE_STORAGE_KEY, JSON.stringify(data));
+}
+
+function isLicenseExpired() {
+  const data = getLicenseData();
+  if (data.licenseStatus === 'lifetime') return false;
+  return Date.now() > data.licenseExpiryDate;
+}
+
+function formatLicenseExpiryText(data) {
+  if (data.licenseStatus === 'lifetime' || data.licenseExpiryDate >= LIFETIME_EXPIRY_TS) {
+    return 'Valid Forever (Lifetime Activated)';
+  }
+  const now = Date.now();
+  const diffMs = data.licenseExpiryDate - now;
+  const dateStr = new Date(data.licenseExpiryDate).toLocaleDateString('en-PK', {
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric'
+  });
+  if (diffMs <= 0) {
+    return `Expired on ${dateStr}`;
+  }
+  const daysLeft = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
+  return `${daysLeft} day${daysLeft === 1 ? '' : 's'} remaining (Expires ${dateStr})`;
+}
+
+function updateSettingsLicenseCardUI() {
+  const data = getLicenseData();
+  const stallEl = document.getElementById('settingsStallIdText');
+  const badgeEl = document.getElementById('settingsLicenseBadge');
+  const expiryEl = document.getElementById('settingsExpiryText');
+
+  if (stallEl) stallEl.textContent = data.stallId;
+  if (expiryEl) expiryEl.textContent = formatLicenseExpiryText(data);
+
+  if (badgeEl) {
+    const expired = isLicenseExpired();
+    if (expired) {
+      badgeEl.textContent = 'EXPIRED';
+      badgeEl.style.background = 'rgba(239, 68, 68, 0.18)';
+      badgeEl.style.color = '#FCA5A5';
+      badgeEl.style.borderColor = 'rgba(239, 68, 68, 0.45)';
+    } else if (data.licenseStatus === 'trial') {
+      badgeEl.textContent = 'TRIAL ACTIVE';
+      badgeEl.style.background = 'rgba(245, 158, 11, 0.18)';
+      badgeEl.style.color = '#FCD34D';
+      badgeEl.style.borderColor = 'rgba(245, 158, 11, 0.45)';
+    } else {
+      badgeEl.textContent = data.licenseStatus === 'lifetime' ? 'LIFETIME PRO' : 'ACTIVE PRO';
+      badgeEl.style.background = 'rgba(16, 185, 129, 0.18)';
+      badgeEl.style.color = '#6EE7B7';
+      badgeEl.style.borderColor = 'rgba(16, 185, 129, 0.45)';
     }
+  }
+}
 
-    // 1. Enter key or Space key: Primary Action -> Sends KOT to kitchen & clears order!
-    if (e.key === 'Enter' || e.code === 'Space' || e.key === ' ') {
-      if (state.cart.length > 0) {
-        e.preventDefault();
-        printKitchenKOT(null, getCustomerNameValue());
-      }
-      return;
-    }
+function enforceLicenseLockUI() {
+  const data = getLicenseData();
+  const overlay = document.getElementById('licenseLockOverlay');
+  const stallEl = document.getElementById('licenseOverlayStallId');
+  if (stallEl) stallEl.textContent = data.stallId;
 
-    // 2. Escape key clears ticket
-    if (e.key === 'Escape') {
-      if (state.cart.length > 0 || state.customerName) {
-        clearCart();
-      }
-      return;
-    }
+  if (isLicenseExpired()) {
+    if (overlay) overlay.classList.add('locked');
+  } else {
+    if (overlay) overlay.classList.remove('locked');
+  }
+  updateSettingsLicenseCardUI();
+}
 
-    // 3. Fast hotkey numbers & symbols for rapid cashier speed dialing
-    const key = e.key.toLowerCase();
-    const hotkeyMap = {
-      '1': 0, '2': 1, '3': 2, '4': 3,
-      '5': 4, '6': 5, '7': 6, '8': 7,
-      '9': 8, '0': 9, '-': 10, '=': 11, '+': 11,
-      'q': 12, 'w': 13, 'e': 14, 'r': 15
+function validateAndActivateLicenseKey(rawKeyInput) {
+  const cleanKey = String(rawKeyInput || '').replace(/\D/g, '').trim();
+  if (cleanKey.length !== 8) {
+    return { ok: false, message: '❌ Please enter a valid 8-digit Activation Key.' };
+  }
+
+  const stallId = getOrCreateStallId();
+  const expected = generateKeysForStallId(stallId);
+  const currentData = getLicenseData();
+  const baseTime = Math.max(Date.now(), currentData.licenseExpiryDate || Date.now());
+
+  if (cleanKey === expected.key30Days) {
+    const updated = {
+      stallId,
+      licenseExpiryDate: baseTime + THIRTY_DAYS_MS,
+      licenseStatus: 'active',
+      planLabel: '30-Day Monthly License'
     };
-    if (Object.prototype.hasOwnProperty.call(hotkeyMap, key)) {
-      const targetItem = SPEED_ITEMS[hotkeyMap[key]];
-      if (targetItem) {
-        e.preventDefault();
-        soundEngine.playBeep();
-        addToCart(targetItem.id);
-      }
+    saveLicenseData(updated);
+    enforceLicenseLockUI();
+    return { ok: true, message: '✅ 30-Day License Activated Successfully!' };
+  }
+
+  if (cleanKey === expected.key1Year) {
+    const updated = {
+      stallId,
+      licenseExpiryDate: baseTime + ONE_YEAR_MS,
+      licenseStatus: 'active',
+      planLabel: '1-Year Annual License'
+    };
+    saveLicenseData(updated);
+    enforceLicenseLockUI();
+    return { ok: true, message: '✅ 1-Year License Activated Successfully!' };
+  }
+
+  if (cleanKey === expected.keyLifetime || cleanKey === expected.masterKey) {
+    const updated = {
+      stallId,
+      licenseExpiryDate: LIFETIME_EXPIRY_TS,
+      licenseStatus: 'lifetime',
+      planLabel: 'Lifetime Pro License'
+    };
+    saveLicenseData(updated);
+    enforceLicenseLockUI();
+    return { ok: true, message: '🎉 Lifetime License Activated Forever!' };
+  }
+
+  return { ok: false, message: `❌ Invalid Key for Stall ID ${stallId}.` };
+}
+
+// ============================================================================
+// 13. SILENT BACKGROUND SUPABASE SYNC ENGINE
+// ============================================================================
+const CLOUD_SYNC_DB_NAME = 'bitedash_cloud_sync_db';
+const CLOUD_SYNC_STORE_NAME = 'outbox';
+let cloudSyncDebounceTimer = null;
+let isCloudSyncRunning = false;
+
+function openCloudSyncIdb() {
+  return new Promise((resolve) => {
+    if (!window.indexedDB) {
+      resolve(null);
+      return;
+    }
+    try {
+      const req = window.indexedDB.open(CLOUD_SYNC_DB_NAME, 1);
+      req.onupgradeneeded = (ev) => {
+        const db = ev.target.result;
+        if (!db.objectStoreNames.contains(CLOUD_SYNC_STORE_NAME)) {
+          db.createObjectStore(CLOUD_SYNC_STORE_NAME, { keyPath: 'sync_id' });
+        }
+      };
+      req.onsuccess = () => resolve(req.result);
+      req.onerror = () => resolve(null);
+    } catch (e) {
+      resolve(null);
     }
   });
 }
 
-// ============================================================================
-// 12. INITIALIZATION & PWA SERVICE WORKER REGISTRATION
-// ============================================================================
-function initPOS() {
-  renderSpeedGrid();
-  setupCategoryPills();
-  updatePOS();
-  setupEventListeners();
-
-  const tokenStr = `TOKEN #${String(state.tokenNumber).padStart(3, '0')}`;
-  const tokenDisplay = document.getElementById('topTokenDisplay');
-  if (tokenDisplay) tokenDisplay.textContent = tokenStr;
-
-  const ticketPanelToken = document.getElementById('ticketPanelToken');
-  if (ticketPanelToken) ticketPanelToken.textContent = tokenStr;
-
-  // Standalone PWA Service Worker Registration
-  if ('serviceWorker' in navigator && (window.location.protocol === 'https:' || window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')) {
-    window.addEventListener('load', () => {
-      navigator.serviceWorker.register('./sw.js')
-        .then((reg) => console.log('Artisan POS PWA Service Worker registered:', reg.scope))
-        .catch((err) => console.debug('PWA Service Worker note:', err));
-    });
-  }
-
-  // Native Android Bluetooth Bridge or Web Bluetooth Status Init
-  if (window.AndroidPOSBridge && window.AndroidPOSBridge.isNative()) {
-    console.log('[initPOS] Native Android environment detected. Auto-connecting Bluetooth printer...');
-    window.AndroidPOSBridge.autoConnectOnLaunch((status, label) => {
-      updatePrinterStatusUI(status, label);
-    });
-  } else {
-    // Web Bluetooth: Render "🖨️ YD583 Ready" if paired, or "🔴 Connect Printer" if not paired
-    updatePrinterStatusUI();
-  }
+async function mirrorOutboxRecordToIdb(entry) {
+  try {
+    const db = await openCloudSyncIdb();
+    if (!db) return;
+    const tx = db.transaction(CLOUD_SYNC_STORE_NAME, 'readwrite');
+    tx.objectStore(CLOUD_SYNC_STORE_NAME).put(entry);
+  } catch (e) {}
 }
 
-document.addEventListener('DOMContentLoaded', initPOS);
+function loadSyncQueue() {
+  try {
+    const raw = localStorage.getItem(SYNC_QUEUE_KEY);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (parsed && typeof parsed === 'object') {
+        return {
+          orders: Array.isArray(parsed.orders) ? parsed.orders : [],
+          expenses: Array.isArray(parsed.expenses) ? parsed.expenses : []
+        };
+      }
+    }
+  } catch (e) {}
+  const initialQueue = { orders: [], expenses: [] };
+  try {
+    localStorage.setItem(SYNC_QUEUE_KEY, JSON.stringify(initialQueue));
+  } catch (e) {}
+  return initialQueue;
+}
+
+function saveSyncQueue(queueObj) {
+  const normalized = {
+    orders: Array.isArray(queueObj && queueObj.orders) ? queueObj.orders : [],
+    expenses: Array.isArray(queueObj && queueObj.expenses) ? queueObj.expenses : []
+  };
+  try {
+    localStorage.setItem(SYNC_QUEUE_KEY, JSON.stringify(normalized));
+  } catch (e) {}
+}
+
+function loadSyncOutbox() {
+  try {
+    const raw = localStorage.getItem(SYNC_OUTBOX_KEY);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed)) return parsed;
+    }
+  } catch (e) {}
+  return [];
+}
+
+function saveSyncOutbox(outboxList) {
+  try {
+    const pending = outboxList.filter(item => item && item.sync_status === 'pending');
+    const synced = outboxList.filter(item => item && item.sync_status === 'synced').slice(-150);
+    const trimmed = [...synced, ...pending];
+    localStorage.setItem(SYNC_OUTBOX_KEY, JSON.stringify(trimmed));
+  } catch (e) {}
+}
+
+function enqueueCloudSyncRecord(recordType, recordData) {
+  try {
+    if (!recordData) return;
+    const syncId = String(
+      recordData.sync_id ||
+      `${recordType}_${recordData.id || recordData.timestamp || Date.now()}`
+    );
+    recordData.sync_id = syncId;
+    recordData.sync_status = 'pending';
+
+    const queue = loadSyncQueue();
+    if (recordType === 'order') {
+      const exists = queue.orders.some(o => o && o.sync_id === syncId);
+      if (!exists) {
+        queue.orders.push({ ...recordData, sync_id: syncId, sync_status: 'pending' });
+      }
+    } else if (recordType === 'expense') {
+      const exists = queue.expenses.some(ex => ex && ex.sync_id === syncId);
+      if (!exists) {
+        queue.expenses.push({ ...recordData, sync_id: syncId, sync_status: 'pending' });
+      }
+    }
+    saveSyncQueue(queue);
+
+    const outbox = loadSyncOutbox();
+    const existingIdx = outbox.findIndex(item => item && item.sync_id === syncId);
+    const entry = {
+      sync_id: syncId,
+      record_type: recordType,
+      sync_status: 'pending',
+      created_at: new Date().toISOString(),
+      payload: { ...recordData, sync_id: syncId, sync_status: 'pending' }
+    };
+
+    if (existingIdx !== -1) {
+      outbox[existingIdx] = entry;
+    } else {
+      outbox.push(entry);
+    }
+    saveSyncOutbox(outbox);
+    mirrorOutboxRecordToIdb(entry);
+  } catch (e) {}
+}
+
+function collectPendingSyncBatch() {
+  const queue = loadSyncQueue();
+  const pendingOrdersMap = new Map();
+  const pendingExpensesMap = new Map();
+
+  queue.orders.forEach((ord, idx) => {
+    if (!ord) return;
+    const sid = String(ord.sync_id || `ord_${ord.timestamp || Date.now()}_${ord.token || idx}`);
+    ord.sync_id = sid;
+    pendingOrdersMap.set(sid, ord);
+  });
+
+  queue.expenses.forEach((exp, idx) => {
+    if (!exp) return;
+    const sid = String(exp.sync_id || `exp_${exp.id || Date.now()}_${idx}`);
+    exp.sync_id = sid;
+    pendingExpensesMap.set(sid, exp);
+  });
+
+  if (Array.isArray(state.ordersToday)) {
+    state.ordersToday.forEach((ord, idx) => {
+      if (!ord) return;
+      if (!ord.sync_id) {
+        ord.sync_id = `ord_${ord.timestamp || Date.now()}_${ord.token || idx}`;
+      }
+      if (!ord.sync_status) {
+        ord.sync_status = 'pending';
+      }
+      if (ord.sync_status === 'pending' && !pendingOrdersMap.has(ord.sync_id)) {
+        pendingOrdersMap.set(ord.sync_id, ord);
+      }
+    });
+  }
+
+  if (Array.isArray(state.expenses)) {
+    state.expenses.forEach((exp, idx) => {
+      if (!exp) return;
+      if (!exp.sync_id) {
+        exp.sync_id = `exp_${exp.id || Date.now()}_${idx}`;
+      }
+      if (!exp.sync_status) {
+        exp.sync_status = 'pending';
+      }
+      if (exp.sync_status === 'pending' && !pendingExpensesMap.has(exp.sync_id)) {
+        pendingExpensesMap.set(exp.sync_id, exp);
+      }
+    });
+  }
+
+  const orders = Array.from(pendingOrdersMap.values());
+  const expenses = Array.from(pendingExpensesMap.values());
+  const syncedIds = new Set([
+    ...pendingOrdersMap.keys(),
+    ...pendingExpensesMap.keys()
+  ]);
+
+  return {
+    orders,
+    expenses,
+    syncedIds,
+    totalPendingCount: orders.length + expenses.length
+  };
+}
+
+function markBatchAsSynced(syncedIdsSet) {
+  if (!syncedIdsSet || syncedIdsSet.size === 0) return;
+  const syncedAtIso = new Date().toISOString();
+
+  const currentQueue = loadSyncQueue();
+  const remainingQueue = {
+    orders: currentQueue.orders.filter(ord => !ord || !syncedIdsSet.has(String(ord.sync_id))),
+    expenses: currentQueue.expenses.filter(exp => !exp || !syncedIdsSet.has(String(exp.sync_id)))
+  };
+  saveSyncQueue(remainingQueue);
+
+  let ordersUpdated = false;
+  if (Array.isArray(state.ordersToday)) {
+    state.ordersToday.forEach(ord => {
+      if (ord && ord.sync_id && syncedIdsSet.has(ord.sync_id)) {
+        ord.sync_status = 'synced';
+        ord.synced_at = syncedAtIso;
+        ordersUpdated = true;
+      }
+    });
+  }
+  if (ordersUpdated) saveOrdersToday();
+
+  let expensesUpdated = false;
+  if (Array.isArray(state.expenses)) {
+    state.expenses.forEach(exp => {
+      if (exp && exp.sync_id && syncedIdsSet.has(exp.sync_id)) {
+        exp.sync_status = 'synced';
+        exp.synced_at = syncedAtIso;
+        expensesUpdated = true;
+      }
+    });
+  }
+  if (expensesUpdated) saveExpensesToStorage();
+
+  const outbox = loadSyncOutbox();
+  outbox.forEach(entry => {
+    if (entry && syncedIdsSet.has(entry.sync_id)) {
+      entry.sync_status = 'synced';
+      entry.synced_at = syncedAtIso;
+      if (entry.payload) entry.payload.sync_status = 'synced';
+      mirrorOutboxRecordToIdb(entry);
+    }
+  });
+  saveSyncOutbox(outbox);
+}
+
+async function syncToCloud() {
+  if (isCloudSyncRunning) return false;
+  if (typeof navigator !== 'undefined' && !navigator.onLine) {
+    return false;
+  }
+
+  const batch = collectPendingSyncBatch();
+  if (batch.orders.length === 0 && batch.expenses.length === 0) {
+    return true;
+  }
+
+  isCloudSyncRunning = true;
+  const controller = typeof AbortController !== 'undefined' ? new AbortController() : null;
+  const timeoutId = controller ? setTimeout(() => controller.abort(), 12000) : null;
+
+  try {
+    const stallId = getOrCreateStallId();
+    const shopName = (shopConfig && shopConfig.shopName) ? shopConfig.shopName : 'Student Burger';
+    const nowIso = new Date().toISOString();
+
+    let cashSales = 0;
+    let onlineSales = 0;
+    batch.orders.forEach(ord => {
+      const amt = Number(ord && ord.total) || 0;
+      if (ord && ord.paymentMode === 'online') {
+        onlineSales += amt;
+      } else {
+        cashSales += amt;
+      }
+    });
+    const totalSales = cashSales + onlineSales;
+    const totalExpenses = batch.expenses.reduce((sum, ex) => sum + (Number(ex && ex.amount) || 0), 0);
+    const netCash = cashSales - totalExpenses;
+    const ordersCount = batch.orders.length;
+    const voidCount = Number((state.audit && state.audit.voidedOrdersCount) || 0);
+    const reprintCount = Number((state.audit && state.audit.reprintCount) || 0);
+
+    const supabaseHeaders = {
+      'apikey': SUPABASE_ANON_KEY,
+      'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+      'Content-Type': 'application/json'
+    };
+
+    // 1. Upsert stall status in stalls table
+    await fetch(`${SUPABASE_URL}/stalls?on_conflict=stall_id`, {
+      method: 'POST',
+      headers: { ...supabaseHeaders, 'Prefer': 'resolution=merge-duplicates' },
+      body: JSON.stringify({
+        stall_id: stallId,
+        shop_name: shopName,
+        last_synced_at: nowIso
+      }),
+      keepalive: true,
+      signal: controller ? controller.signal : undefined
+    }).catch(() => null);
+
+    // 2. Insert batch in stall_sync_logs table
+    const logPayload = {
+      stall_id: stallId,
+      shop_name: shopName,
+      total_sales: totalSales,
+      total_expenses: totalExpenses,
+      net_cash: netCash,
+      cash_sales: cashSales,
+      online_sales: onlineSales,
+      orders_count: ordersCount,
+      void_count: voidCount,
+      reprint_count: reprintCount,
+      orders_json: batch.orders,
+      expenses_json: batch.expenses
+    };
+
+    const response = await fetch(`${SUPABASE_URL}/stall_sync_logs`, {
+      method: 'POST',
+      headers: supabaseHeaders,
+      body: JSON.stringify(logPayload),
+      keepalive: true,
+      signal: controller ? controller.signal : undefined
+    });
+
+    if (response && (response.status === 200 || response.status === 201 || response.status === 204)) {
+      markBatchAsSynced(batch.syncedIds);
+      return true;
+    }
+  } catch (err) {
+    // Silent fail: retain queue locally, zero cashier popup
+  } finally {
+    if (timeoutId) clearTimeout(timeoutId);
+    isCloudSyncRunning = false;
+  }
+  return false;
+}
+
+const syncPendingData = syncToCloud;
+
+function scheduleDebouncedCloudSync(delayMs = 2000) {
+  if (cloudSyncDebounceTimer) {
+    clearTimeout(cloudSyncDebounceTimer);
+  }
+  cloudSyncDebounceTimer = setTimeout(() => {
+    cloudSyncDebounceTimer = null;
+    syncToCloud();
+  }, delayMs);
+}
+
+// Window online trigger
+window.addEventListener('online', () => {
+  syncToCloud();
+});
+
+// Periodic 5-minute interval check
+setInterval(() => {
+  syncToCloud();
+}, CLOUD_SYNC_INTERVAL_MS);
+
+window.syncToCloud = syncToCloud;
+window.syncPendingData = syncToCloud;
+
+// ============================================================================
+// 14. EVENT LISTENERS
+// ============================================================================
+// Login Gateway Listeners
+document.getElementById('loginSubmitBtn').addEventListener('click', handleLoginGatewaySubmit);
+document.getElementById('loginPinInput').addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') handleLoginGatewaySubmit();
+});
+document.getElementById('loginShopCodeInput').addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') {
+    const pin = document.getElementById('loginPinInput');
+    if (pin) pin.focus();
+  }
+});
+
+// Role Switcher / RBAC Listeners
+document.getElementById('roleIndicatorBadge').addEventListener('click', () => {
+  if (currentRole === 'owner') {
+    if (confirm('Switch to Cashier Mode?')) {
+      setRole('cashier');
+      showToast('Switched to Cashier Mode', 'default');
+    }
+  } else {
+    requireOwnerPin(() => {
+      setRole('owner');
+      showToast('Switched to Owner Mode', 'success');
+    }, 'Enter Owner PIN to activate Owner Mode');
+  }
+});
+
+document.getElementById('lockToCashierBtn').addEventListener('click', () => {
+  setRole('cashier');
+  closeSettingsModal();
+  showToast('Switched to Cashier Mode', 'default');
+});
+
+document.getElementById('logoutSessionBtn').addEventListener('click', logoutSession);
+
+// Cart and Drawer Listeners
+document.getElementById('cartStrip').addEventListener('click', () => {
+  const totalQty = Object.values(state.cart).reduce((s, q) => s + q, 0);
+  if (totalQty === 0) return;
+  state.drawerOpen = !state.drawerOpen;
+  updateUI();
+});
+
+document.getElementById('closeCartDrawerBtn').addEventListener('click', () => {
+  state.drawerOpen = false;
+  updateUI();
+});
+
+document.getElementById('cartDrawerBackdrop').addEventListener('click', (e) => {
+  if (e.target.id === 'cartDrawerBackdrop') {
+    state.drawerOpen = false;
+    updateUI();
+  }
+});
+
+document.getElementById('cartDrawerList').addEventListener('click', (e) => {
+  const minus = e.target.closest('[data-drawer-minus]');
+  if (minus) {
+    decrementItem(minus.dataset.drawerMinus);
+    return;
+  }
+  const plus = e.target.closest('[data-drawer-plus]');
+  if (plus) {
+    incrementItem(plus.dataset.drawerPlus);
+  }
+});
+
+// PIN Keypad Listeners
+document.getElementById('closePinModalBtn').addEventListener('click', closePinModal);
+pinModal.addEventListener('click', (e) => {
+  if (e.target === pinModal) closePinModal();
+});
+
+document.getElementById('pinKeypad').addEventListener('click', (e) => {
+  const btn = e.target.closest('.pin-key');
+  if (!btn) return;
+  const digit = btn.dataset.digit;
+  const action = btn.dataset.action;
+  if (digit !== undefined) {
+    handlePinDigitInput(digit);
+  } else if (action === 'clear') {
+    enteredPin = '';
+    updatePinDotsUI();
+  } else if (action === 'back') {
+    enteredPin = enteredPin.slice(0, -1);
+    updatePinDotsUI();
+  }
+});
+
+// Menu Editor Listeners
+document.getElementById('menuEditorList').addEventListener('click', (e) => {
+  const editBtn = e.target.closest('[data-edit-item]');
+  if (editBtn) {
+    const id = editBtn.dataset.editItem;
+    const item = MENU_ITEMS.find(i => i.id === id);
+    if (!item) return;
+    document.getElementById('editItemId').value = item.id;
+    document.getElementById('itemNameEnInput').value = item.name;
+    document.getElementById('itemNameUrInput').value = item.urdu;
+    document.getElementById('itemCategorySelect').value =
+      item.cat === 'shawarma' ? 'shawarma' : (item.cat === 'sandwiches' ? 'sandwiches' : 'burger');
+    document.getElementById('itemPriceInput').value = item.price;
+    document.getElementById('menuFormHeading').textContent = `✏️ Editing: ${item.name}`;
+    document.getElementById('saveMenuItemBtn').textContent = '💾 Update Item';
+    document.getElementById('resetItemFormBtn').style.display = 'inline-block';
+    return;
+  }
+
+  const delBtn = e.target.closest('[data-del-item]');
+  if (delBtn) {
+    const id = delBtn.dataset.delItem;
+    if (MENU_ITEMS.length <= 1) {
+      showToast('Cannot delete the last remaining menu item.', 'error');
+      return;
+    }
+    MENU_ITEMS = MENU_ITEMS.filter(i => i.id !== id);
+    delete state.cart[id];
+    saveMenuItemsToStorage();
+    savePersistedState();
+    renderMenu();
+    updateUI();
+    renderMenuEditorList();
+    showToast('Menu item deleted.', 'default');
+  }
+});
+
+document.getElementById('resetItemFormBtn').addEventListener('click', resetMenuItemForm);
+
+document.getElementById('saveShopConfigBtn').addEventListener('click', () => {
+  const shopName = document.getElementById('cfgShopName').value.trim() || 'Student Burger';
+  const phone = document.getElementById('cfgShopPhone').value.trim();
+  const address = document.getElementById('cfgShopAddress').value.trim();
+  const footerNote = document.getElementById('cfgFooterNote').value.trim() || 'Thank You For Coming';
+  const pinVal = document.getElementById('cfgOwnerPin').value.trim();
+
+  if (!/^\d{4}$/.test(pinVal)) {
+    showToast('Owner PIN must be exactly 4 digits (e.g. 1234).', 'error');
+    return;
+  }
+
+  shopConfig = { shopName, phone, address, footerNote };
+  setOwnerPin(pinVal);
+  saveShopConfigToStorage();
+  scheduleDebouncedCloudSync(500);
+  showToast('Shop settings & Owner PIN saved!', 'success');
+});
+
+document.getElementById('saveMenuItemBtn').addEventListener('click', () => {
+  const editId = document.getElementById('editItemId').value.trim();
+  const nameEn = document.getElementById('itemNameEnInput').value.trim();
+  const nameUr = document.getElementById('itemNameUrInput').value.trim() || nameEn;
+  const category = document.getElementById('itemCategorySelect').value;
+  const price = Math.round(Number(document.getElementById('itemPriceInput').value));
+
+  if (!nameEn) {
+    showToast('Please enter an English item name.', 'error');
+    return;
+  }
+  if (!Number.isFinite(price) || price <= 0) {
+    showToast('Please enter a valid price in Rs.', 'error');
+    return;
+  }
+
+  if (editId) {
+    const idx = MENU_ITEMS.findIndex(i => i.id === editId);
+    if (idx !== -1) {
+      MENU_ITEMS[idx] = normalizeMenuItem({
+        ...MENU_ITEMS[idx],
+        id: editId,
+        nameEn,
+        nameUr,
+        category,
+        price
+      }, idx);
+    }
+    showToast(`Updated "${nameEn}" (Rs. ${price})`, 'success');
+  } else {
+    const newItem = normalizeMenuItem({
+      id: 'm_' + Date.now(),
+      nameEn,
+      nameUr,
+      category,
+      price
+    }, MENU_ITEMS.length);
+    MENU_ITEMS.push(newItem);
+    showToast(`Added "${nameEn}" (Rs. ${price})`, 'success');
+  }
+
+  saveMenuItemsToStorage();
+  renderMenu();
+  updateUI();
+  resetMenuItemForm();
+  renderMenuEditorList();
+});
+
+document.getElementById('closeSettingsModalBtn').addEventListener('click', closeSettingsModal);
+settingsModal.addEventListener('click', (e) => {
+  if (e.target === settingsModal) closeSettingsModal();
+});
+
+// RBAC: Settings Icon & Token Display
+document.getElementById('openSettingsHeaderBtn').addEventListener('click', () => {
+  if (currentRole === 'owner') {
+    openSettingsModal();
+  } else {
+    requireOwnerPin(() => {
+      setRole('owner');
+      openSettingsModal();
+    }, 'Enter 4-digit Owner PIN for Shop & Menu Settings');
+  }
+});
+
+document.getElementById('openSettingsFromHisaabBtn').addEventListener('click', () => {
+  closeHisaabModal();
+  if (currentRole === 'owner') {
+    openSettingsModal();
+  } else {
+    requireOwnerPin(() => {
+      setRole('owner');
+      openSettingsModal();
+    }, 'Enter 4-digit Owner PIN for Shop & Menu Settings');
+  }
+});
+
+document.getElementById('tokenDisplay').addEventListener('click', () => {
+  if (currentRole === 'owner') {
+    openHisaabModal();
+  } else {
+    requireOwnerPin(() => {
+      openHisaabModal();
+    }, 'Enter 4-digit Owner PIN to view Daily Hisaab');
+  }
+});
+
+document.getElementById('closeHisaabModalBtn').addEventListener('click', closeHisaabModal);
+hisaabModal.addEventListener('click', (e) => {
+  if (e.target === hisaabModal) closeHisaabModal();
+});
+document.getElementById('printSummarySlipBtn').addEventListener('click', printDailyHisaabSlip);
+document.getElementById('sendWhatsAppBtn').addEventListener('click', () => sendHisaabOnWhatsApp(false));
+
+resetDayTriggerBtn.addEventListener('click', () => {
+  if (currentRole === 'owner') {
+    resetDayTriggerBtn.style.display = 'none';
+    resetConfirmBox.classList.add('show');
+  } else {
+    requireOwnerPin(() => {
+      resetDayTriggerBtn.style.display = 'none';
+      resetConfirmBox.classList.add('show');
+    }, 'Enter 4-digit Owner PIN to End Shift & Reset Day');
+  }
+});
+
+document.getElementById('cancelResetDayBtn').addEventListener('click', () => {
+  resetConfirmBox.classList.remove('show');
+  resetDayTriggerBtn.style.display = 'block';
+});
+document.getElementById('confirmResetDayBtn').addEventListener('click', executeResetDayAndToken);
+
+// License Activation Listeners
+document.getElementById('licenseActivateBtn').addEventListener('click', () => {
+  const inputEl = document.getElementById('licenseActivationInput');
+  const errEl = document.getElementById('licenseErrorMsg');
+  const result = validateAndActivateLicenseKey(inputEl ? inputEl.value : '');
+  if (!result.ok) {
+    if (errEl) errEl.textContent = result.message;
+    showToast(result.message, 'error');
+  } else {
+    if (errEl) errEl.textContent = '';
+    if (inputEl) inputEl.value = '';
+    showToast(result.message, 'success');
+  }
+});
+
+document.getElementById('settingsActivateKeyBtn').addEventListener('click', () => {
+  const inputEl = document.getElementById('settingsLicenseKeyInput');
+  const result = validateAndActivateLicenseKey(inputEl ? inputEl.value : '');
+  if (!result.ok) {
+    showToast(result.message, 'error');
+  } else {
+    if (inputEl) inputEl.value = '';
+    updateSettingsLicenseCardUI();
+    showToast(result.message, 'success');
+  }
+});
+
+document.getElementById('licenseWhatsAppHelpBtn').addEventListener('click', () => {
+  const stallId = getOrCreateStallId();
+  const shopName = (shopConfig && shopConfig.shopName) ? shopConfig.shopName : 'BiteDash Stall';
+  const msg = `Assalam-o-Alaikum Hanzla Bhai! Please send BiteDash POS Activation Key.\n*Shop:* ${shopName}\n*Stall ID:* ${stallId}`;
+  window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`, '_blank', 'noopener,noreferrer');
+});
+
+// Expense Modal Listeners (RBAC: Cashier can create, only Owner can delete)
+document.getElementById('openExpenseModalBtn').addEventListener('click', openExpenseModal);
+document.getElementById('closeExpenseModalBtn').addEventListener('click', closeExpenseModal);
+expenseModal.addEventListener('click', (e) => {
+  if (e.target === expenseModal) closeExpenseModal();
+});
+
+document.getElementById('expenseQuickPills').addEventListener('click', (e) => {
+  const pill = e.target.closest('.expense-quick-pill');
+  if (!pill) return;
+  document.querySelectorAll('#expenseQuickPills .expense-quick-pill').forEach(p => p.classList.remove('selected'));
+  pill.classList.add('selected');
+  if (expenseTitleInput) {
+    expenseTitleInput.value = pill.dataset.title || '';
+  }
+  if (expenseAmountInput) {
+    expenseAmountInput.focus();
+  }
+});
+
+document.getElementById('saveExpenseBtn').addEventListener('click', () => {
+  const title = (expenseTitleInput ? expenseTitleInput.value : '').trim();
+  const amount = Math.round(Number(expenseAmountInput ? expenseAmountInput.value : 0));
+
+  if (!title) {
+    showToast('Kharcha tafseel likhein ya upar button chunein.', 'error');
+    if (expenseTitleInput) expenseTitleInput.focus();
+    return;
+  }
+  if (!Number.isFinite(amount) || amount <= 0) {
+    showToast('Durust raqam darj karein (Valid amount in Rs).', 'error');
+    if (expenseAmountInput) expenseAmountInput.focus();
+    return;
+  }
+
+  if (!Array.isArray(state.expenses)) state.expenses = [];
+  const nowId = Date.now();
+  const newExpense = {
+    id: nowId,
+    sync_id: `exp_${nowId}`,
+    sync_status: 'pending',
+    title,
+    amount,
+    time: formatTimeShortEn(new Date(nowId))
+  };
+  state.expenses.push(newExpense);
+  saveExpensesToStorage();
+  enqueueCloudSyncRecord('expense', newExpense);
+  scheduleDebouncedCloudSync();
+
+  if (expenseTitleInput) expenseTitleInput.value = '';
+  if (expenseAmountInput) expenseAmountInput.value = '';
+  document.querySelectorAll('#expenseQuickPills .expense-quick-pill').forEach(p => p.classList.remove('selected'));
+  renderExpenseModalList();
+  showToast(`✅ Kharcha saved: ${title} (Rs. ${amount})`, 'success');
+});
+
+document.getElementById('expenseListContainer').addEventListener('click', (e) => {
+  const delBtn = e.target.closest('[data-del-expense]');
+  if (!delBtn) return;
+  if (currentRole !== 'owner') {
+    showToast('Sirf Owner kharcha delete kar sakta hai.', 'error');
+    return;
+  }
+  const targetId = String(delBtn.dataset.delExpense);
+  state.expenses = (state.expenses || []).filter(ex => String(ex.id) !== targetId);
+  saveExpensesToStorage();
+  renderExpenseModalList();
+  showToast('Kharcha entry removed.', 'default');
+});
+
+// Payment Mode Listeners
+document.getElementById('payModeCashBtn').addEventListener('click', () => {
+  setPaymentMode('cash');
+});
+document.getElementById('payModeOnlineBtn').addEventListener('click', () => {
+  setPaymentMode('online');
+});
+
+// Main Action Listeners
+printButton.addEventListener('click', printKitchenKOT);
+document.getElementById('reprintLastBtn').addEventListener('click', reprintLastReceipt);
+printerStatus.addEventListener('click', handlePrinterStatusBarTap);
+connectPrinterModalBtn.addEventListener('click', handleConnectPrinterModalClick);
+document.getElementById('closePrinterModalBtn').addEventListener('click', closePrinterModal);
+printerModal.addEventListener('click', (e) => {
+  if (e.target === printerModal) closePrinterModal();
+});
+
+testPrintBtn.addEventListener('click', async () => {
+  testPrintBtn.disabled = true;
+  testPrintBtn.textContent = '⏳ پرنٹ ہو رہا ہے...';
+  try {
+    const testOrderData = {
+      token: state.token || 1,
+      timestamp: Date.now(),
+      customer: '',
+      paymentMode: 'cash',
+      items: [
+        { name: 'Shami Burger', urdu: 'شامی برگر', quantity: 2, unitPrice: 150, lineTotal: 300 },
+        { name: 'Zinger Burger + Fries', urdu: 'زنگر برگر + فرائز', quantity: 1, unitPrice: 300, lineTotal: 300 }
+      ],
+      total: 600
+    };
+
+    const asciiBytes = buildLocalKotEscPosBytes(testOrderData);
+    const bridge = window.AndroidPOSBridge;
+
+    if (bridge && typeof bridge.isNative === 'function' && bridge.isNative()) {
+      const res = await bridge.sendEscPosBytes(asciiBytes);
+      if (!res || res.status !== 'SUCCESS') {
+        throw new Error('Printer disconnected');
+      }
+    } else {
+      await sendBytesOverWebBluetooth(asciiBytes);
+    }
+    showToast('✅ چیک پرچی پرنٹ ہو گئی! (Test Print OK)', 'success');
+  } catch (err) {
+    showToast(getFriendlyPrinterErrorMessage(err), 'error');
+  } finally {
+    testPrintBtn.textContent = '📄 چیک پرچی (Test Print)';
+    await syncPrinterStatusFromBridge();
+  }
+});
+
+disconnectPrinterBtn.addEventListener('click', async () => {
+  const bridge = window.AndroidPOSBridge;
+  if (bleDevice && bleDevice.gatt && bleDevice.gatt.connected) {
+    bleDevice.gatt.disconnect();
+    bleCharacteristic = null;
+    setPrinterStatus('disconnected');
+    await syncPrinterStatusFromBridge();
+    showToast('پرنٹر بند کر دیا گیا (Disconnected)');
+    return;
+  }
+  if (!bridge || !bridge.isNative()) return;
+  await bridge.disconnect();
+  await syncPrinterStatusFromBridge();
+  await loadBondedDevicesInModal();
+  showToast('پرنٹر بند کر دیا گیا (Disconnected)');
+});
+
+document.getElementById('clearOrderBtn').addEventListener('click', clearCurrentOrder);
+
+document.getElementById('customerToggleBtn').addEventListener('click', () => {
+  const wrap = document.getElementById('customerInputWrap');
+  const input = document.getElementById('customerInput');
+  const isOpen = wrap.classList.toggle('open');
+  updateUI();
+  if (isOpen) {
+    input.focus();
+  }
+});
+
+document.getElementById('customerInput').addEventListener('input', (e) => {
+  state.customer = e.target.value;
+  savePersistedState();
+  updateUI();
+});
+
+document.getElementById('retryPrintBtn').addEventListener('click', () => {
+  printKitchenKOT();
+});
+
+document.getElementById('confirmPrintedBtn').addEventListener('click', () => {
+  const completed = completeOrderAndAdvanceToken();
+  showToast(`Marked TOKEN #${String(completed).padStart(3, '0')} as printed.`, 'success');
+});
+
+document.getElementById('categoryBar').addEventListener('click', (e) => {
+  const chip = e.target.closest('.cat-chip');
+  if (!chip) return;
+  const cat = chip.dataset.cat || 'all';
+  state.activeCategory = cat;
+  document.querySelectorAll('.cat-chip').forEach(c => {
+    c.classList.toggle('active', c.dataset.cat === cat);
+  });
+  document.querySelectorAll('.menu-section').forEach(sec => {
+    sec.style.display = (cat === 'all' || sec.dataset.section === cat) ? 'block' : 'none';
+  });
+});
+
+// Keyboard Hotkey Support (1-9, 0, -, =)
+window.addEventListener('keydown', (e) => {
+  // If Login Overlay is open, don't trigger POS shortcuts
+  const loginOverlay = document.getElementById('loginGatewayOverlay');
+  if (loginOverlay && !loginOverlay.classList.contains('hidden')) {
+    return;
+  }
+
+  if (pinModal.classList.contains('open')) {
+    if (e.key === 'Escape') {
+      e.preventDefault();
+      closePinModal();
+    } else if (e.key === 'Backspace') {
+      e.preventDefault();
+      enteredPin = enteredPin.slice(0, -1);
+      updatePinDotsUI();
+    } else if (/^\d$/.test(e.key)) {
+      e.preventDefault();
+      handlePinDigitInput(e.key);
+    }
+    return;
+  }
+
+  const activeTag = document.activeElement ? document.activeElement.tagName : '';
+  if (activeTag === 'INPUT' || activeTag === 'TEXTAREA' || activeTag === 'SELECT') {
+    if (e.key === 'Enter' && document.activeElement.id === 'customerInput') {
+      e.preventDefault();
+      document.activeElement.blur();
+      if (!printButton.disabled) printKitchenKOT();
+    }
+    return;
+  }
+
+  if (e.key === 'Escape') {
+    if (expenseModal.classList.contains('open')) {
+      closeExpenseModal();
+      return;
+    }
+    if (settingsModal.classList.contains('open')) {
+      closeSettingsModal();
+      return;
+    }
+    if (hisaabModal.classList.contains('open')) {
+      closeHisaabModal();
+      return;
+    }
+    if (printerModal.classList.contains('open')) {
+      closePrinterModal();
+      return;
+    }
+    if (state.drawerOpen) {
+      state.drawerOpen = false;
+      updateUI();
+      return;
+    }
+  }
+
+  if (
+    isLicenseExpired() ||
+    expenseModal.classList.contains('open') ||
+    printerModal.classList.contains('open') ||
+    hisaabModal.classList.contains('open') ||
+    settingsModal.classList.contains('open')
+  ) {
+    return;
+  }
+
+  const matched = MENU_ITEMS.find(i => i.key && i.key === e.key);
+  if (matched) {
+    e.preventDefault();
+    incrementItem(matched.id);
+  } else if (e.key === 'Enter') {
+    if (!printButton.disabled) {
+      e.preventDefault();
+      printKitchenKOT();
+    }
+  }
+});
+
+// ============================================================================
+// 15. STARTUP INITIALIZATION
+// ============================================================================
+window.addEventListener('load', async () => {
+  loadPersistedState();
+  getOrCreateStallId();
+  loadSyncQueue();
+  initLoginSessionAndRBAC();
+  enforceLicenseLockUI();
+  syncPaymentModeToggleUI();
+  document.getElementById('customerInput').value = state.customer || '';
+  renderMenu();
+  updateUI();
+  syncToCloud();
+  await syncPrinterStatusFromBridge();
+
+  // Auto-reconnect Web Bluetooth or Android SPP
+  const bridge = window.AndroidPOSBridge;
+  if (bridge && typeof bridge.isNative === 'function' && bridge.isNative()) {
+    if (getSavedPrinterMac()) {
+      ensureSilentPrinterConnection().then(() => syncPrinterStatusFromBridge());
+    }
+  } else {
+    await autoReconnectWebBluetoothOnStartup();
+  }
+
+  if (window.AndroidPOSBridge && typeof window.AndroidPOSBridge.onStateChange === 'function') {
+    window.AndroidPOSBridge.onStateChange(() => {
+      syncPrinterStatusFromBridge();
+      if (printerModal.classList.contains('open')) {
+        loadBondedDevicesInModal();
+      }
+    });
+  }
+});

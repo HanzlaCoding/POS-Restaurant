@@ -1,870 +1,571 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="dark">
 
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <meta name="theme-color" content="#0F172A">
-  <title>BiteDash SaaS • Hanzla Super-Admin &amp; Keygen Panel</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@500;600;700;800;900&family=JetBrains+Mono:wght@600;700;800&display=swap" rel="stylesheet">
-  <style>
-    :root {
-      --bg-dark: #090D16;
-      --bg-card: #111827;
-      --bg-card-hover: #1E293B;
-      --border: #1F2937;
-      --border-light: #334155;
-      --text-main: #F8FAFC;
-      --text-muted: #94A3B8;
-      --accent-amber: #F59E0B;
-      --accent-green: #10B981;
-      --accent-red: #EF4444;
-      --accent-blue: #3B82F6;
-      --accent-purple: #8B5CF6;
-    }
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>BiteDash • Super-Admin Command Portal</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>⚡</text></svg>">
 
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  <!-- Tailwind CSS via CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            slate: {
+              750: '#293548',
+              850: '#151F32',
+              950: '#0B1120'
+            }
+          },
+          fontFamily: {
+            sans: ['Inter', 'system-ui', '-apple-system', 'Segoe UI', 'Roboto', 'sans-serif'],
+            mono: ['JetBrains Mono', 'Fira Code', 'SFMono-Regular', 'Consolas', 'monospace']
+          }
+        }
+      }
     }
+  </script>
+
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@500;700;800&display=swap');
 
     body {
-      background: var(--bg-dark);
-      color: var(--text-main);
-      min-height: 100vh;
-      padding-bottom: 60px;
+      font-family: 'Inter', system-ui, sans-serif;
     }
 
-    /* PIN Lock Screen */
-    .admin-lock-overlay {
-      position: fixed;
-      inset: 0;
-      z-index: 9999;
-      background: radial-gradient(circle at top, #1E293B 0%, #090D16 75%);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      padding: 20px;
-    }
-
-    .admin-lock-overlay.unlocked {
-      display: none;
-    }
-
-    .lock-box {
-      width: 100%;
-      max-width: 380px;
-      background: #111827;
-      border: 1px solid #334155;
-      border-radius: 18px;
-      padding: 28px 22px;
-      text-align: center;
-      box-shadow: 0 25px 60px rgba(0, 0, 0, 0.75);
-    }
-
-    .lock-badge {
-      display: inline-block;
-      padding: 4px 12px;
-      border-radius: 999px;
-      background: rgba(245, 158, 11, 0.15);
-      border: 1px solid rgba(245, 158, 11, 0.4);
-      color: #FBBF24;
-      font-size: 11px;
-      font-weight: 800;
-      letter-spacing: 0.06em;
-      text-transform: uppercase;
-      margin-bottom: 10px;
-    }
-
-    .lock-title {
-      font-size: 20px;
-      font-weight: 900;
-      margin-bottom: 6px;
-    }
-
-    .lock-sub {
-      font-size: 12.5px;
-      color: var(--text-muted);
-      margin-bottom: 18px;
-    }
-
-    .lock-input {
-      width: 100%;
-      height: 50px;
-      border-radius: 12px;
-      border: 2px solid #334155;
-      background: #090D16;
-      color: #FBBF24;
+    .font-mono-num {
       font-family: 'JetBrains Mono', monospace;
-      font-size: 22px;
-      font-weight: 800;
-      text-align: center;
-      letter-spacing: 0.25em;
-      outline: none;
-      margin-bottom: 12px;
+      font-feature-settings: 'tnum' on, 'lnum' on;
     }
 
-    .lock-input:focus {
-      border-color: var(--accent-amber);
+    /* Custom scrollbar for data tables */
+    ::-webkit-scrollbar {
+      width: 7px;
+      height: 7px;
     }
-
-    .lock-btn {
-      width: 100%;
-      height: 46px;
-      border-radius: 12px;
-      border: none;
-      background: linear-gradient(135deg, #F59E0B, #D97706);
-      color: #090D16;
-      font-size: 14px;
-      font-weight: 900;
-      cursor: pointer;
+    ::-webkit-scrollbar-track {
+      background: #0f172a;
     }
-
-    /* Top Navbar */
-    .topbar {
-      position: sticky;
-      top: 0;
-      z-index: 100;
-      background: rgba(17, 24, 39, 0.92);
-      backdrop-filter: blur(12px);
-      border-bottom: 1px solid var(--border);
-      padding: 14px 20px;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      flex-wrap: wrap;
-      gap: 12px;
-    }
-
-    .brand-wrap {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-    }
-
-    .brand-logo {
-      width: 40px;
-      height: 40px;
-      border-radius: 11px;
-      background: linear-gradient(135deg, #F59E0B, #EA580C);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 20px;
-      font-weight: 900;
-      color: #090D16;
-    }
-
-    .brand-title {
-      font-size: 16px;
-      font-weight: 900;
-      letter-spacing: -0.02em;
-    }
-
-    .brand-sub {
-      font-size: 11.5px;
-      color: var(--text-muted);
-      font-weight: 600;
-    }
-
-    .topbar-actions {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      flex-wrap: wrap;
-    }
-
-    .btn {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      gap: 6px;
-      padding: 8px 14px;
-      border-radius: 9px;
-      border: 1px solid var(--border-light);
-      background: #1E293B;
-      color: var(--text-main);
-      font-size: 12.5px;
-      font-weight: 700;
-      cursor: pointer;
-      text-decoration: none;
-      transition: all 0.15s ease;
-    }
-
-    .btn:hover {
+    ::-webkit-scrollbar-thumb {
       background: #334155;
-    }
-
-    .btn-amber {
-      background: linear-gradient(135deg, #F59E0B, #D97706);
-      color: #090D16;
-      border-color: #F59E0B;
-      font-weight: 900;
-    }
-
-    .btn-amber:hover {
-      filter: brightness(1.08);
-    }
-
-    .btn-green {
-      background: rgba(16, 185, 129, 0.18);
-      color: #34D399;
-      border-color: rgba(16, 185, 129, 0.45);
-    }
-
-    .btn-red {
-      background: rgba(239, 68, 68, 0.16);
-      color: #FCA5A5;
-      border-color: rgba(239, 68, 68, 0.45);
-    }
-
-    .container {
-      max-width: 1280px;
-      margin: 0 auto;
-      padding: 20px;
-      display: flex;
-      flex-direction: column;
-      gap: 20px;
-    }
-
-    /* Alert Banner for SQL setup if tables don't exist yet */
-    .sql-alert-banner {
-      display: none;
-      background: rgba(245, 158, 11, 0.12);
-      border: 1px solid rgba(245, 158, 11, 0.45);
-      border-radius: 14px;
-      padding: 16px;
-      color: #FDE68A;
-      font-size: 13px;
-      line-height: 1.5;
-    }
-
-    .sql-alert-banner.show {
-      display: block;
-    }
-
-    /* KPI Row */
-    .kpi-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
-      gap: 14px;
-    }
-
-    .kpi-card {
-      background: var(--bg-card);
-      border: 1px solid var(--border);
-      border-radius: 14px;
-      padding: 16px;
-      display: flex;
-      flex-direction: column;
-      gap: 6px;
-    }
-
-    .kpi-label {
-      font-size: 11.5px;
-      font-weight: 700;
-      text-transform: uppercase;
-      letter-spacing: 0.04em;
-      color: var(--text-muted);
-    }
-
-    .kpi-value {
-      font-size: 26px;
-      font-weight: 900;
-      font-family: 'JetBrains Mono', monospace;
-    }
-
-    .kpi-sub {
-      font-size: 11.5px;
-      color: var(--text-muted);
-      font-weight: 600;
-    }
-
-    /* Main 2-Column Layout: Keygen + Add Client */
-    .tools-grid {
-      display: grid;
-      grid-template-columns: 1.2fr 1fr;
-      gap: 18px;
-    }
-
-    @media (max-width: 920px) {
-      .tools-grid {
-        grid-template-columns: 1fr;
-      }
-    }
-
-    .panel-card {
-      background: var(--bg-card);
-      border: 1px solid var(--border);
-      border-radius: 16px;
-      padding: 18px;
-      display: flex;
-      flex-direction: column;
-      gap: 14px;
-    }
-
-    .panel-header {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 10px;
-      border-bottom: 1px solid var(--border);
-      padding-bottom: 10px;
-    }
-
-    .panel-title {
-      font-size: 15px;
-      font-weight: 900;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-
-    .keygen-controls {
-      display: grid;
-      grid-template-columns: 1fr 1fr auto;
-      gap: 10px;
-    }
-
-    @media (max-width: 600px) {
-      .keygen-controls {
-        grid-template-columns: 1fr;
-      }
-    }
-
-    .field {
-      display: flex;
-      flex-direction: column;
-      gap: 5px;
-    }
-
-    .field label {
-      font-size: 11px;
-      font-weight: 800;
-      color: var(--text-muted);
-      text-transform: uppercase;
-    }
-
-    .input,
-    .select {
-      height: 40px;
-      padding: 0 12px;
-      border-radius: 9px;
-      border: 1px solid var(--border-light);
-      background: #090D16;
-      color: var(--text-main);
-      font-size: 13.5px;
-      font-weight: 700;
-      outline: none;
-    }
-
-    .input:focus,
-    .select:focus {
-      border-color: var(--accent-amber);
-    }
-
-    .mono-input {
-      font-family: 'JetBrains Mono', monospace;
-      text-transform: uppercase;
-      letter-spacing: 0.08em;
-      color: #FBBF24;
-    }
-
-    .keys-showcase {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 10px;
-    }
-
-    @media (max-width: 640px) {
-      .keys-showcase {
-        grid-template-columns: 1fr;
-      }
-    }
-
-    .key-box {
-      background: #090D16;
-      border: 1px solid var(--border-light);
-      border-radius: 12px;
-      padding: 12px;
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-      position: relative;
-    }
-
-    .key-box.highlight {
-      border-color: rgba(245, 158, 11, 0.6);
-      background: rgba(245, 158, 11, 0.05);
-    }
-
-    .key-plan-name {
-      font-size: 11px;
-      font-weight: 800;
-      text-transform: uppercase;
-      color: var(--text-muted);
-      display: flex;
-      justify-content: space-between;
-    }
-
-    .key-digits {
-      font-family: 'JetBrains Mono', monospace;
-      font-size: 21px;
-      font-weight: 900;
-      color: #F8FAFC;
-      letter-spacing: 0.08em;
-    }
-
-    .key-box.highlight .key-digits {
-      color: #FBBF24;
-    }
-
-    .key-actions {
-      display: flex;
-      gap: 6px;
-    }
-
-    .key-actions .btn {
-      flex: 1;
-      padding: 6px 8px;
-      font-size: 11.5px;
-    }
-
-    /* Filter Bar */
-    .filter-bar {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      flex-wrap: wrap;
-      gap: 10px;
-    }
-
-    .filter-pills {
-      display: flex;
-      gap: 6px;
-      flex-wrap: wrap;
-    }
-
-    .filter-pill {
-      padding: 6px 12px;
       border-radius: 999px;
-      border: 1px solid var(--border-light);
-      background: #090D16;
-      color: var(--text-muted);
-      font-size: 12px;
-      font-weight: 700;
-      cursor: pointer;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #475569;
     }
 
-    .filter-pill.active {
-      background: var(--accent-amber);
-      color: #090D16;
-      border-color: var(--accent-amber);
-      font-weight: 900;
+    /* Pulse animation for live online indicator */
+    @keyframes livePulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.4; transform: scale(1.15); }
     }
-
-    /* Stalls Table / Cards */
-    .table-wrap {
-      overflow-x: auto;
-      border: 1px solid var(--border);
-      border-radius: 12px;
-    }
-
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      min-width: 920px;
-    }
-
-    th,
-    td {
-      padding: 12px 14px;
-      text-align: left;
-      border-bottom: 1px solid var(--border);
-      font-size: 13px;
-    }
-
-    th {
-      background: #090D16;
-      color: var(--text-muted);
-      font-size: 11px;
-      font-weight: 800;
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
-    }
-
-    tr:hover td {
-      background: rgba(30, 41, 59, 0.5);
-    }
-
-    .stall-id-pill {
-      display: inline-block;
-      font-family: 'JetBrains Mono', monospace;
-      font-size: 12.5px;
-      font-weight: 900;
-      padding: 3px 8px;
-      border-radius: 6px;
-      background: rgba(245, 158, 11, 0.14);
-      border: 1px solid rgba(245, 158, 11, 0.4);
-      color: #FBBF24;
-    }
-
-    .status-badge {
-      display: inline-flex;
-      align-items: center;
-      gap: 5px;
-      padding: 4px 10px;
-      border-radius: 999px;
-      font-size: 11.5px;
-      font-weight: 800;
-      cursor: pointer;
-      user-select: none;
-      border: 1px solid transparent;
-    }
-
-    .status-badge.paid {
-      background: rgba(16, 185, 129, 0.16);
-      color: #34D399;
-      border-color: rgba(16, 185, 129, 0.4);
-    }
-
-    .status-badge.unpaid {
-      background: rgba(239, 68, 68, 0.18);
-      color: #FCA5A5;
-      border-color: rgba(239, 68, 68, 0.45);
-    }
-
-    .status-badge.trial {
-      background: rgba(59, 130, 246, 0.16);
-      color: #93C5FD;
-      border-color: rgba(59, 130, 246, 0.4);
-    }
-
-    .row-actions {
-      display: flex;
-      gap: 6px;
-      flex-wrap: wrap;
-    }
-
-    .row-actions .btn {
-      padding: 5px 9px;
-      font-size: 11.5px;
-    }
-
-    /* Modal for viewing a stall's detailed sync logs */
-    .modal-backdrop {
-      position: fixed;
-      inset: 0;
-      z-index: 2000;
-      background: rgba(0, 0, 0, 0.78);
-      display: none;
-      align-items: center;
-      justify-content: center;
-      padding: 16px;
-    }
-
-    .modal-backdrop.open {
-      display: flex;
-    }
-
-    .modal-box {
-      width: 100%;
-      max-width: 760px;
-      max-height: 88vh;
-      background: var(--bg-card);
-      border: 1px solid var(--border-light);
-      border-radius: 16px;
-      padding: 20px;
-      display: flex;
-      flex-direction: column;
-      gap: 14px;
-      overflow-y: auto;
-    }
-
-    .toast {
-      position: fixed;
-      bottom: 20px;
-      right: 20px;
-      z-index: 9999;
-      background: #10B981;
-      color: #090D16;
-      font-weight: 900;
-      font-size: 13px;
-      padding: 12px 18px;
-      border-radius: 10px;
-      box-shadow: 0 12px 30px rgba(0, 0, 0, 0.5);
-      transform: translateY(80px);
-      opacity: 0;
-      transition: all 0.2s ease;
-    }
-
-    .toast.show {
-      transform: translateY(0);
-      opacity: 1;
+    .animate-live-pulse {
+      animation: livePulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
     }
   </style>
 </head>
 
-<body>
-  <!-- Super-Admin PIN Gate (Default: 9999 or 1234) -->
-  <div class="admin-lock-overlay" id="adminLockOverlay">
-    <div class="lock-box">
-      <div class="lock-badge">👑 Creator Only • Hanzla Shahid</div>
-      <div class="lock-title">BiteDash SaaS Control Center</div>
-      <div class="lock-sub">Apna Super-Admin PIN darj karein (Default: <strong>9999</strong>)</div>
-      <input type="password" id="adminPinInput" class="lock-input" maxlength="8" inputmode="numeric" placeholder="••••">
-      <div id="adminPinError" style="color:#EF4444;font-size:12px;font-weight:700;min-height:18px;margin-bottom:8px;"></div>
-      <button type="button" class="lock-btn" id="unlockAdminBtn">🔓 Unlock Master Dashboard</button>
+<body class="bg-slate-950 text-slate-100 min-h-screen antialiased selection:bg-emerald-500 selection:text-slate-950">
+
+  <!-- ====================================================================== -->
+  <!-- 1. AUTHENTICATION GATE (PIN 9999 REQUIRED)                             -->
+  <!-- ====================================================================== -->
+  <div id="authGate" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/95 backdrop-blur-md p-4 transition-all duration-300">
+    <div class="w-full max-w-sm rounded-3xl border border-slate-800 bg-slate-900 p-8 shadow-2xl shadow-black/80 flex flex-col items-center text-center">
+      <div class="h-16 w-16 rounded-2xl bg-gradient-to-tr from-amber-500/20 via-emerald-500/20 to-indigo-500/20 border border-slate-700/80 flex items-center justify-center text-3xl shadow-inner mb-4">
+        👑
+      </div>
+      <h1 class="text-xl font-black tracking-tight text-white">BiteDash Super-Admin</h1>
+      <p class="text-xs text-slate-400 mt-1 mb-6">Central POS Fleet Monitor &amp; Keygen Portal</p>
+
+      <form id="authForm" class="w-full space-y-4" onsubmit="event.preventDefault(); verifyPin();">
+        <div class="relative">
+          <input type="password" id="authPinInput" maxlength="4" inputmode="numeric" placeholder="••••" autocomplete="off" autofocus
+            class="w-full text-center tracking-[0.75em] text-2xl font-mono font-bold bg-slate-950 border-2 border-slate-700 focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/20 rounded-2xl py-3.5 px-4 text-emerald-400 outline-none transition placeholder-slate-700">
+        </div>
+
+        <div id="authErrorMsg" class="text-xs font-semibold text-rose-400 min-h-[1.25rem]"></div>
+
+        <button type="submit" id="authSubmitBtn"
+          class="w-full py-3.5 px-4 rounded-xl font-bold bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-slate-950 shadow-lg shadow-emerald-500/20 active:scale-95 transition-all text-sm flex items-center justify-center gap-2">
+          <span>Unlock Command Center</span>
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>
+        </button>
+
+        <p class="text-[11px] text-slate-500">Default PIN: <span class="font-mono text-slate-400">9999</span></p>
+      </form>
     </div>
   </div>
 
-  <!-- Top Navigation -->
-  <header class="topbar">
-    <div class="brand-wrap">
-      <div class="brand-logo">⚡</div>
-      <div>
-        <div class="brand-title">BiteDash SaaS • Master Admin Panel</div>
-        <div class="brand-sub" id="supabaseConnStatus">🟢 Connected to Supabase (`giyfjerwbkcbdtvgghjp`)</div>
+  <!-- ====================================================================== -->
+  <!-- 2. MAIN ADMIN PORTAL WRAPPER (HIDDEN UNTIL UNLOCKED)                   -->
+  <!-- ====================================================================== -->
+  <div id="mainPortal" class="hidden flex flex-col min-h-screen">
+
+    <!-- Top Navigation Bar -->
+    <header class="sticky top-0 z-40 border-b border-slate-800 bg-slate-900/80 backdrop-blur-lg">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-4">
+        
+        <!-- Brand & Supabase Status -->
+        <div class="flex items-center gap-3">
+          <div class="h-10 w-10 rounded-xl bg-gradient-to-tr from-emerald-500 to-teal-400 flex items-center justify-center text-slate-950 font-black text-xl shadow-lg shadow-emerald-500/20">
+            ⚡
+          </div>
+          <div>
+            <div class="flex items-center gap-2">
+              <span class="text-base font-extrabold text-white tracking-tight">BiteDash Control</span>
+              <span class="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/30">Enterprise</span>
+            </div>
+            <div class="flex items-center gap-1.5 text-[11px] text-slate-400">
+              <span class="relative flex h-2 w-2">
+                <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                <span class="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+              </span>
+              <span>Supabase Live</span>
+              <span class="text-slate-600">•</span>
+              <span class="font-mono text-[10px] text-slate-500">giyfjerwbkcbdtvgghjp</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="flex items-center gap-2">
+          <!-- Refresh Data Button with Countdown -->
+          <button id="refreshDataBtn" onclick="fetchLiveFleetData(true)" title="Manual Refresh"
+            class="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700/80 active:scale-95 transition">
+            <svg id="refreshSpinner" class="w-3.5 h-3.5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+            </svg>
+            <span id="refreshTimerLabel">Refresh (<span id="autoTimerSec">60</span>s)</span>
+          </button>
+
+          <!-- Copy SQL Setup Modal Trigger -->
+          <button onclick="openSqlModal()" title="View Supabase SQL Setup"
+            class="hidden sm:flex items-center gap-1 px-3 py-2 rounded-xl text-xs font-semibold bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700/80 active:scale-95 transition">
+            <svg class="w-3.5 h-3.5 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+            <span>Supabase SQL</span>
+          </button>
+
+          <!-- Quick Keygen Trigger -->
+          <button onclick="openQuickKeygenModal()"
+            class="flex items-center gap-1 px-3 py-2 rounded-xl text-xs font-semibold bg-indigo-600/20 hover:bg-indigo-600/30 text-indigo-300 border border-indigo-500/40 active:scale-95 transition">
+            <svg class="w-3.5 h-3.5 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"/></svg>
+            <span>Keygen</span>
+          </button>
+
+          <!-- Onboard Stall Trigger -->
+          <button onclick="openOnboardingModal()"
+            class="flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold bg-emerald-500 hover:bg-emerald-400 text-slate-950 shadow-md shadow-emerald-500/20 active:scale-95 transition">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"/></svg>
+            <span>Onboard Stall</span>
+          </button>
+
+          <!-- Lock Portal (Logout) -->
+          <button onclick="lockPortal()" title="Lock Portal"
+            class="p-2 rounded-xl text-rose-400 hover:bg-rose-500/10 border border-transparent hover:border-rose-500/20 active:scale-95 transition">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>
+          </button>
+        </div>
+      </div>
+    </header>
+
+    <!-- Main Content Body -->
+    <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
+
+      <!-- ================================================================== -->
+      <!-- 3. GLOBAL METRICS CARDS (TOP ROW)                                 -->
+      <!-- ================================================================== -->
+      <section class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        
+        <!-- Metric 1: Total Stalls -->
+        <div class="relative overflow-hidden rounded-2xl border border-slate-800 bg-slate-900/90 p-5 shadow-lg">
+          <div class="flex items-center justify-between">
+            <span class="text-xs font-bold uppercase tracking-wider text-slate-400">Total Active Stalls</span>
+            <div class="h-9 w-9 rounded-xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-center text-blue-400">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>
+            </div>
+          </div>
+          <div class="mt-3 flex items-baseline gap-2">
+            <span id="metricTotalStalls" class="text-3xl font-black font-mono-num text-white">0</span>
+            <span class="text-xs text-slate-400">Terminals</span>
+          </div>
+          <div class="mt-2 text-xs flex items-center gap-2">
+            <span class="text-emerald-400 font-semibold flex items-center gap-1">
+              <span class="h-1.5 w-1.5 rounded-full bg-emerald-400 inline-block"></span>
+              <span id="metricOnlineStalls">0</span> Online
+            </span>
+            <span class="text-slate-600">•</span>
+            <span class="text-slate-400">
+              <span id="metricOfflineStalls">0</span> Offline
+            </span>
+          </div>
+        </div>
+
+        <!-- Metric 2: Today's Network Sales -->
+        <div class="relative overflow-hidden rounded-2xl border border-emerald-500/20 bg-slate-900/90 p-5 shadow-lg">
+          <div class="flex items-center justify-between">
+            <span class="text-xs font-bold uppercase tracking-wider text-emerald-400">Today's Network Sales</span>
+            <div class="h-9 w-9 rounded-xl bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center text-emerald-400">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+            </div>
+          </div>
+          <div class="mt-3 flex items-baseline gap-1.5">
+            <span class="text-lg font-bold text-emerald-500">Rs.</span>
+            <span id="metricGrossSales" class="text-3xl font-black font-mono-num text-emerald-400">0</span>
+          </div>
+          <div class="mt-2 text-xs text-slate-400 flex items-center gap-1.5">
+            <span>Orders Synced:</span>
+            <span id="metricOrdersCount" class="font-bold text-white font-mono-num">0</span>
+          </div>
+        </div>
+
+        <!-- Metric 3: Payment Split (Cash vs Online) -->
+        <div class="relative overflow-hidden rounded-2xl border border-slate-800 bg-slate-900/90 p-5 shadow-lg">
+          <div class="flex items-center justify-between">
+            <span class="text-xs font-bold uppercase tracking-wider text-slate-400">Payment Breakdown</span>
+            <div class="h-9 w-9 rounded-xl bg-cyan-500/10 border border-cyan-500/20 flex items-center justify-center text-cyan-400">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"/></svg>
+            </div>
+          </div>
+          <div class="mt-3 flex items-center justify-between text-xs font-mono-num">
+            <div class="text-emerald-400 font-bold">
+              <span>Cash: Rs. </span><span id="metricCashSales">0</span>
+            </div>
+            <div class="text-cyan-400 font-bold">
+              <span>Online: Rs. </span><span id="metricOnlineSales">0</span>
+            </div>
+          </div>
+          <!-- Progress bar -->
+          <div class="w-full bg-slate-800 rounded-full h-2 mt-2.5 overflow-hidden flex">
+            <div id="barCash" class="bg-emerald-500 h-full transition-all duration-500" style="width: 50%"></div>
+            <div id="barOnline" class="bg-cyan-500 h-full transition-all duration-500" style="width: 50%"></div>
+          </div>
+          <div class="mt-2 text-[11px] text-slate-400 flex justify-between">
+            <span id="percentCash">50% Cash</span>
+            <span id="percentOnline">50% Digital</span>
+          </div>
+        </div>
+
+        <!-- Metric 4: Total Expenses & Net Drawer -->
+        <div class="relative overflow-hidden rounded-2xl border border-slate-800 bg-slate-900/90 p-5 shadow-lg">
+          <div class="flex items-center justify-between">
+            <span class="text-xs font-bold uppercase tracking-wider text-slate-400">Network Expenses</span>
+            <div class="h-9 w-9 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-400">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+            </div>
+          </div>
+          <div class="mt-3 flex items-baseline gap-1.5">
+            <span class="text-lg font-bold text-amber-500">Rs.</span>
+            <span id="metricTotalExpenses" class="text-3xl font-black font-mono-num text-amber-400">0</span>
+          </div>
+          <div class="mt-2 text-xs text-slate-400 flex items-center justify-between">
+            <span>Drawer Net Cash:</span>
+            <span class="font-bold text-emerald-400 font-mono-num">Rs. <span id="metricNetCash">0</span></span>
+          </div>
+        </div>
+
+      </section>
+
+      <!-- ================================================================== -->
+      <!-- 4. SEARCH, FILTER & ACTION BAR                                    -->
+      <!-- ================================================================== -->
+      <section class="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 bg-slate-900/60 border border-slate-800 p-3 rounded-2xl">
+        
+        <!-- Search Input -->
+        <div class="relative flex-1">
+          <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-500">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+          </div>
+          <input type="text" id="stallSearchInput" placeholder="Filter by Stall ID (e.g. BD-5694), Shop Name, or Phone..."
+            oninput="renderStallsTable()"
+            class="w-full bg-slate-950 border border-slate-700/80 rounded-xl pl-10 pr-4 py-2 text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 transition">
+        </div>
+
+        <!-- Filter Chips -->
+        <div class="flex items-center gap-1.5 overflow-x-auto pb-1 sm:pb-0 text-xs">
+          <button class="filter-chip active px-3 py-1.5 rounded-lg font-semibold bg-emerald-500/20 text-emerald-400 border border-emerald-500/40" data-filter="all" onclick="setTableFilter('all', this)">All</button>
+          <button class="filter-chip px-3 py-1.5 rounded-lg font-semibold bg-slate-800 text-slate-400 hover:text-white border border-slate-700/60" data-filter="online" onclick="setTableFilter('online', this)">🟢 Online</button>
+          <button class="filter-chip px-3 py-1.5 rounded-lg font-semibold bg-slate-800 text-slate-400 hover:text-white border border-slate-700/60" data-filter="offline" onclick="setTableFilter('offline', this)">⚪ Offline</button>
+          <button class="filter-chip px-3 py-1.5 rounded-lg font-semibold bg-slate-800 text-slate-400 hover:text-white border border-slate-700/60" data-filter="trial" onclick="setTableFilter('trial', this)">🟡 Trial</button>
+          <button class="filter-chip px-3 py-1.5 rounded-lg font-semibold bg-slate-800 text-slate-400 hover:text-white border border-slate-700/60" data-filter="expired" onclick="setTableFilter('expired', this)">🔴 Expired</button>
+        </div>
+      </section>
+
+      <!-- ================================================================== -->
+      <!-- 5. STALL MONITORING GRID / TABLE                                   -->
+      <!-- ================================================================== -->
+      <section class="rounded-2xl border border-slate-800 bg-slate-900/80 shadow-xl overflow-hidden">
+        <div class="overflow-x-auto">
+          <table class="w-full text-left text-xs">
+            <thead class="bg-slate-950/80 text-slate-400 font-bold uppercase tracking-wider border-b border-slate-800">
+              <tr>
+                <th scope="col" class="py-3.5 px-4">Stall ID</th>
+                <th scope="col" class="py-3.5 px-4">Shop Name</th>
+                <th scope="col" class="py-3.5 px-4">Owner Phone</th>
+                <th scope="col" class="py-3.5 px-4">Status</th>
+                <th scope="col" class="py-3.5 px-4 text-right">Today's Sales</th>
+                <th scope="col" class="py-3.5 px-4 text-right">Drawer Cash</th>
+                <th scope="col" class="py-3.5 px-4 text-center">License</th>
+                <th scope="col" class="py-3.5 px-4 text-center">Quick Actions</th>
+              </tr>
+            </thead>
+            <tbody id="stallsTableBody" class="divide-y divide-slate-800/80">
+              <!-- Dynamically populated via renderStallsTable() -->
+              <tr>
+                <td colspan="8" class="py-12 text-center text-slate-500">
+                  <div class="inline-block animate-spin mb-2">⏳</div>
+                  <div>Loading live stalls from Supabase...</div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+    </main>
+  </div>
+
+  <!-- ====================================================================== -->
+  <!-- 6. NEW STALL ONBOARDING MODAL                                          -->
+  <!-- ====================================================================== -->
+  <div id="onboardingModal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-slate-950/85 backdrop-blur-sm p-4">
+    <div class="w-full max-w-lg rounded-3xl border border-slate-800 bg-slate-900 p-6 shadow-2xl space-y-4">
+      <div class="flex items-center justify-between pb-3 border-b border-slate-800">
+        <div class="flex items-center gap-2">
+          <span class="text-xl">🍔</span>
+          <h2 class="text-base font-bold text-white">Onboard New POS Stall</h2>
+        </div>
+        <button onclick="closeOnboardingModal()" class="text-slate-400 hover:text-white p-1 rounded-lg">✕</button>
+      </div>
+
+      <form id="onboardingForm" onsubmit="event.preventDefault(); submitOnboardStall();" class="space-y-4">
+        
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <!-- Stall ID -->
+          <div>
+            <label class="block text-xs font-semibold text-slate-400 mb-1">Stall ID / Shop Code</label>
+            <div class="flex items-center gap-1.5">
+              <input type="text" id="newStallId" required maxlength="10" placeholder="BD-5694"
+                class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs font-mono font-bold text-amber-400 uppercase focus:border-emerald-500 focus:outline-none">
+              <button type="button" onclick="generateRandomStallId()" title="Generate Random ID"
+                class="px-2.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs border border-slate-700 font-bold">🎲</button>
+            </div>
+          </div>
+
+          <!-- Shop Name -->
+          <div>
+            <label class="block text-xs font-semibold text-slate-400 mb-1">Shop / Stall Name</label>
+            <input type="text" id="newShopName" required placeholder="e.g. Student Burger"
+              class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:border-emerald-500 focus:outline-none">
+          </div>
+        </div>
+
+        <!-- Owner Phone -->
+        <div>
+          <label class="block text-xs font-semibold text-slate-400 mb-1">Owner WhatsApp / Phone</label>
+          <input type="text" id="newOwnerPhone" placeholder="03001234567"
+            class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs font-mono text-white focus:border-emerald-500 focus:outline-none">
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <!-- Default Owner PIN -->
+          <div>
+            <label class="block text-xs font-semibold text-slate-400 mb-1">Owner 4-Digit PIN</label>
+            <input type="text" id="newOwnerPin" maxlength="4" value="1234"
+              class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs font-mono text-white focus:border-emerald-500 focus:outline-none">
+          </div>
+
+          <!-- Default Cashier PIN -->
+          <div>
+            <label class="block text-xs font-semibold text-slate-400 mb-1">Cashier 4-Digit PIN</label>
+            <input type="text" id="newCashierPin" maxlength="4" value="0000"
+              class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs font-mono text-white focus:border-emerald-500 focus:outline-none">
+          </div>
+        </div>
+
+        <!-- Initial License Expiry -->
+        <div>
+          <label class="block text-xs font-semibold text-slate-400 mb-1">Initial License Plan</label>
+          <select id="newLicensePlan"
+            class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:border-emerald-500 focus:outline-none">
+            <option value="trial_30">30-Day Free Trial</option>
+            <option value="year_1">1-Year Commercial License</option>
+            <option value="lifetime">Lifetime Unlimited Access</option>
+          </select>
+        </div>
+
+        <div id="onboardError" class="text-xs font-semibold text-rose-400 min-h-[1rem]"></div>
+
+        <div class="flex items-center justify-end gap-2 pt-2 border-t border-slate-800">
+          <button type="button" onclick="closeOnboardingModal()" class="px-4 py-2 text-xs font-semibold rounded-xl text-slate-400 hover:text-white">Cancel</button>
+          <button type="submit" id="onboardSubmitBtn"
+            class="px-5 py-2 text-xs font-bold rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 shadow-md shadow-emerald-500/20 active:scale-95 transition">
+            Save &amp; Activate Stall
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ====================================================================== -->
+  <!-- 7. ORDERS & EXPENSES JSON VIEWER MODAL                                 -->
+  <!-- ====================================================================== -->
+  <div id="jsonModal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-slate-950/85 backdrop-blur-sm p-4">
+    <div class="w-full max-w-2xl max-h-[90vh] flex flex-col rounded-3xl border border-slate-800 bg-slate-900 shadow-2xl overflow-hidden">
+      <div class="flex items-center justify-between p-4 border-b border-slate-800 bg-slate-950/50">
+        <div>
+          <h2 class="text-sm font-bold text-white flex items-center gap-2">
+            <span>📦 Sync Payload Viewer</span>
+            <span id="jsonModalStallBadge" class="font-mono text-xs px-2 py-0.5 rounded bg-amber-400/10 text-amber-300 border border-amber-400/20">BD-0000</span>
+          </h2>
+          <p id="jsonModalTimestamp" class="text-[11px] text-slate-400">Latest Sync Time: --</p>
+        </div>
+        <button onclick="closeJsonModal()" class="text-slate-400 hover:text-white p-1 rounded-lg">✕</button>
+      </div>
+
+      <div class="p-4 overflow-y-auto space-y-4 text-xs">
+        <div class="flex items-center justify-between">
+          <span class="text-slate-400 font-semibold">Raw Orders &amp; Expenses JSON:</span>
+          <button onclick="copyRawJson()" class="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 font-mono text-[11px] border border-slate-700">
+            📋 Copy JSON
+          </button>
+        </div>
+        <pre id="jsonModalContent" class="bg-slate-950 p-4 rounded-xl font-mono text-[11px] text-emerald-400 overflow-x-auto border border-slate-800 max-h-96"></pre>
       </div>
     </div>
-    <div class="topbar-actions">
-      <button type="button" class="btn btn-amber" id="refreshSupabaseBtn">🔄 Refresh Live Data</button>
-      <button type="button" class="btn" id="toggleSqlModalBtn">🛠️ Supabase SQL Setup</button>
-      <a href="index.html" class="btn">🍔 Open POS Terminal</a>
-      <button type="button" class="btn btn-red" id="lockAdminBtn">🔒 Lock</button>
-    </div>
-  </header>
+  </div>
 
-  <main class="container">
-    <!-- SQL Setup Helper Banner (Shown if Supabase tables are not created yet or on click) -->
-    <div class="sql-alert-banner" id="sqlSetupBanner">
-      <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:8px;">
-        <strong>📌 Supabase Database Tables Setup (`stalls` &amp; `stall_sync_logs`)</strong>
-        <div style="display:flex;gap:8px;">
-          <button type="button" class="btn btn-amber" id="copySqlBtn">📋 Copy SQL Code</button>
-          <a href="https://supabase.com/dashboard/project/giyfjerwbkcbdtvgghjp/sql/new" target="_blank" rel="noopener" class="btn">🚀 Open Supabase SQL Editor</a>
+  <!-- ====================================================================== -->
+  <!-- 8. QUICK KEYGEN & WHATSAPP MODAL                                      -->
+  <!-- ====================================================================== -->
+  <div id="keygenModal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-slate-950/85 backdrop-blur-sm p-4">
+    <div class="w-full max-w-md rounded-3xl border border-slate-800 bg-slate-900 p-6 shadow-2xl space-y-4">
+      <div class="flex items-center justify-between pb-3 border-b border-slate-800">
+        <div class="flex items-center gap-2">
+          <span class="text-xl">🔑</span>
+          <h2 class="text-base font-bold text-white">BiteDash Key Generator</h2>
         </div>
+        <button onclick="closeQuickKeygenModal()" class="text-slate-400 hover:text-white p-1 rounded-lg">✕</button>
       </div>
-      <p style="font-size:12px;color:#FDE68A;">
-        Agar aap ne abhi tak Supabase mein tables nahi banaye, to <strong>"📋 Copy SQL Code"</strong> daba kar Supabase SQL Editor mein paste karein aur <strong>RUN</strong> dabayein.
-      </p>
-    </div>
 
-    <!-- Top KPIs -->
-    <section class="kpi-grid">
-      <div class="kpi-card">
-        <span class="kpi-label">🏪 Total Registered Stalls</span>
-        <span class="kpi-value" id="kpiTotalStalls">0</span>
-        <span class="kpi-sub" id="kpiOnlineStallsSub">0 synced from cloud</span>
-      </div>
-      <div class="kpi-card">
-        <span class="kpi-label">🚨 Payment Pending (Unpaid)</span>
-        <span class="kpi-value" style="color:#EF4444;" id="kpiUnpaidStalls">0</span>
-        <span class="kpi-sub" id="kpiUnpaidAmountSub">Rs. 0 baqi hai</span>
-      </div>
-      <div class="kpi-card">
-        <span class="kpi-label">🔑 Needs New Key / Expiring</span>
-        <span class="kpi-value" style="color:#F59E0B;" id="kpiNeedsKeyCount">0</span>
-        <span class="kpi-sub">Trial / Expiring in &le; 3 days</span>
-      </div>
-      <div class="kpi-card">
-        <span class="kpi-label">💰 Paid Subscription Revenue</span>
-        <span class="kpi-value" style="color:#10B981;" id="kpiSaaSRevenue">Rs. 0</span>
-        <span class="kpi-sub" id="kpiPaidStallsSub">0 Paid Stalls</span>
-      </div>
-      <div class="kpi-card">
-        <span class="kpi-label">🍔 All Stalls Synced Sales</span>
-        <span class="kpi-value" style="color:#38BDF8;" id="kpiTotalGmv">Rs. 0</span>
-        <span class="kpi-sub" id="kpiTotalOrdersSub">0 total orders synced</span>
-      </div>
-    </section>
-
-    <!-- Row 2: 1-Click Key Generator + Add/Update Shop Billing CRM -->
-    <section class="tools-grid">
-      <!-- 1. Instant Activation Key Generator -->
-      <div class="panel-card">
-        <div class="panel-header">
-          <div class="panel-title">🔑 1-Click Activation Key Generator (Offline Math)</div>
-          <span style="font-size:11.5px;color:var(--text-muted);">Master Key: <strong style="color:#FBBF24;">99786786</strong></span>
+      <div class="space-y-3 text-xs">
+        <div>
+          <label class="block text-slate-400 font-semibold mb-1">Target Stall ID</label>
+          <input type="text" id="keygenStallIdInput" oninput="updateKeygenResults()" placeholder="e.g. BD-5694"
+            class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-sm font-mono font-bold text-amber-400 uppercase focus:border-emerald-500 focus:outline-none">
         </div>
 
-        <div class="keygen-controls">
-          <div class="field">
-            <label for="keygenStallIdInput">Customer Stall ID (BD-XXXX)</label>
-            <input type="text" id="keygenStallIdInput" class="input mono-input" maxlength="7" placeholder="BD-7842" value="BD-7842">
-          </div>
-          <div class="field">
-            <label for="keygenWhatsAppPhone">Owner WhatsApp (Optional)</label>
-            <input type="text" id="keygenWhatsAppPhone" class="input" maxlength="20" placeholder="0300-1234567">
-          </div>
-          <div class="field" style="justify-content:flex-end;">
-            <button type="button" class="btn btn-amber" id="generateKeysBtn" style="height:40px;">⚡ Generate Keys</button>
-          </div>
-        </div>
-
-        <div class="keys-showcase">
-          <!-- 30 Days Key -->
-          <div class="key-box highlight">
-            <div class="key-plan-name">
-              <span>📅 30-Day Monthly</span>
-              <span style="color:#FBBF24;">+30 Days</span>
+        <div class="space-y-2 pt-2">
+          <!-- 30 Days -->
+          <div class="p-3 rounded-xl bg-slate-950 border border-slate-800 flex items-center justify-between">
+            <div>
+              <div class="font-bold text-white">30-Day Extension Key</div>
+              <div class="text-[10px] text-slate-500">Extends license by 30 days</div>
             </div>
-            <div class="key-digits" id="outKey30">--------</div>
-            <div class="key-actions">
-              <button type="button" class="btn" data-copy-key="30">📋 Copy</button>
-              <button type="button" class="btn btn-green" data-wa-key="30">📲 WhatsApp</button>
+            <div class="flex items-center gap-2">
+              <span id="resKey30" class="font-mono font-black text-amber-400 tracking-wider text-sm">--</span>
+              <button onclick="copySingleKey('resKey30')" class="p-1 rounded text-slate-400 hover:text-white">📋</button>
             </div>
           </div>
 
-          <!-- 1 Year Key -->
-          <div class="key-box">
-            <div class="key-plan-name">
-              <span>📆 1-Year Annual</span>
-              <span style="color:#38BDF8;">+365 Days</span>
+          <!-- 1 Year -->
+          <div class="p-3 rounded-xl bg-slate-950 border border-slate-800 flex items-center justify-between">
+            <div>
+              <div class="font-bold text-white">1-Year Commercial Key</div>
+              <div class="text-[10px] text-slate-500">Extends license by 365 days</div>
             </div>
-            <div class="key-digits" id="outKey365">--------</div>
-            <div class="key-actions">
-              <button type="button" class="btn" data-copy-key="365">📋 Copy</button>
-              <button type="button" class="btn btn-green" data-wa-key="365">📲 WhatsApp</button>
+            <div class="flex items-center gap-2">
+              <span id="resKey1Year" class="font-mono font-black text-emerald-400 tracking-wider text-sm">--</span>
+              <button onclick="copySingleKey('resKey1Year')" class="p-1 rounded text-slate-400 hover:text-white">📋</button>
             </div>
           </div>
 
-          <!-- Lifetime Key -->
-          <div class="key-box">
-            <div class="key-plan-name">
-              <span>♾️ Lifetime Pro</span>
-              <span style="color:#34D399;">Forever</span>
+          <!-- Lifetime -->
+          <div class="p-3 rounded-xl bg-slate-950 border border-slate-800 flex items-center justify-between">
+            <div>
+              <div class="font-bold text-white">Lifetime Activation Key</div>
+              <div class="text-[10px] text-slate-500">Permanent unlock</div>
             </div>
-            <div class="key-digits" id="outKeyLife">--------</div>
-            <div class="key-actions">
-              <button type="button" class="btn" data-copy-key="life">📋 Copy</button>
-              <button type="button" class="btn btn-green" data-wa-key="life">📲 WhatsApp</button>
+            <div class="flex items-center gap-2">
+              <span id="resKeyLife" class="font-mono font-black text-indigo-400 tracking-wider text-sm">--</span>
+              <button onclick="copySingleKey('resKeyLife')" class="p-1 rounded text-slate-400 hover:text-white">📋</button>
             </div>
           </div>
         </div>
-      </div>
 
-      <!-- 2. Register / Edit Shop Payment & License Status -->
-      <div class="panel-card">
-        <div class="panel-header">
-          <div class="panel-title">📝 Add / Update Shop Billing &amp; Payment Status</div>
-          <button type="button" class="btn" id="clearCrmFormBtn" style="padding:4px 10px;font-size:11px;">Reset Form</button>
-        </div>
-
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
-          <div class="field">
-            <label for="crmStallId">Stall ID</label>
-            <input type="text" id="crmStallId" class="input mono-input" maxlength="7" placeholder="BD-7842">
-          </div>
-          <div class="field">
-            <label for="crmShopName">Shop / Stall Name</label>
-            <input type="text" id="crmShopName" class="input" maxlength="32" placeholder="Student Burger">
-          </div>
-          <div class="field">
-            <label for="crmOwnerPhone">Owner WhatsApp Phone</label>
-            <input type="text" id="crmOwnerPhone" class="input" maxlength="20" placeholder="0300-1234567">
-          </div>
-          <div class="field">
-            <label for="crmFeeAmount">Subscription Fee (Rs.)</label>
-            <input type="number" id="crmFeeAmount" class="input" placeholder="1500" value="1500">
-          </div>
-          <div class="field">
-            <label for="crmPaymentStatus">Payment Ayi Ya Nahi?</label>
-            <select id="crmPaymentStatus" class="select">
-              <option value="unpaid">🚨 UNPAID (Payment Baqi Hai)</option>
-              <option value="paid">✅ PAID (Payment Aa Gayi)</option>
-              <option value="trial">⏳ FREE TRIAL (3-Day Demo)</option>
-            </select>
-          </div>
-          <div class="field">
-            <label for="crmPlanType">Key / Plan Issued</label>
-            <select id="crmPlanType" class="select">
-              <option value="trial">3-Day Trial (Needs Key Soon)</option>
-              <option value="30d">30-Day Monthly Key</option>
-              <option value="1y">1-Year Annual Key</option>
-              <option value="lifetime">Lifetime Key</option>
-            </select>
-          </div>
-        </div>
-
-        <button type="button" class="btn btn-amber" id="saveCrmStallBtn" style="height:40px;width:100%;">
-          💾 Save Stall Payment &amp; Sync to Cloud
+        <!-- WhatsApp Dispatch -->
+        <button onclick="copyWhatsAppMessage()"
+          class="w-full py-2.5 rounded-xl font-bold bg-emerald-600 hover:bg-emerald-500 text-white flex items-center justify-center gap-1.5 text-xs shadow-md shadow-emerald-700/30 active:scale-95 transition">
+          <span>📲 Copy WhatsApp Activation Message</span>
         </button>
       </div>
-    </section>
-
-    <!-- Row 3: All Stalls Live Table (Who Paid, Who Needs Key, Live Sales & Fraud Audit) -->
-    <section class="panel-card">
-      <div class="filter-bar">
-        <div class="panel-title">📊 All Shops / Stalls — Payment, Key &amp; Live Sales Monitor</div>
-        <div class="filter-pills" id="stallFilterPills">
-          <button type="button" class="filter-pill active" data-filter="all">All Shops</button>
-          <button type="button" class="filter-pill" data-filter="unpaid">🚨 Payment Baqi (Unpaid)</button>
-          <button type="button" class="filter-pill" data-filter="needs_key">🔑 Key Banani Hai (Trial/Expiring)</button>
-          <button type="button" class="filter-pill" data-filter="paid">✅ Paid</button>
-        </div>
-      </div>
-
-      <div class="table-wrap">
-        <table>
-          <thead>
-            <tr>
-              <th>Stall ID &amp; Shop</th>
-              <th>Payment Status (1-Click Toggle)</th>
-              <th>Key / Expiry Status</th>
-              <th>Live POS Sales (Supabase)</th>
-              <th>Kharcha &amp; Net Galla</th>
-              <th>Audit (Void / Reprint)</th>
-              <th>Last Sync</th>
-              <th>Quick Actions (Key / WhatsApp)</th>
-            </tr>
-          </thead>
-          <tbody id="stallsTableBody">
-            <tr>
-              <td colspan="8" style="text-align:center;color:var(--text-muted);padding:28px;">
-                Loading live stalls from Supabase...
-              </td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-    </section>
-  </main>
-
-  <!-- Stall Detailed Sync Logs Modal -->
-  <div class="modal-backdrop" id="stallLogsModal">
-    <div class="modal-box">
-      <div class="panel-header">
-        <div class="panel-title" id="stallLogsModalTitle">📦 Stall Sync History</div>
-        <button type="button" class="btn" id="closeStallLogsModalBtn">✕ Close</button>
-      </div>
-      <div id="stallLogsModalBody" style="display:flex;flex-direction:column;gap:10px;"></div>
     </div>
   </div>
 
-  <div class="toast" id="adminToast">Copied!</div>
+  <!-- ====================================================================== -->
+  <!-- 9. SUPABASE SQL SETUP MODAL                                           -->
+  <!-- ====================================================================== -->
+  <div id="sqlModal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-slate-950/85 backdrop-blur-sm p-4">
+    <div class="w-full max-w-2xl rounded-3xl border border-slate-800 bg-slate-900 p-6 shadow-2xl space-y-4">
+      <div class="flex items-center justify-between pb-3 border-b border-slate-800">
+        <div class="flex items-center gap-2">
+          <span class="text-xl">🗄️</span>
+          <h2 class="text-base font-bold text-white">Supabase SQL Schema &amp; RLS Policies</h2>
+        </div>
+        <button onclick="closeSqlModal()" class="text-slate-400 hover:text-white p-1 rounded-lg">✕</button>
+      </div>
 
+      <p class="text-xs text-slate-400">
+        If you haven't enabled table policies on Supabase yet, copy and execute this SQL script in your
+        <a href="https://supabase.com/dashboard/project/giyfjerwbkcbdtvgghjp/sql/new" target="_blank" rel="noopener" class="text-emerald-400 underline font-semibold">Supabase SQL Editor</a>.
+      </p>
+
+      <pre id="sqlSetupCode" class="bg-slate-950 p-4 rounded-xl font-mono text-[11px] text-slate-300 overflow-x-auto border border-slate-800 max-h-72"></pre>
+
+      <div class="flex justify-end gap-2 pt-2">
+        <button onclick="copySqlSetup()" class="px-4 py-2 rounded-xl text-xs font-bold bg-indigo-600 hover:bg-indigo-500 text-white flex items-center gap-1.5">
+          📋 Copy SQL to Clipboard
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Notification Box -->
+  <div id="adminToast" class="fixed bottom-5 right-5 z-50 transform translate-y-20 opacity-0 pointer-events-none transition-all duration-300 bg-slate-900 border border-slate-700 text-white px-4 py-3 rounded-2xl shadow-2xl text-xs font-semibold flex items-center gap-2">
+    <span id="toastIcon">⚡</span>
+    <span id="toastMsg">Success</span>
+  </div>
+
+  <!-- ====================================================================== -->
+  <!-- 10. JAVASCRIPT CONTROLLER                                              -->
+  <!-- ====================================================================== -->
   <script>
-    // ============================================================================
-    // SUPABASE CREDENTIALS (SAME AS POS TERMINAL)
-    // ============================================================================
+    // ========================================================================
+    // SUPABASE CREDENTIALS & CONSTANTS
+    // ========================================================================
     const SUPABASE_URL = 'https://giyfjerwbkcbdtvgghjp.supabase.co/rest/v1';
     const SUPABASE_ANON_KEY = 'sb_publishable_ICpRf007sA4GPPkkroSM5g_43PZIU1b';
-    const ADMIN_CRM_STORAGE_KEY = 'bitedash_superadmin_crm_v1';
-    const ADMIN_UNLOCKED_SESSION_KEY = 'bitedash_superadmin_unlocked';
-    const MASTER_ADMIN_PINS = ['9999', '1234', '7860'];
+    const AUTH_SESSION_KEY = 'bitedash_admin_authenticated';
+    const LOCAL_CRM_KEY = 'bitedash_admin_crm_cache';
+    const MASTER_PIN = '9999';
 
-    const SUPABASE_SETUP_SQL = `-- Run this in Supabase SQL Editor (https://supabase.com/dashboard/project/giyfjerwbkcbdtvgghjp/sql/new)
+    const SUPABASE_SQL_SCRIPT = `-- 1. Stalls table
 create table if not exists public.stalls (
   stall_id text primary key,
   shop_name text,
-  last_synced_at timestamptz default now()
+  owner_phone text,
+  license_status text default 'trial',
+  license_expires_at timestamptz,
+  last_synced_at timestamptz default now(),
+  app_version text,
+  created_at timestamptz default now()
 );
 
+-- 2. Stall Sync Logs table
 create table if not exists public.stall_sync_logs (
   id bigint generated by default as identity primary key,
   created_at timestamptz default now(),
@@ -882,6 +583,7 @@ create table if not exists public.stall_sync_logs (
   expenses_json jsonb default '[]'::jsonb
 );
 
+-- 3. Enable RLS and Anon Access Policies
 alter table public.stalls enable row level security;
 alter table public.stall_sync_logs enable row level security;
 
@@ -891,17 +593,621 @@ create policy "Allow anon all stalls" on public.stalls for all to anon using (tr
 drop policy if exists "Allow anon all sync_logs" on public.stall_sync_logs;
 create policy "Allow anon all sync_logs" on public.stall_sync_logs for all to anon using (true) with check (true);`;
 
-    let activeFilter = 'all';
-    let cloudStalls = [];
-    let cloudSyncLogs = [];
-    let localCrmMap = {};
+    let stallsData = [];
+    let syncLogsData = [];
+    let currentFilter = 'all';
+    let autoRefreshInterval = null;
+    let autoRefreshCountdown = 60;
+    let selectedStallForJson = null;
 
-    function showToast(msg) {
-      const t = document.getElementById('adminToast');
-      t.textContent = msg;
-      t.classList.add('show');
-      clearTimeout(window.__adminToastTimer);
-      window.__adminToastTimer = setTimeout(() => t.classList.remove('show'), 2600);
+    // ========================================================================
+    // AUTHENTICATION PIN VERIFICATION
+    // ========================================================================
+    function verifyPin() {
+      const pinInput = document.getElementById('authPinInput');
+      const errEl = document.getElementById('authErrorMsg');
+      const entered = (pinInput.value || '').trim();
+
+      if (entered === MASTER_PIN || entered === '7860' || entered === '1234') {
+        sessionStorage.setItem(AUTH_SESSION_KEY, 'true');
+        document.getElementById('authGate').classList.add('hidden');
+        document.getElementById('mainPortal').classList.remove('hidden');
+        initDashboard();
+      } else {
+        errEl.textContent = '❌ Incorrect Master PIN. Please try again.';
+        pinInput.value = '';
+        pinInput.focus();
+      }
+    }
+
+    function lockPortal() {
+      sessionStorage.removeItem(AUTH_SESSION_KEY);
+      clearInterval(autoRefreshInterval);
+      document.getElementById('mainPortal').classList.add('hidden');
+      document.getElementById('authGate').classList.remove('hidden');
+      document.getElementById('authPinInput').value = '';
+      document.getElementById('authErrorMsg').textContent = '';
+      document.getElementById('authPinInput').focus();
+    }
+
+    // ========================================================================
+    // TOAST NOTIFIER
+    // ========================================================================
+    function showToast(msg, icon = '⚡') {
+      const toast = document.getElementById('adminToast');
+      document.getElementById('toastMsg').textContent = msg;
+      document.getElementById('toastIcon').textContent = icon;
+      toast.classList.remove('translate-y-20', 'opacity-0');
+      clearTimeout(window.__adminToastTimeout);
+      window.__adminToastTimeout = setTimeout(() => {
+        toast.classList.add('translate-y-20', 'opacity-0');
+      }, 3000);
+    }
+
+    // ========================================================================
+    // DETERMINISTIC 8-DIGIT KEY GENERATOR (MATCHES CLIENT 100%)
+    // ========================================================================
+    function generateKeysForStallId(stallIdInput) {
+      const clean = String(stallIdInput || 'BD-7842').trim().toUpperCase();
+      const digits = parseInt(clean.replace(/\D/g, ''), 10) || 1000;
+      const key30Days = '30' + String(((digits * 613 + 52917) % 900000) + 100000);
+      const key1Year  = '36' + String(((digits * 827 + 74123) % 900000) + 100000);
+      const keyLife   = '99' + String(((digits * 941 + 88319) % 900000) + 100000);
+      return {
+        stallId: `BD-${String(digits).padStart(4, '0').slice(-4)}`,
+        key30Days,
+        key1Year,
+        keyLifetime: keyLife,
+        masterKey: '99786786'
+      };
+    }
+
+    // ========================================================================
+    // DATA FETCHING & SYNC LOGS AGGREGATION
+    // ========================================================================
+    async function fetchLiveFleetData(isManual = false) {
+      const spinner = document.getElementById('refreshSpinner');
+      if (spinner) spinner.classList.add('animate-spin');
+
+      const headers = {
+        'apikey': SUPABASE_ANON_KEY,
+        'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+        'Content-Type': 'application/json'
+      };
+
+      try {
+        const [resStalls, resLogs] = await Promise.all([
+          fetch(`${SUPABASE_URL}/stalls?select=*&order=last_synced_at.desc`, { headers }),
+          fetch(`${SUPABASE_URL}/stall_sync_logs?select=*&order=created_at.desc&limit=500`, { headers })
+        ]);
+
+        if (resStalls.ok) {
+          stallsData = await resStalls.json();
+        }
+        if (resLogs.ok) {
+          syncLogsData = await resLogs.json();
+        }
+
+        renderGlobalMetrics();
+        renderStallsTable();
+        autoRefreshCountdown = 60;
+
+        if (isManual) {
+          showToast('Live fleet data refreshed from Supabase!', '✅');
+        }
+      } catch (err) {
+        console.error('Fetch error:', err);
+        showToast('Network error syncing with Supabase', '⚠️');
+      } finally {
+        if (spinner) {
+          setTimeout(() => spinner.classList.remove('animate-spin'), 400);
+        }
+      }
+    }
+
+    // ========================================================================
+    // RENDER TOP METRICS
+    // ========================================================================
+    function renderGlobalMetrics() {
+      const now = Date.now();
+      let onlineCount = 0;
+      let offlineCount = 0;
+
+      stallsData.forEach(st => {
+        const lastSync = st.last_synced_at ? new Date(st.last_synced_at).getTime() : 0;
+        const diffMinutes = (now - lastSync) / 60000;
+        if (diffMinutes <= 10) {
+          onlineCount++;
+        } else {
+          offlineCount++;
+        }
+      });
+
+      document.getElementById('metricTotalStalls').textContent = stallsData.length;
+      document.getElementById('metricOnlineStalls').textContent = onlineCount;
+      document.getElementById('metricOfflineStalls').textContent = offlineCount;
+
+      // Aggregate latest sync logs for today's numbers
+      let totalGross = 0;
+      let totalCash = 0;
+      let totalOnline = 0;
+      let totalExpenses = 0;
+      let totalOrders = 0;
+
+      // Group latest log by stall
+      const stallLatestLog = {};
+      syncLogsData.forEach(log => {
+        if (!stallLatestLog[log.stall_id]) {
+          stallLatestLog[log.stall_id] = log;
+        }
+      });
+
+      Object.values(stallLatestLog).forEach(log => {
+        totalGross += Number(log.total_sales || 0);
+        totalCash += Number(log.cash_sales || 0);
+        totalOnline += Number(log.online_sales || 0);
+        totalExpenses += Number(log.total_expenses || 0);
+        totalOrders += Number(log.orders_count || 0);
+      });
+
+      const netCash = Math.max(0, totalCash - totalExpenses);
+
+      document.getElementById('metricGrossSales').textContent = totalGross.toLocaleString();
+      document.getElementById('metricOrdersCount').textContent = totalOrders.toLocaleString();
+      document.getElementById('metricCashSales').textContent = totalCash.toLocaleString();
+      document.getElementById('metricOnlineSales').textContent = totalOnline.toLocaleString();
+      document.getElementById('metricTotalExpenses').textContent = totalExpenses.toLocaleString();
+      document.getElementById('metricNetCash').textContent = netCash.toLocaleString();
+
+      // Progress bar split
+      const totalPayments = (totalCash + totalOnline) || 1;
+      const cashPercent = Math.round((totalCash / totalPayments) * 100);
+      const onlinePercent = 100 - cashPercent;
+
+      document.getElementById('barCash').style.width = `${cashPercent}%`;
+      document.getElementById('barOnline').style.width = `${onlinePercent}%`;
+      document.getElementById('percentCash').textContent = `${cashPercent}% Cash`;
+      document.getElementById('percentOnline').textContent = `${onlinePercent}% Digital`;
+    }
+
+    // ========================================================================
+    // RENDER STALLS TABLE
+    // ========================================================================
+    function renderStallsTable() {
+      const tbody = document.getElementById('stallsTableBody');
+      const searchQuery = (document.getElementById('stallSearchInput').value || '').trim().toLowerCase();
+      const now = Date.now();
+
+      // Filter stalls
+      let filtered = stallsData.filter(stall => {
+        const stallId = (stall.stall_id || '').toLowerCase();
+        const shopName = (stall.shop_name || '').toLowerCase();
+        const phone = (stall.owner_phone || '').toLowerCase();
+
+        const matchesSearch = !searchQuery || stallId.includes(searchQuery) || shopName.includes(searchQuery) || phone.includes(searchQuery);
+        if (!matchesSearch) return false;
+
+        const lastSync = stall.last_synced_at ? new Date(stall.last_synced_at).getTime() : 0;
+        const isOnline = (now - lastSync) <= 10 * 60000;
+        const status = (stall.license_status || 'trial').toLowerCase();
+
+        if (currentFilter === 'online') return isOnline;
+        if (currentFilter === 'offline') return !isOnline;
+        if (currentFilter === 'trial') return status === 'trial';
+        if (currentFilter === 'expired') return status === 'expired';
+
+        return true;
+      });
+
+      if (filtered.length === 0) {
+        tbody.innerHTML = `
+          <tr>
+            <td colspan="8" class="py-10 text-center text-slate-500">
+              No stalls found matching criteria. Click <button onclick="openOnboardingModal()" class="text-emerald-400 font-bold underline">Onboard Stall</button> to add one.
+            </td>
+          </tr>
+        `;
+        return;
+      }
+
+      // Latest sync logs indexed by stall_id
+      const logsByStall = {};
+      syncLogsData.forEach(log => {
+        if (!logsByStall[log.stall_id]) {
+          logsByStall[log.stall_id] = log;
+        }
+      });
+
+      tbody.innerHTML = filtered.map(stall => {
+        const lastSync = stall.last_synced_at ? new Date(stall.last_synced_at).getTime() : 0;
+        const diffMin = Math.round((now - lastSync) / 60000);
+        const isOnline = diffMin <= 10;
+        
+        const relativeTime = diffMin < 1 ? 'Just now' : diffMin < 60 ? `${diffMin}m ago` : `${Math.round(diffMin/60)}h ago`;
+        const log = logsByStall[stall.stall_id] || {};
+
+        const grossSales = Number(log.total_sales || 0);
+        const cashSales = Number(log.cash_sales || 0);
+        const expenses = Number(log.total_expenses || 0);
+        const drawerCash = Math.max(0, cashSales - expenses);
+        const ordersCount = Number(log.orders_count || 0);
+
+        const status = (stall.license_status || 'trial').toLowerCase();
+        let licenseBadge = '';
+        if (status === 'active') {
+          licenseBadge = '<span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/30">Active</span>';
+        } else if (status === 'expired') {
+          licenseBadge = '<span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-rose-500/10 text-rose-400 border border-rose-500/30">Expired / Locked</span>';
+        } else {
+          licenseBadge = '<span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-500/10 text-amber-400 border border-amber-500/30">Trial</span>';
+        }
+
+        const cleanPhone = (stall.owner_phone || '').replace(/\D/g, '');
+        const waLink = cleanPhone ? `https://wa.me/${cleanPhone.startsWith('92') ? cleanPhone : '92' + cleanPhone.replace(/^0/, '')}` : null;
+
+        return `
+          <tr class="hover:bg-slate-800/40 transition-colors">
+            
+            <!-- Stall ID -->
+            <td class="py-3.5 px-4 whitespace-nowrap">
+              <div class="flex items-center gap-1.5">
+                <span class="font-mono font-bold text-amber-300 bg-amber-400/10 px-2 py-0.5 rounded border border-amber-400/20 text-xs">
+                  ${escapeHtml(stall.stall_id)}
+                </span>
+                <button onclick="copyToClipboard('${escapeHtml(stall.stall_id)}', 'Stall ID copied!')" title="Copy ID" class="text-slate-500 hover:text-slate-300 text-xs">📋</button>
+              </div>
+            </td>
+
+            <!-- Shop Name -->
+            <td class="py-3.5 px-4 whitespace-nowrap">
+              <div class="font-bold text-white text-xs">${escapeHtml(stall.shop_name || 'BiteDash Stall')}</div>
+              <div class="text-[10px] text-slate-500 font-mono">App: ${escapeHtml(stall.app_version || 'v2.0')}</div>
+            </td>
+
+            <!-- Owner Phone -->
+            <td class="py-3.5 px-4 whitespace-nowrap">
+              ${waLink ? `
+                <a href="${waLink}" target="_blank" rel="noopener" class="inline-flex items-center gap-1 text-slate-300 hover:text-emerald-400 font-mono text-xs">
+                  <span>📱 ${escapeHtml(stall.owner_phone)}</span>
+                  <span class="text-[10px] text-emerald-400 font-bold">(WA)</span>
+                </a>
+              ` : `<span class="text-slate-600 font-mono text-xs">--</span>`}
+            </td>
+
+            <!-- Heartbeat Status -->
+            <td class="py-3.5 px-4 whitespace-nowrap">
+              ${isOnline ? `
+                <div class="flex items-center gap-1.5">
+                  <span class="relative flex h-2 w-2">
+                    <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                    <span class="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+                  </span>
+                  <span class="text-emerald-400 font-semibold text-xs">Online</span>
+                  <span class="text-[10px] text-slate-500">(${relativeTime})</span>
+                </div>
+              ` : `
+                <div class="flex items-center gap-1.5">
+                  <span class="h-2 w-2 rounded-full bg-slate-600 inline-block"></span>
+                  <span class="text-slate-400 text-xs">Offline</span>
+                  <span class="text-[10px] text-slate-600">(${relativeTime})</span>
+                </div>
+              `}
+            </td>
+
+            <!-- Today's Sales -->
+            <td class="py-3.5 px-4 text-right whitespace-nowrap">
+              <div class="font-bold font-mono text-white text-xs">Rs. ${grossSales.toLocaleString()}</div>
+              <div class="text-[10px] text-slate-400 font-mono">${ordersCount} Orders</div>
+            </td>
+
+            <!-- Drawer Net Cash -->
+            <td class="py-3.5 px-4 text-right whitespace-nowrap">
+              <div class="font-bold font-mono text-emerald-400 text-xs">Rs. ${drawerCash.toLocaleString()}</div>
+              <div class="text-[10px] text-slate-500 font-mono">Exp: Rs. ${expenses.toLocaleString()}</div>
+            </td>
+
+            <!-- License Status -->
+            <td class="py-3.5 px-4 text-center whitespace-nowrap">
+              ${licenseBadge}
+            </td>
+
+            <!-- Quick Actions -->
+            <td class="py-3.5 px-4 text-center whitespace-nowrap">
+              <div class="inline-flex items-center gap-1.5">
+                <button onclick="extendStallLicense('${escapeHtml(stall.stall_id)}')" title="Extend +30 Days"
+                  class="px-2 py-1 rounded-lg bg-emerald-600/20 hover:bg-emerald-600/30 text-emerald-300 border border-emerald-500/30 text-[11px] font-bold transition">
+                  ⚡ +30d
+                </button>
+                <button onclick="lockStallLicense('${escapeHtml(stall.stall_id)}')" title="Lock / Expire Stall"
+                  class="px-2 py-1 rounded-lg bg-rose-600/20 hover:bg-rose-600/30 text-rose-300 border border-rose-500/30 text-[11px] font-bold transition">
+                  🔒 Lock
+                </button>
+                <button onclick="openKeygenForStall('${escapeHtml(stall.stall_id)}')" title="Keygen &amp; WhatsApp"
+                  class="px-2 py-1 rounded-lg bg-indigo-600/20 hover:bg-indigo-600/30 text-indigo-300 border border-indigo-500/30 text-[11px] font-bold transition">
+                  🔑 Key
+                </button>
+                <button onclick="viewStallJson('${escapeHtml(stall.stall_id)}')" title="View Synced JSON"
+                  class="px-2 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 text-[11px] font-semibold transition">
+                  📄 JSON
+                </button>
+              </div>
+            </td>
+
+          </tr>
+        `;
+      }).join('');
+    }
+
+    // ========================================================================
+    // FILTER CHIPS CONTROLLER
+    // ========================================================================
+    function setTableFilter(filter, btn) {
+      currentFilter = filter;
+      document.querySelectorAll('.filter-chip').forEach(el => {
+        el.className = 'filter-chip px-3 py-1.5 rounded-lg font-semibold bg-slate-800 text-slate-400 hover:text-white border border-slate-700/60';
+      });
+      btn.className = 'filter-chip active px-3 py-1.5 rounded-lg font-semibold bg-emerald-500/20 text-emerald-400 border border-emerald-500/40';
+      renderStallsTable();
+    }
+
+    // ========================================================================
+    // ACTION HANDLERS: EXTEND, LOCK & ONBOARD
+    // ========================================================================
+    async function extendStallLicense(stallId) {
+      if (!confirm(`Extend license by +30 days for stall ${stallId}?`)) return;
+
+      const newExpiry = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString();
+      try {
+        const res = await fetch(`${SUPABASE_URL}/stalls?stall_id=eq.${encodeURIComponent(stallId)}`, {
+          method: 'PATCH',
+          headers: {
+            'apikey': SUPABASE_ANON_KEY,
+            'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            license_status: 'active',
+            license_expires_at: newExpiry
+          })
+        });
+
+        if (res.ok) {
+          showToast(`License extended for ${stallId}!`, '⚡');
+          fetchLiveFleetData();
+        } else {
+          showToast('Failed to update Supabase record', '❌');
+        }
+      } catch (e) {
+        showToast('Network error updating license', '⚠️');
+      }
+    }
+
+    async function lockStallLicense(stallId) {
+      if (!confirm(`Are you sure you want to LOCK / EXPIRE stall ${stallId}? The POS terminal will require an activation key.`)) return;
+
+      try {
+        const res = await fetch(`${SUPABASE_URL}/stalls?stall_id=eq.${encodeURIComponent(stallId)}`, {
+          method: 'PATCH',
+          headers: {
+            'apikey': SUPABASE_ANON_KEY,
+            'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            license_status: 'expired'
+          })
+        });
+
+        if (res.ok) {
+          showToast(`Stall ${stallId} is now LOCKED`, '🔒');
+          fetchLiveFleetData();
+        } else {
+          showToast('Failed to lock stall in Supabase', '❌');
+        }
+      } catch (e) {
+        showToast('Network error locking stall', '⚠️');
+      }
+    }
+
+    // ========================================================================
+    // NEW STALL ONBOARDING
+    // ========================================================================
+    function openOnboardingModal() {
+      generateRandomStallId();
+      document.getElementById('newShopName').value = '';
+      document.getElementById('newOwnerPhone').value = '';
+      document.getElementById('newOwnerPin').value = '1234';
+      document.getElementById('newCashierPin').value = '0000';
+      document.getElementById('onboardError').textContent = '';
+      document.getElementById('onboardingModal').classList.remove('hidden');
+    }
+
+    function closeOnboardingModal() {
+      document.getElementById('onboardingModal').classList.add('hidden');
+    }
+
+    function generateRandomStallId() {
+      const num = Math.floor(1000 + Math.random() * 9000);
+      document.getElementById('newStallId').value = `BD-${num}`;
+    }
+
+    async function submitOnboardStall() {
+      const stallId = (document.getElementById('newStallId').value || '').trim().toUpperCase();
+      const shopName = (document.getElementById('newShopName').value || '').trim();
+      const ownerPhone = (document.getElementById('newOwnerPhone').value || '').trim();
+      const plan = document.getElementById('newLicensePlan').value;
+      const errEl = document.getElementById('onboardError');
+      const submitBtn = document.getElementById('onboardSubmitBtn');
+
+      if (!stallId) {
+        errEl.textContent = 'Please enter or generate a Stall ID.';
+        return;
+      }
+      if (!shopName) {
+        errEl.textContent = 'Please enter a shop name.';
+        return;
+      }
+
+      submitBtn.disabled = true;
+      submitBtn.textContent = '⏳ Saving...';
+      errEl.textContent = '';
+
+      let licenseStatus = 'trial';
+      let expiryDate = null;
+      if (plan === 'trial_30') {
+        licenseStatus = 'trial';
+        expiryDate = new Date(Date.now() + 30 * 86400000).toISOString();
+      } else if (plan === 'year_1') {
+        licenseStatus = 'active';
+        expiryDate = new Date(Date.now() + 365 * 86400000).toISOString();
+      } else if (plan === 'lifetime') {
+        licenseStatus = 'active';
+        expiryDate = new Date(Date.now() + 3650 * 86400000).toISOString();
+      }
+
+      try {
+        const payload = {
+          stall_id: stallId,
+          shop_name: shopName,
+          owner_phone: ownerPhone || null,
+          license_status: licenseStatus,
+          license_expires_at: expiryDate,
+          app_version: 'v2.0'
+        };
+
+        const res = await fetch(`${SUPABASE_URL}/stalls`, {
+          method: 'POST',
+          headers: {
+            'apikey': SUPABASE_ANON_KEY,
+            'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+            'Content-Type': 'application/json',
+            'Prefer': 'resolution=merge-duplicates'
+          },
+          body: JSON.stringify(payload)
+        });
+
+        if (res.ok) {
+          closeOnboardingModal();
+          showToast(`Stall ${stallId} onboarded successfully!`, '🎉');
+          fetchLiveFleetData();
+          openKeygenForStall(stallId);
+        } else {
+          const data = await res.json();
+          errEl.textContent = `Error: ${data.message || 'Could not insert record'}`;
+        }
+      } catch (err) {
+        errEl.textContent = 'Network error saving to Supabase.';
+      } finally {
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Save & Activate Stall';
+      }
+    }
+
+    // ========================================================================
+    // JSON VIEWER MODAL
+    // ========================================================================
+    function viewStallJson(stallId) {
+      selectedStallForJson = stallId;
+      document.getElementById('jsonModalStallBadge').textContent = stallId;
+      const log = syncLogsData.find(l => l.stall_id === stallId);
+      const pre = document.getElementById('jsonModalContent');
+      const timeEl = document.getElementById('jsonModalTimestamp');
+
+      if (log) {
+        timeEl.textContent = `Latest Sync: ${new Date(log.created_at).toLocaleString()}`;
+        pre.textContent = JSON.stringify(log, null, 2);
+      } else {
+        timeEl.textContent = 'No sync logs recorded yet for this stall.';
+        pre.textContent = JSON.stringify({
+          message: 'No orders or expenses have been synced from this stall yet.',
+          stall_id: stallId
+        }, null, 2);
+      }
+
+      document.getElementById('jsonModal').classList.remove('hidden');
+    }
+
+    function closeJsonModal() {
+      document.getElementById('jsonModal').classList.add('hidden');
+    }
+
+    function copyRawJson() {
+      const text = document.getElementById('jsonModalContent').textContent;
+      copyToClipboard(text, 'JSON copied to clipboard!');
+    }
+
+    // ========================================================================
+    // KEYGEN & WHATSAPP MODAL
+    // ========================================================================
+    function openQuickKeygenModal() {
+      document.getElementById('keygenStallIdInput').value = stallsData[0]?.stall_id || 'BD-5694';
+      updateKeygenResults();
+      document.getElementById('keygenModal').classList.remove('hidden');
+    }
+
+    function openKeygenForStall(stallId) {
+      document.getElementById('keygenStallIdInput').value = stallId;
+      updateKeygenResults();
+      document.getElementById('keygenModal').classList.remove('hidden');
+    }
+
+    function closeQuickKeygenModal() {
+      document.getElementById('keygenModal').classList.add('hidden');
+    }
+
+    function updateKeygenResults() {
+      const stallId = document.getElementById('keygenStallIdInput').value;
+      const keys = generateKeysForStallId(stallId);
+      document.getElementById('resKey30').textContent = keys.key30Days;
+      document.getElementById('resKey1Year').textContent = keys.key1Year;
+      document.getElementById('resKeyLife').textContent = keys.keyLifetime;
+    }
+
+    function copySingleKey(elId) {
+      const key = document.getElementById(elId).textContent;
+      copyToClipboard(key, `Key ${key} copied!`);
+    }
+
+    function copyWhatsAppMessage() {
+      const stallId = (document.getElementById('keygenStallIdInput').value || 'BD-5694').toUpperCase();
+      const keys = generateKeysForStallId(stallId);
+
+      const msg = `🍔 *BiteDash POS Software Activation*\n\nAssalam-o-Alaikum! Aapka POS Terminal activate karne ki details darj zail hain:\n\n📍 *Stall ID:* ${keys.stallId}\n🔑 *30-Day Key:* \`${keys.key30Days}\`\n⭐ *1-Year Key:* \`${keys.key1Year}\`\n👑 *Lifetime Key:* \`${keys.keyLifetime}\`\n\n*Tareeqa:*\n1. BiteDash POS open karein.\n2. Settings (⚙️) mein jayein.\n3. Upar diye gaye 8-Digit Code ko enter karein aur Activate dabayein.\n\nShukriya!\n*Hanzla Shahid • BiteDash Support*`;
+
+      copyToClipboard(msg, 'WhatsApp message copied! Ready to paste into WhatsApp.');
+    }
+
+    // ========================================================================
+    // SUPABASE SQL MODAL
+    // ========================================================================
+    function openSqlModal() {
+      document.getElementById('sqlSetupCode').textContent = SUPABASE_SQL_SCRIPT;
+      document.getElementById('sqlModal').classList.remove('hidden');
+    }
+
+    function closeSqlModal() {
+      document.getElementById('sqlModal').classList.add('hidden');
+    }
+
+    function copySqlSetup() {
+      copyToClipboard(SUPABASE_SQL_SCRIPT, 'SQL copied! Paste into Supabase SQL Editor.');
+    }
+
+    // ========================================================================
+    // UTILITY HELPERS
+    // ========================================================================
+    function copyToClipboard(text, successToast = 'Copied to clipboard!') {
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).then(() => showToast(successToast, '📋'));
+      } else {
+        const ta = document.createElement('textarea');
+        ta.value = text;
+        document.body.appendChild(ta);
+        ta.select();
+        document.execCommand('copy');
+        document.body.removeChild(ta);
+        showToast(successToast, '📋');
+      }
     }
 
     function escapeHtml(str) {
@@ -912,632 +1218,36 @@ create policy "Allow anon all sync_logs" on public.stall_sync_logs for all to an
         .replace(/"/g, '&quot;');
     }
 
-    // ============================================================================
-    // 1. DETERMINISTIC 8-DIGIT KEY GENERATOR (MATCHES POS TERMINAL 100%)
-    // ============================================================================
-    function generateKeysForStallId(stallIdInput) {
-      const clean = String(stallIdInput || 'BD-7842').trim().toUpperCase();
-      const digits = parseInt(clean.replace(/\D/g, ''), 10) || 1000;
-      const normalizedStallId = `BD-${String(digits).padStart(4, '0').slice(-4)}`;
-      const key30Days = '30' + String(((digits * 613 + 52917) % 900000) + 100000);
-      const key1Year  = '36' + String(((digits * 827 + 74123) % 900000) + 100000);
-      const keyLife   = '99' + String(((digits * 941 + 88319) % 900000) + 100000);
-      return {
-        stallId: normalizedStallId,
-        key30Days,
-        key1Year,
-        keyLifetime: keyLife,
-        masterKey: '99786786'
-      };
-    }
+    // ========================================================================
+    // DASHBOARD INITIALIZATION
+    // ========================================================================
+    function initDashboard() {
+      fetchLiveFleetData();
 
-    function updateKeygenDisplay() {
-      const inputEl = document.getElementById('keygenStallIdInput');
-      const keys = generateKeysForStallId(inputEl.value);
-      document.getElementById('outKey30').textContent = keys.key30Days;
-      document.getElementById('outKey365').textContent = keys.key1Year;
-      document.getElementById('outKeyLife').textContent = keys.keyLifetime;
-      return keys;
-    }
+      // 60-Second Auto Refresh Loop with countdown
+      clearInterval(autoRefreshInterval);
+      autoRefreshCountdown = 60;
+      autoRefreshInterval = setInterval(() => {
+        autoRefreshCountdown--;
+        const timerSecEl = document.getElementById('autoTimerSec');
+        if (timerSecEl) timerSecEl.textContent = autoRefreshCountdown;
 
-    // ============================================================================
-    // 2. LOCAL + CLOUD BILLING CRM STORAGE
-    // ============================================================================
-    function loadLocalCrmMap() {
-      try {
-        const raw = localStorage.getItem(ADMIN_CRM_STORAGE_KEY);
-        if (raw) {
-          const parsed = JSON.parse(raw);
-          if (parsed && typeof parsed === 'object') {
-            localCrmMap = parsed;
-          }
+        if (autoRefreshCountdown <= 0) {
+          autoRefreshCountdown = 60;
+          fetchLiveFleetData();
         }
-      } catch (e) {}
-
-      // Also auto-import local POS device stall if running on the same browser
-      const localDeviceStallId = localStorage.getItem('bitedash_stall_id');
-      if (localDeviceStallId && !localCrmMap[localDeviceStallId]) {
-        let localShopCfg = {};
-        try {
-          localShopCfg = JSON.parse(localStorage.getItem('bitedash_shop_config') || '{}');
-        } catch (e) {}
-        localCrmMap[localDeviceStallId] = {
-          stallId: localDeviceStallId,
-          shopName: localShopCfg.shopName || 'Student Burger (This Device)',
-          phone: localShopCfg.phone || '0300-1234567',
-          feeAmount: 1500,
-          paymentStatus: 'trial',
-          planType: 'trial',
-          expiryTimestamp: Date.now() + 3 * 24 * 60 * 60 * 1000,
-          updatedAt: new Date().toISOString()
-        };
-        saveLocalCrmMap();
-      }
+      }, 1000);
     }
 
-    function saveLocalCrmMap() {
-      try {
-        localStorage.setItem(ADMIN_CRM_STORAGE_KEY, JSON.stringify(localCrmMap));
-      } catch (e) {}
-    }
-
-    // ============================================================================
-    // 3. FETCH LIVE STALLS & SYNC LOGS FROM SUPABASE
-    // ============================================================================
-    async function fetchSupabaseData() {
-      const statusEl = document.getElementById('supabaseConnStatus');
-      statusEl.textContent = '⏳ Syncing live stalls from Supabase...';
-
-      const headers = {
-        'apikey': SUPABASE_ANON_KEY,
-        'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
-        'Content-Type': 'application/json'
-      };
-
-      try {
-        const [stallsRes, logsRes] = await Promise.all([
-          fetch(`${SUPABASE_URL}/stalls?select=*&order=last_synced_at.desc`, { headers }),
-          fetch(`${SUPABASE_URL}/stall_sync_logs?select=*&order=created_at.desc&limit=500`, { headers })
-        ]);
-
-        if (stallsRes.status === 404 || logsRes.status === 404) {
-          document.getElementById('sqlSetupBanner').classList.add('show');
-          statusEl.textContent = '⚠️ Supabase tables not created yet — Click "Copy SQL Code" below';
-          renderDashboard();
-          return;
-        }
-
-        if (stallsRes.ok) {
-          cloudStalls = await stallsRes.json();
-        }
-        if (logsRes.ok) {
-          cloudSyncLogs = await logsRes.json();
-        }
-
-        statusEl.textContent = `🟢 Live Supabase Connected • Last checked ${new Date().toLocaleTimeString()}`;
-      } catch (err) {
-        statusEl.textContent = '📴 Offline / Local CRM Mode';
-      }
-
-      renderDashboard();
-    }
-
-    function computeMergedStallsList() {
-      const mergedMap = new Map();
-
-      // 1. Seed from local CRM records
-      Object.values(localCrmMap).forEach(crm => {
-        if (!crm || !crm.stallId) return;
-        mergedMap.set(crm.stallId, {
-          stallId: crm.stallId,
-          shopName: crm.shopName || 'Burger Stall',
-          phone: crm.phone || '',
-          feeAmount: Number(crm.feeAmount) || 1500,
-          paymentStatus: crm.paymentStatus || 'unpaid',
-          planType: crm.planType || 'trial',
-          expiryTimestamp: crm.expiryTimestamp || (Date.now() + 3 * 24 * 60 * 60 * 1000),
-          lastSyncedAt: null,
-          totalSales: 0,
-          cashSales: 0,
-          onlineSales: 0,
-          totalExpenses: 0,
-          netCash: 0,
-          ordersCount: 0,
-          voidCount: 0,
-          reprintCount: 0,
-          logs: []
-        });
-      });
-
-      // 2. Merge Supabase `stalls` table
-      cloudStalls.forEach(st => {
-        if (!st || !st.stall_id) return;
-        const sid = st.stall_id;
-        const existing = mergedMap.get(sid) || {
-          stallId: sid,
-          shopName: st.shop_name || 'Burger Stall',
-          phone: '',
-          feeAmount: 1500,
-          paymentStatus: 'unpaid',
-          planType: 'trial',
-          expiryTimestamp: Date.now() + 3 * 24 * 60 * 60 * 1000,
-          lastSyncedAt: st.last_synced_at,
-          totalSales: 0,
-          cashSales: 0,
-          onlineSales: 0,
-          totalExpenses: 0,
-          netCash: 0,
-          ordersCount: 0,
-          voidCount: 0,
-          reprintCount: 0,
-          logs: []
-        };
-        if (st.shop_name) existing.shopName = st.shop_name;
-        if (st.last_synced_at) existing.lastSyncedAt = st.last_synced_at;
-        mergedMap.set(sid, existing);
-      });
-
-      // 3. Aggregate Supabase `stall_sync_logs` per stall_id
-      cloudSyncLogs.forEach(log => {
-        if (!log || !log.stall_id) return;
-        const sid = log.stall_id;
-        if (!mergedMap.has(sid)) {
-          mergedMap.set(sid, {
-            stallId: sid,
-            shopName: log.shop_name || 'Burger Stall',
-            phone: '',
-            feeAmount: 1500,
-            paymentStatus: 'unpaid',
-            planType: 'trial',
-            expiryTimestamp: Date.now() + 3 * 24 * 60 * 60 * 1000,
-            lastSyncedAt: log.created_at,
-            totalSales: 0,
-            cashSales: 0,
-            onlineSales: 0,
-            totalExpenses: 0,
-            netCash: 0,
-            ordersCount: 0,
-            voidCount: 0,
-            reprintCount: 0,
-            logs: []
-          });
-        }
-        const item = mergedMap.get(sid);
-        item.totalSales += Number(log.total_sales || 0);
-        item.cashSales += Number(log.cash_sales || 0);
-        item.onlineSales += Number(log.online_sales || 0);
-        item.totalExpenses += Number(log.total_expenses || 0);
-        item.netCash += Number(log.net_cash || 0);
-        item.ordersCount += Number(log.orders_count || 0);
-        item.voidCount = Math.max(item.voidCount, Number(log.void_count || 0));
-        item.reprintCount = Math.max(item.reprintCount, Number(log.reprint_count || 0));
-        if (!item.lastSyncedAt || new Date(log.created_at) > new Date(item.lastSyncedAt)) {
-          item.lastSyncedAt = log.created_at;
-        }
-        item.logs.push(log);
-      });
-
-      return Array.from(mergedMap.values());
-    }
-
-    function formatRelativeTime(isoStr) {
-      if (!isoStr) return 'Never synced';
-      const diffSec = Math.floor((Date.now() - new Date(isoStr).getTime()) / 1000);
-      if (diffSec < 60) return '🟢 Just now';
-      if (diffSec < 3600) return `🟢 ${Math.floor(diffSec / 60)}m ago`;
-      if (diffSec < 86400) return `🟡 ${Math.floor(diffSec / 3600)}h ago`;
-      return `⚪ ${Math.floor(diffSec / 86400)}d ago`;
-    }
-
-    function needsKeySoon(stall) {
-      if (stall.planType === 'lifetime') return false;
-      if (stall.planType === 'trial' || stall.paymentStatus === 'unpaid') return true;
-      const daysLeft = Math.ceil(((stall.expiryTimestamp || 0) - Date.now()) / (1000 * 60 * 60 * 24));
-      return daysLeft <= 5;
-    }
-
-    function formatPlanBadge(stall) {
-      if (stall.planType === 'lifetime') {
-        return `<span style="color:#34D399;font-weight:800;">♾️ Lifetime Key Active</span>`;
-      }
-      const daysLeft = Math.ceil(((stall.expiryTimestamp || 0) - Date.now()) / (1000 * 60 * 60 * 24));
-      if (stall.planType === 'trial') {
-        return `<span style="color:#FBBF24;font-weight:800;">⚠️ 3-Day Trial (Key Banani Hai)</span>`;
-      }
-      if (daysLeft <= 0) {
-        return `<span style="color:#EF4444;font-weight:800;">🔒 Expired — Send New Key</span>`;
-      }
-      const label = stall.planType === '1y' ? '1-Year Key' : '30-Day Key';
-      return `<span style="color:#38BDF8;font-weight:800;">🔑 ${label} (${daysLeft}d left)</span>`;
-    }
-
-    function renderDashboard() {
-      const allStalls = computeMergedStallsList();
-
-      // Update KPIs
-      const unpaidList = allStalls.filter(s => s.paymentStatus === 'unpaid');
-      const paidList = allStalls.filter(s => s.paymentStatus === 'paid');
-      const needsKeyList = allStalls.filter(s => needsKeySoon(s));
-      const unpaidSum = unpaidList.reduce((s, x) => s + (Number(x.feeAmount) || 0), 0);
-      const paidSum = paidList.reduce((s, x) => s + (Number(x.feeAmount) || 0), 0);
-      const totalGmv = allStalls.reduce((s, x) => s + x.totalSales, 0);
-      const totalOrders = allStalls.reduce((s, x) => s + x.ordersCount, 0);
-
-      document.getElementById('kpiTotalStalls').textContent = allStalls.length;
-      document.getElementById('kpiOnlineStallsSub').textContent = `${cloudStalls.length} synced in Supabase`;
-      document.getElementById('kpiUnpaidStalls').textContent = unpaidList.length;
-      document.getElementById('kpiUnpaidAmountSub').textContent = `Rs. ${unpaidSum.toLocaleString('en-PK')} baqi hai`;
-      document.getElementById('kpiNeedsKeyCount').textContent = needsKeyList.length;
-      document.getElementById('kpiSaaSRevenue').textContent = `Rs. ${paidSum.toLocaleString('en-PK')}`;
-      document.getElementById('kpiPaidStallsSub').textContent = `${paidList.length} Paid Shops`;
-      document.getElementById('kpiTotalGmv').textContent = `Rs. ${totalGmv.toLocaleString('en-PK')}`;
-      document.getElementById('kpiTotalOrdersSub').textContent = `${totalOrders.toLocaleString('en-PK')} synced orders`;
-
-      // Filter stalls for table
-      const filtered = allStalls.filter(st => {
-        if (activeFilter === 'unpaid') return st.paymentStatus === 'unpaid';
-        if (activeFilter === 'paid') return st.paymentStatus === 'paid';
-        if (activeFilter === 'needs_key') return needsKeySoon(st);
-        return true;
-      });
-
-      const tbody = document.getElementById('stallsTableBody');
-      if (filtered.length === 0) {
-        tbody.innerHTML = `
-          <tr>
-            <td colspan="8" style="text-align:center;color:var(--text-muted);padding:26px;">
-              No stalls match this filter. Use "📝 Add / Update Shop Billing" above to add a client stall or punch an order in the POS!
-            </td>
-          </tr>
-        `;
-        return;
-      }
-
-      tbody.innerHTML = filtered.map(st => {
-        let payBadgeHtml = '';
-        if (st.paymentStatus === 'paid') {
-          payBadgeHtml = `<span class="status-badge paid" data-toggle-pay="${escapeHtml(st.stallId)}" title="Click to toggle payment status">✅ PAID (Rs. ${Number(st.feeAmount || 1500).toLocaleString()})</span>`;
-        } else if (st.paymentStatus === 'trial') {
-          payBadgeHtml = `<span class="status-badge trial" data-toggle-pay="${escapeHtml(st.stallId)}" title="Click to toggle payment status">⏳ TRIAL (Rs. ${Number(st.feeAmount || 1500).toLocaleString()})</span>`;
-        } else {
-          payBadgeHtml = `<span class="status-badge unpaid" data-toggle-pay="${escapeHtml(st.stallId)}" title="Click to toggle payment status">🚨 UNPAID (Rs. ${Number(st.feeAmount || 1500).toLocaleString()} Baqi)</span>`;
-        }
-
-        return `
-          <tr>
-            <td>
-              <div style="display:flex;flex-direction:column;gap:4px;">
-                <div><span class="stall-id-pill">${escapeHtml(st.stallId)}</span></div>
-                <strong style="font-size:13.5px;">${escapeHtml(st.shopName)}</strong>
-                ${st.phone ? `<span style="font-size:11.5px;color:var(--text-muted);">📞 ${escapeHtml(st.phone)}</span>` : ''}
-              </div>
-            </td>
-            <td>${payBadgeHtml}</td>
-            <td>${formatPlanBadge(st)}</td>
-            <td>
-              <div style="font-weight:900;font-size:14px;color:#38BDF8;">Rs. ${st.totalSales.toLocaleString('en-PK')}</div>
-              <div style="font-size:11px;color:var(--text-muted);">
-                💵 ${st.cashSales.toLocaleString()} • 📱 ${st.onlineSales.toLocaleString()} (${st.ordersCount} orders)
-              </div>
-            </td>
-            <td>
-              <div style="font-weight:800;color:#FCA5A5;">Kharcha: Rs. ${st.totalExpenses.toLocaleString('en-PK')}</div>
-              <div style="font-size:11.5px;color:#34D399;font-weight:800;">Net Galla: Rs. ${st.netCash.toLocaleString('en-PK')}</div>
-            </td>
-            <td>
-              <span style="font-size:12px;font-weight:800;color:${st.voidCount > 0 ? '#EF4444' : 'var(--text-muted)'};">
-                ❌ ${st.voidCount} Void
-              </span>
-              <br>
-              <span style="font-size:11.5px;color:var(--text-muted);">🖨️ ${st.reprintCount} Reprint</span>
-            </td>
-            <td style="font-size:12px;color:var(--text-muted);">${formatRelativeTime(st.lastSyncedAt)}</td>
-            <td>
-              <div class="row-actions">
-                <button type="button" class="btn btn-amber" data-make-key="${escapeHtml(st.stallId)}">🔑 Make Key</button>
-                <button type="button" class="btn btn-green" data-wa-remind="${escapeHtml(st.stallId)}">💬 WhatsApp</button>
-                <button type="button" class="btn" data-edit-stall="${escapeHtml(st.stallId)}">✏️ Edit</button>
-                <button type="button" class="btn" data-view-logs="${escapeHtml(st.stallId)}">📊 Logs (${st.logs.length})</button>
-              </div>
-            </td>
-          </tr>
-        `;
-      }).join('');
-    }
-
-    // ============================================================================
-    // 4. EVENT LISTENERS & ACTIONS
-    // ============================================================================
-    document.getElementById('keygenStallIdInput').addEventListener('input', updateKeygenDisplay);
-    document.getElementById('generateKeysBtn').addEventListener('click', () => {
-      const keys = updateKeygenDisplay();
-      showToast(`Generated keys for ${keys.stallId}`);
-    });
-
-    document.querySelectorAll('[data-copy-key]').forEach(btn => {
-      btn.addEventListener('click', () => {
-        const keys = updateKeygenDisplay();
-        const type = btn.dataset.copyKey;
-        const val = type === '30' ? keys.key30Days : (type === '365' ? keys.key1Year : keys.keyLifetime);
-        navigator.clipboard.writeText(val);
-        showToast(`Copied Key: ${val}`);
-      });
-    });
-
-    document.querySelectorAll('[data-wa-key]').forEach(btn => {
-      btn.addEventListener('click', () => {
-        const keys = updateKeygenDisplay();
-        const type = btn.dataset.waKey;
-        const keyVal = type === '30' ? keys.key30Days : (type === '365' ? keys.key1Year : keys.keyLifetime);
-        const planLabel = type === '30' ? '30-Day Monthly' : (type === '365' ? '1-Year Annual' : 'Lifetime Pro');
-        const rawPhone = document.getElementById('keygenWhatsAppPhone').value.replace(/\D/g, '');
-        const cleanPhone = rawPhone.startsWith('0') ? '92' + rawPhone.slice(1) : rawPhone;
-
-        const msg =
-          `*BiteDash POS Activation Key* 🍔🔑\n` +
-          `------------------------------\n` +
-          `*Stall ID:* ${keys.stallId}\n` +
-          `*Plan:* ${planLabel}\n` +
-          `*8-Digit Key:* *${keyVal}*\n` +
-          `------------------------------\n` +
-          `Apni POS app mein ye 8-digit key darj kar ke *Activate* daba dein. Shukriya! — *Hanzla Shahid*`;
-
-        const url = cleanPhone
-          ? `https://wa.me/${cleanPhone}?text=${encodeURIComponent(msg)}`
-          : `https://wa.me/?text=${encodeURIComponent(msg)}`;
-        window.open(url, '_blank', 'noopener');
-      });
-    });
-
-    document.getElementById('saveCrmStallBtn').addEventListener('click', async () => {
-      const rawId = document.getElementById('crmStallId').value.trim().toUpperCase();
-      const digits = parseInt(rawId.replace(/\D/g, ''), 10);
-      if (!digits || digits < 1000 || digits > 9999) {
-        showToast('Enter valid Stall ID like BD-7842');
-        return;
-      }
-      const stallId = `BD-${String(digits).padStart(4, '0').slice(-4)}`;
-      const shopName = document.getElementById('crmShopName').value.trim() || 'Burger Stall';
-      const phone = document.getElementById('crmOwnerPhone').value.trim();
-      const feeAmount = Number(document.getElementById('crmFeeAmount').value) || 1500;
-      const paymentStatus = document.getElementById('crmPaymentStatus').value;
-      const planType = document.getElementById('crmPlanType').value;
-
-      const now = Date.now();
-      let expiryTimestamp = now + 3 * 24 * 60 * 60 * 1000;
-      if (planType === '30d') expiryTimestamp = now + 30 * 24 * 60 * 60 * 1000;
-      if (planType === '1y') expiryTimestamp = now + 365 * 24 * 60 * 60 * 1000;
-      if (planType === 'lifetime') expiryTimestamp = 4102444800000;
-
-      localCrmMap[stallId] = {
-        stallId,
-        shopName,
-        phone,
-        feeAmount,
-        paymentStatus,
-        planType,
-        expiryTimestamp,
-        updatedAt: new Date().toISOString()
-      };
-      saveLocalCrmMap();
-
-      // Also upsert to Supabase `stalls` table
-      try {
-        await fetch(`${SUPABASE_URL}/stalls?on_conflict=stall_id`, {
-          method: 'POST',
-          headers: {
-            'apikey': SUPABASE_ANON_KEY,
-            'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
-            'Prefer': 'resolution=merge-duplicates',
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({
-            stall_id: stallId,
-            shop_name: shopName,
-            last_synced_at: new Date().toISOString()
-          })
-        });
-      } catch (e) {}
-
-      document.getElementById('keygenStallIdInput').value = stallId;
-      document.getElementById('keygenWhatsAppPhone').value = phone;
-      updateKeygenDisplay();
-      renderDashboard();
-      showToast(`Saved ${shopName} (${stallId})!`);
-    });
-
-    document.getElementById('clearCrmFormBtn').addEventListener('click', () => {
-      document.getElementById('crmStallId').value = '';
-      document.getElementById('crmShopName').value = '';
-      document.getElementById('crmOwnerPhone').value = '';
-      document.getElementById('crmFeeAmount').value = '1500';
-      document.getElementById('crmPaymentStatus').value = 'unpaid';
-      document.getElementById('crmPlanType').value = 'trial';
-    });
-
-    document.getElementById('stallFilterPills').addEventListener('click', (e) => {
-      const pill = e.target.closest('.filter-pill');
-      if (!pill) return;
-      activeFilter = pill.dataset.filter || 'all';
-      document.querySelectorAll('#stallFilterPills .filter-pill').forEach(p => {
-        p.classList.toggle('active', p === pill);
-      });
-      renderDashboard();
-    });
-
-    document.getElementById('stallsTableBody').addEventListener('click', (e) => {
-      // 1-Click Payment Status Toggle (Unpaid -> Paid -> Trial)
-      const togglePay = e.target.closest('[data-toggle-pay]');
-      if (togglePay) {
-        const sid = togglePay.dataset.togglePay;
-        const all = computeMergedStallsList();
-        const found = all.find(x => x.stallId === sid);
-        if (!found) return;
-        const nextStatus = found.paymentStatus === 'paid' ? 'unpaid' : 'paid';
-        const nextPlan = nextStatus === 'paid' && found.planType === 'trial' ? '30d' : found.planType;
-        localCrmMap[sid] = {
-          ...(localCrmMap[sid] || found),
-          stallId: sid,
-          shopName: found.shopName,
-          phone: found.phone || '',
-          feeAmount: found.feeAmount || 1500,
-          paymentStatus: nextStatus,
-          planType: nextPlan,
-          expiryTimestamp: nextPlan === '30d' ? Date.now() + 30 * 86400000 : found.expiryTimestamp
-        };
-        saveLocalCrmMap();
-        renderDashboard();
-        showToast(`${sid} marked as ${nextStatus.toUpperCase()}`);
-        return;
-      }
-
-      // 1-Click Load into Keygen
-      const makeKeyBtn = e.target.closest('[data-make-key]');
-      if (makeKeyBtn) {
-        const sid = makeKeyBtn.dataset.makeKey;
-        const all = computeMergedStallsList();
-        const found = all.find(x => x.stallId === sid);
-        document.getElementById('keygenStallIdInput').value = sid;
-        document.getElementById('keygenWhatsAppPhone').value = (found && found.phone) ? found.phone : '';
-        const keys = updateKeygenDisplay();
-        window.scrollTo({ top: 0, behavior: 'smooth' });
-        showToast(`Keys ready for ${sid}: 30d = ${keys.key30Days}`);
-        return;
-      }
-
-      // 1-Click WhatsApp Payment Reminder or Key
-      const waBtn = e.target.closest('[data-wa-remind]');
-      if (waBtn) {
-        const sid = waBtn.dataset.waRemind;
-        const all = computeMergedStallsList();
-        const found = all.find(x => x.stallId === sid);
-        if (!found) return;
-        const keys = generateKeysForStallId(sid);
-        const rawPhone = String(found.phone || '').replace(/\D/g, '');
-        const cleanPhone = rawPhone.startsWith('0') ? '92' + rawPhone.slice(1) : rawPhone;
-
-        let msg = '';
-        if (found.paymentStatus === 'unpaid') {
-          msg =
-            `Assalam-o-Alaikum *${found.shopName}*!\n` +
-            `Aap ke BiteDash POS (*Stall ID: ${sid}*) ki monthly subscription fee *Rs. ${found.feeAmount || 1500}* pending hai.\n` +
-            `Meharbani farma kar EasyPaisa/JazzCash par payment bhej dein taake aap ki nayi Activation Key jari ki ja sake.\n` +
-            `— *Hanzla Shahid*`;
-        } else {
-          msg =
-            `Assalam-o-Alaikum *${found.shopName}*!\n` +
-            `Payment mosool ho gayi hai. Aap ke BiteDash POS (*${sid}*) ki 30-Day Activation Key ye hai:\n` +
-            `🔑 *${keys.key30Days}*\n` +
-            `— *Hanzla Shahid*`;
-        }
-
-        const url = cleanPhone
-          ? `https://wa.me/${cleanPhone}?text=${encodeURIComponent(msg)}`
-          : `https://wa.me/?text=${encodeURIComponent(msg)}`;
-        window.open(url, '_blank', 'noopener');
-        return;
-      }
-
-      // Edit Stall in CRM Form
-      const editBtn = e.target.closest('[data-edit-stall]');
-      if (editBtn) {
-        const sid = editBtn.dataset.editStall;
-        const all = computeMergedStallsList();
-        const found = all.find(x => x.stallId === sid);
-        if (!found) return;
-        document.getElementById('crmStallId').value = found.stallId;
-        document.getElementById('crmShopName').value = found.shopName;
-        document.getElementById('crmOwnerPhone').value = found.phone || '';
-        document.getElementById('crmFeeAmount').value = found.feeAmount || 1500;
-        document.getElementById('crmPaymentStatus').value = found.paymentStatus || 'unpaid';
-        document.getElementById('crmPlanType').value = found.planType || 'trial';
-        window.scrollTo({ top: 0, behavior: 'smooth' });
-        return;
-      }
-
-      // View Sync Logs Modal
-      const logsBtn = e.target.closest('[data-view-logs]');
-      if (logsBtn) {
-        const sid = logsBtn.dataset.viewLogs;
-        const all = computeMergedStallsList();
-        const found = all.find(x => x.stallId === sid);
-        if (!found) return;
-        const modal = document.getElementById('stallLogsModal');
-        document.getElementById('stallLogsModalTitle').textContent =
-          `📊 ${found.shopName} (${found.stallId}) — Synced Batches (${found.logs.length})`;
-        const body = document.getElementById('stallLogsModalBody');
-
-        if (found.logs.length === 0) {
-          body.innerHTML = `<div style="color:var(--text-muted);padding:16px;">No cloud sync batches received from this stall yet.</div>`;
-        } else {
-          body.innerHTML = found.logs.map(lg => `
-            <div style="background:#090D16;border:1px solid var(--border-light);border-radius:10px;padding:12px;">
-              <div style="display:flex;justify-content:space-between;margin-bottom:6px;font-size:12px;">
-                <strong>🕒 ${new Date(lg.created_at).toLocaleString()}</strong>
-                <span style="color:#38BDF8;font-weight:800;">Sales: Rs. ${Number(lg.total_sales || 0).toLocaleString()} (${lg.orders_count || 0} orders)</span>
-              </div>
-              <div style="font-size:12px;color:var(--text-muted);">
-                💵 Cash: Rs. ${Number(lg.cash_sales || 0).toLocaleString()} |
-                📱 Online: Rs. ${Number(lg.online_sales || 0).toLocaleString()} |
-                💸 Kharcha: Rs. ${Number(lg.total_expenses || 0).toLocaleString()} |
-                💰 Net Galla: Rs. ${Number(lg.net_cash || 0).toLocaleString()} |
-                ❌ Voids: ${lg.void_count || 0} | 🖨️ Reprints: ${lg.reprint_count || 0}
-              </div>
-            </div>
-          `).join('');
-        }
-        modal.classList.add('open');
-      }
-    });
-
-    document.getElementById('closeStallLogsModalBtn').addEventListener('click', () => {
-      document.getElementById('stallLogsModal').classList.remove('open');
-    });
-
-    document.getElementById('refreshSupabaseBtn').addEventListener('click', fetchSupabaseData);
-
-    document.getElementById('toggleSqlModalBtn').addEventListener('click', () => {
-      document.getElementById('sqlSetupBanner').classList.toggle('show');
-    });
-
-    document.getElementById('copySqlBtn').addEventListener('click', () => {
-      navigator.clipboard.writeText(SUPABASE_SETUP_SQL);
-      showToast('✅ Supabase SQL Copied! Paste in Supabase SQL Editor & click RUN.');
-    });
-
-    // PIN Gate Logic
-    function checkUnlockGate() {
-      if (sessionStorage.getItem(ADMIN_UNLOCKED_SESSION_KEY) === '1') {
-        document.getElementById('adminLockOverlay').classList.add('unlocked');
-      }
-    }
-
-    function attemptUnlock() {
-      const val = document.getElementById('adminPinInput').value.trim();
-      if (MASTER_ADMIN_PINS.includes(val)) {
-        sessionStorage.setItem(ADMIN_UNLOCKED_SESSION_KEY, '1');
-        document.getElementById('adminLockOverlay').classList.add('unlocked');
-        document.getElementById('adminPinError').textContent = '';
+    // On page load check session
+    window.addEventListener('DOMContentLoaded', () => {
+      if (sessionStorage.getItem(AUTH_SESSION_KEY) === 'true') {
+        document.getElementById('authGate').classList.add('hidden');
+        document.getElementById('mainPortal').classList.remove('hidden');
+        initDashboard();
       } else {
-        document.getElementById('adminPinError').textContent = '❌ Invalid Super-Admin PIN (Try 9999)';
+        document.getElementById('authPinInput').focus();
       }
-    }
-
-    document.getElementById('unlockAdminBtn').addEventListener('click', attemptUnlock);
-    document.getElementById('adminPinInput').addEventListener('keydown', (e) => {
-      if (e.key === 'Enter') attemptUnlock();
-    });
-    document.getElementById('lockAdminBtn').addEventListener('click', () => {
-      sessionStorage.removeItem(ADMIN_UNLOCKED_SESSION_KEY);
-      document.getElementById('adminPinInput').value = '';
-      document.getElementById('adminLockOverlay').classList.remove('unlocked');
-    });
-
-    window.addEventListener('load', () => {
-      checkUnlockGate();
-      loadLocalCrmMap();
-      updateKeygenDisplay();
-      fetchSupabaseData();
     });
   </script>
 </body>
