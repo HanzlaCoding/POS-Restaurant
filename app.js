@@ -632,6 +632,7 @@ function saveOrdersToday() {
 // 6. ORDER ENTRY & PUNCH LOGIC
 // ============================================================================
 function incrementItem(id) {
+  if (typeof playTapSound === 'function') playTapSound();
   if (isPrinting) return;
   const current = state.cart[id] || 0;
   if (current >= 99) return;
@@ -642,6 +643,7 @@ function incrementItem(id) {
 }
 
 function decrementItem(id) {
+  if (typeof playTapSound === 'function') playTapSound();
   if (isPrinting) return;
   const current = state.cart[id] || 0;
   if (current <= 0) return;
@@ -746,6 +748,7 @@ function recordConfirmedOrderToHisaab(printedToken) {
 }
 
 function completeOrderAndAdvanceToken() {
+  if (typeof playSuccessChime === 'function') playSuccessChime();
   const printedToken = state.token;
   recordConfirmedOrderToHisaab(printedToken);
   state.cart = {};
@@ -766,6 +769,7 @@ function completeOrderAndAdvanceToken() {
 }
 
 function setPaymentMode(mode) {
+  if (typeof playTapSound === 'function') playTapSound();
   state.paymentMode = mode === 'online' ? 'online' : 'cash';
   syncPaymentModeToggleUI();
 }
@@ -964,9 +968,17 @@ function computeHisaabSummary() {
   let totalRevenue = 0;
   let cashSales = 0;
   let onlineSales = 0;
+  let computedVoidedCount = 0;
+  let computedVoidedAmt = 0;
   const itemMap = new Map();
 
   (state.ordersToday || []).forEach(order => {
+    if (order.voided || order.status === 'voided') {
+      computedVoidedCount += 1;
+      computedVoidedAmt += Number(order.total) || 0;
+      return;
+    }
+
     totalOrders += 1;
     const orderTotal = Number(order.total) || 0;
     totalRevenue += orderTotal;
@@ -1009,8 +1021,8 @@ function computeHisaabSummary() {
     netCashInDrawer,
     expensesList: expenses,
     topItems,
-    voidedOrdersCount: (state.audit && state.audit.voidedOrdersCount) || 0,
-    voidedOrdersAmount: (state.audit && state.audit.voidedOrdersAmount) || 0,
+    voidedOrdersCount: Math.max((state.audit && state.audit.voidedOrdersCount) || 0, computedVoidedCount),
+    voidedOrdersAmount: Math.max((state.audit && state.audit.voidedOrdersAmount) || 0, computedVoidedAmt),
     reprintCount: (state.audit && state.audit.reprintCount) || 0,
     currentToken: state.token
   };
@@ -1579,6 +1591,20 @@ function buildLocalKotEscPosBytes(orderData) {
   const shopName = (shopConfig.shopName || 'STUDENT BURGER').toUpperCase();
   appendLine(shopName.slice(0, 32));
   appendBytes(CMD.FONT_BOLD_OFF);
+
+  // Prominent Watermark Banner if DUPLICATE or VOIDED
+  const isVoidedOrder = Boolean(orderData.isVoided || orderData.voided || orderData.status === 'voided');
+  const isDuplicateOrder = Boolean(orderData.isDuplicate || orderData.isReprint || orderData.duplicate);
+
+  if (isVoidedOrder) {
+    appendBytes(CMD.FONT_BOLD_ON);
+    appendLine('*** VOIDED ORDER (CANCELLED) ***');
+    appendBytes(CMD.FONT_BOLD_OFF);
+  } else if (isDuplicateOrder) {
+    appendBytes(CMD.FONT_BOLD_ON);
+    appendLine('*** DUPLICATE RECEIPT ***');
+    appendBytes(CMD.FONT_BOLD_OFF);
+  }
   appendLine(DIVIDER_DASH);
 
   // 2. Token (Centered Hero Section for Kitchen - Double Height & Width)
@@ -1597,8 +1623,14 @@ function buildLocalKotEscPosBytes(orderData) {
   const isOnline = orderData.paymentMode === 'online' || String(orderData.paymentMode).toLowerCase() === 'online';
   const payLabel = isOnline ? 'PAYMENT: ONLINE' : 'PAYMENT: CASH';
   appendLine(payLabel);
-  if (orderData.isReprint) {
-    appendLine('*** DUPLICATE / REPRINT ***');
+  if (isVoidedOrder) {
+    appendBytes(CMD.FONT_BOLD_ON);
+    appendLine('STATUS: VOIDED (BY OWNER)');
+    appendBytes(CMD.FONT_BOLD_OFF);
+  } else if (isDuplicateOrder) {
+    appendBytes(CMD.FONT_BOLD_ON);
+    appendLine('COPY: DUPLICATE / REPRINT');
+    appendBytes(CMD.FONT_BOLD_OFF);
   }
   appendLine(DIVIDER_EQUAL);
 
@@ -3447,6 +3479,10 @@ window.addEventListener('keydown', (e) => {
       closeSettingsModal();
       return;
     }
+    if (typeof orderHistoryModal !== 'undefined' && orderHistoryModal && orderHistoryModal.classList.contains('open')) {
+      closeOrderHistoryModal();
+      return;
+    }
     if (hisaabModal.classList.contains('open')) {
       closeHisaabModal();
       return;
@@ -3467,7 +3503,8 @@ window.addEventListener('keydown', (e) => {
     expenseModal.classList.contains('open') ||
     printerModal.classList.contains('open') ||
     hisaabModal.classList.contains('open') ||
-    settingsModal.classList.contains('open')
+    settingsModal.classList.contains('open') ||
+    (typeof orderHistoryModal !== 'undefined' && orderHistoryModal && orderHistoryModal.classList.contains('open'))
   ) {
     return;
   }
@@ -3573,3 +3610,252 @@ window.onAppUpdated = function() {
     }
   }
 };
+
+
+// ============================================================================
+// 17. SECURE ORDER HISTORY & ANTI-THEFT VOID SYSTEM
+// ============================================================================
+const orderHistoryModal = document.getElementById('orderHistoryModal');
+const openOrderHistoryBtn = document.getElementById('openOrderHistoryBtn');
+const closeOrderHistoryModalBtn = document.getElementById('closeOrderHistoryModalBtn');
+const historySearchInput = document.getElementById('historySearchInput');
+const historyOrdersList = document.getElementById('historyOrdersList');
+const historyTotalOrdersCount = document.getElementById('historyTotalOrdersCount');
+const historyTotalSalesAmount = document.getElementById('historyTotalSalesAmount');
+const historyVoidedCount = document.getElementById('historyVoidedCount');
+
+function openOrderHistoryModal() {
+  if (typeof playTapSound === 'function') playTapSound();
+  if (historySearchInput) historySearchInput.value = '';
+  renderOrderHistoryList('');
+  if (orderHistoryModal) orderHistoryModal.classList.add('open');
+}
+
+function closeOrderHistoryModal() {
+  if (orderHistoryModal) orderHistoryModal.classList.remove('open');
+}
+
+function renderOrderHistoryList(searchFilter = '') {
+  if (!historyOrdersList) return;
+
+  const orders = state.ordersToday || [];
+  const q = String(searchFilter || '').trim().toLowerCase();
+
+  let activeCount = 0;
+  let activeSales = 0;
+  let voidedCount = 0;
+
+  orders.forEach(o => {
+    if (o.voided || o.status === 'voided') {
+      voidedCount++;
+    } else {
+      activeCount++;
+      activeSales += Number(o.total) || 0;
+    }
+  });
+
+  if (historyTotalOrdersCount) historyTotalOrdersCount.textContent = orders.length;
+  if (historyTotalSalesAmount) historyTotalSalesAmount.textContent = `Rs. ${activeSales.toLocaleString('en-PK')}`;
+  if (historyVoidedCount) historyVoidedCount.textContent = voidedCount;
+
+  const filtered = orders.filter(o => {
+    if (!q) return true;
+    const tokenStr = String(o.token || '').padStart(3, '0');
+    if (tokenStr.includes(q)) return true;
+    if (o.customer && String(o.customer).toLowerCase().includes(q)) return true;
+    if (Array.isArray(o.items)) {
+      return o.items.some(it => (it.name && it.name.toLowerCase().includes(q)) || (it.urdu && it.urdu.includes(q)));
+    }
+    return false;
+  });
+
+  if (filtered.length === 0) {
+    historyOrdersList.innerHTML = `<div style="text-align:center;padding:36px 12px;color:#71717A;font-style:italic;font-size:13px;">
+      ${orders.length === 0 ? 'آج کا کوئی آرڈر ریکارڈ نہیں ہوا (No orders today yet)' : 'کوئی آرڈر نہیں ملا (No matching orders found)'}
+    </div>`;
+    return;
+  }
+
+  // Reverse so latest order appears first
+  const sorted = [...filtered].reverse();
+
+  historyOrdersList.innerHTML = sorted.map(order => {
+    const isVoided = Boolean(order.voided || order.status === 'voided');
+    const isOnline = order.paymentMode === 'online';
+    const tokenDisplay = `#${String(order.token || 1).padStart(3, '0')}`;
+    const timeDisplay = order.time || formatTime12Hour(new Date(order.timestamp || Date.now()));
+    const totalDisplay = `Rs. ${Number(order.total || 0).toLocaleString('en-PK')}`;
+
+    const itemsSummary = (order.items || []).map(it => {
+      const name = it.name || it.urdu || 'Item';
+      const qty = it.qty || it.quantity || 1;
+      return `${escapeHtml(name)} <strong style="color:#F59E0B;">x${qty}</strong>`;
+    }).join(', ');
+
+    return `
+      <div class="history-order-card ${isVoided ? 'voided' : ''}" data-token="${order.token}">
+        <div class="history-card-top">
+          <div style="display:flex;align-items:center;">
+            <span class="history-card-token">TOKEN ${tokenDisplay}</span>
+            <span class="history-card-time">${timeDisplay}</span>
+          </div>
+          <div>
+            ${isVoided 
+              ? '<span class="history-badge voided">⛔ VOIDED</span>'
+              : (isOnline ? '<span class="history-badge online">ONLINE</span>' : '<span class="history-badge cash">CASH</span>')
+            }
+          </div>
+        </div>
+        ${order.customer ? `<div style="font-size:11px;color:#94A3B8;">👤 ${escapeHtml(order.customer)}</div>` : ''}
+        <div class="history-card-items">${itemsSummary}</div>
+        <div class="history-card-footer">
+          <span class="history-card-total">${totalDisplay}</span>
+          <div class="history-card-actions">
+            ${isVoided ? `
+              <button type="button" class="btn-history-reprint" data-action="reprint" data-token="${order.token}" title="Reprint Void Slip">
+                🖨️ Void Slip
+              </button>
+            ` : `
+              <button type="button" class="btn-history-reprint" data-action="reprint" data-token="${order.token}" title="Print Duplicate Copy">
+                🖨️ Duplicate
+              </button>
+              <button type="button" class="btn-history-void" data-action="void" data-token="${order.token}" title="Void Order (Requires Owner PIN)">
+                ⛔ Void
+              </button>
+            `}
+          </div>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+async function printDuplicateOrder(token) {
+  if (typeof playTapSound === 'function') playTapSound();
+
+  const order = (state.ordersToday || []).find(o => Number(o.token) === Number(token));
+  if (!order) {
+    showToast('Order not found', 'error');
+    return;
+  }
+
+  const reprintPayload = {
+    ...order,
+    isDuplicate: true,
+    isReprint: true
+  };
+
+  state.audit.reprintCount = Number(state.audit.reprintCount || 0) + 1;
+  saveAuditState();
+
+  const asciiBytes = typeof PrinterHelper !== 'undefined' && PrinterHelper.buildKotEscPosBytes
+    ? PrinterHelper.buildKotEscPosBytes(reprintPayload, shopConfig)
+    : buildLocalKotEscPosBytes(reprintPayload);
+
+  const bridge = window.AndroidPOSBridge;
+  isPrinting = true;
+  try {
+    if (bridge && typeof bridge.isNative === 'function' && bridge.isNative()) {
+      const res = await bridge.sendEscPosBytes(asciiBytes);
+      if (!res || res.status !== 'SUCCESS') {
+        throw new Error((res && res.error) || 'Printer rejected print job');
+      }
+    } else if (bleCharacteristic) {
+      await sendBytesOverWebBluetooth(asciiBytes);
+    } else {
+      throw new Error('Printer disconnected');
+    }
+    if (typeof playSuccessChime === 'function') playSuccessChime();
+    showToast(`🖨️ Duplicate copy printed for Token #${String(order.token).padStart(3, '0')}`, 'success');
+  } catch (err) {
+    if (typeof playWarningBuzzer === 'function') playWarningBuzzer();
+    showToast(getFriendlyPrinterErrorMessage(err), 'error');
+  } finally {
+    isPrinting = false;
+    await syncPrinterStatusFromBridge();
+  }
+}
+
+function promptVoidOrder(token) {
+  if (typeof playTapSound === 'function') playTapSound();
+
+  const order = (state.ordersToday || []).find(o => Number(o.token) === Number(token));
+  if (!order) {
+    showToast('Order not found', 'error');
+    return;
+  }
+
+  if (order.voided || order.status === 'voided') {
+    showToast(`Token #${String(token).padStart(3, '0')} pehle se VOID ho chuka hai!`, 'default');
+    return;
+  }
+
+  // Anti-Theft Security: Cashier CANNOT void an order without Owner PIN
+  requireOwnerPin(() => {
+    executeVoidOrder(token);
+  }, `Enter 4-digit Owner PIN to VOID Token #${String(token).padStart(3, '0')}`);
+}
+
+function executeVoidOrder(token) {
+  const order = (state.ordersToday || []).find(o => Number(o.token) === Number(token));
+  if (!order) return;
+
+  order.voided = true;
+  order.status = 'voided';
+  order.voidedAt = Date.now();
+  order.voidedBy = 'owner';
+
+  state.audit = state.audit || {};
+  state.audit.voidedOrdersCount = Number(state.audit.voidedOrdersCount || 0) + 1;
+  state.audit.voidedOrdersAmount = Number(state.audit.voidedOrdersAmount || 0) + (Number(order.total) || 0);
+
+  saveOrdersToday();
+  saveAuditState();
+  savePersistedState();
+
+  enqueueCloudSyncRecord('order_void', {
+    token: order.token,
+    sync_id: order.sync_id,
+    voidedAt: order.voidedAt,
+    voidedBy: order.voidedBy
+  });
+  scheduleDebouncedCloudSync();
+
+  if (typeof playWarningBuzzer === 'function') playWarningBuzzer();
+  showToast(`⛔ Token #${String(order.token).padStart(3, '0')} (Rs. ${order.total}) VOIDED!`, 'warning');
+
+  renderOrderHistoryList(historySearchInput ? historySearchInput.value : '');
+  updateUI();
+}
+
+if (openOrderHistoryBtn) {
+  openOrderHistoryBtn.addEventListener('click', openOrderHistoryModal);
+}
+if (closeOrderHistoryModalBtn) {
+  closeOrderHistoryModalBtn.addEventListener('click', closeOrderHistoryModal);
+}
+if (orderHistoryModal) {
+  orderHistoryModal.addEventListener('click', (e) => {
+    if (e.target === orderHistoryModal) closeOrderHistoryModal();
+  });
+}
+if (historySearchInput) {
+  historySearchInput.addEventListener('input', (e) => {
+    renderOrderHistoryList(e.target.value);
+  });
+}
+if (historyOrdersList) {
+  historyOrdersList.addEventListener('click', (e) => {
+    const btn = e.target.closest('button[data-action]');
+    if (!btn) return;
+    const action = btn.dataset.action;
+    const token = Number(btn.dataset.token);
+    if (!token) return;
+
+    if (action === 'reprint') {
+      printDuplicateOrder(token);
+    } else if (action === 'void') {
+      promptVoidOrder(token);
+    }
+  });
+}

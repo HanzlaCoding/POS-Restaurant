@@ -31,20 +31,13 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
 /**
- * BiteDash POS - Main Android Host Activity with Silent In-App Hot Updates (OTA).
+ * BiteDash POS - Main Android Host Activity with Capacitor-Native Silent Hot Updates (OTA).
  *
- * Architecture:
- * 1. Internal Writable Web Directory:
- *    Instead of read-only apk assets, the WebView loads from an internal writable
- *    sandbox directory (getFilesDir()/www/). On first launch, APK assets/public are
- *    copied here automatically.
- * 2. Silent OTA Update Checker:
- *    A non-blocking background thread queries the remote version endpoint. When a higher
- *    version_code is available, it downloads the zip bundle, safely unzips and overwrites
- *    local files, updates SharedPreferences, and triggers window.onAppUpdated() in WebView.
- * 3. Native Hardware Bridge:
- *    Exposes AndroidBridge & Android interfaces to JavaScript before loading so thermal
- *    printer and system Bluetooth settings remain 100% accessible.
+ * Uses Capacitor's official bridge.setServerBasePath() API:
+ * 1. Serves from https://localhost/ (eliminates FileUriExposedException and CORS issues).
+ * 2. If an OTA update bundle exists in getFilesDir()/www, Capacitor serves from it.
+ * 3. Background thread checks Supabase OTA endpoint silently and unzips hot updates.
+ * 4. Preserves 100% compatibility with Bluetooth thermal printer & native plugins.
  */
 public class MainActivity extends BridgeActivity {
 
@@ -66,108 +59,41 @@ public class MainActivity extends BridgeActivity {
         if (this.bridge != null && this.bridge.getWebView() != null) {
             WebView webView = this.bridge.getWebView();
 
-            // 1. Hardware Acceleration for smooth POS UI rendering
+            // 1. Hardware acceleration for smooth POS UI rendering
             webView.setLayerType(View.LAYER_TYPE_HARDWARE, null);
 
-            // 2. Configure WebSettings for local writable sandbox execution
+            // 2. Configure WebSettings
             WebSettings settings = webView.getSettings();
             settings.setJavaScriptEnabled(true);
             settings.setDomStorageEnabled(true);
             settings.setDatabaseEnabled(true);
             settings.setCacheMode(WebSettings.LOAD_DEFAULT);
-            settings.setAllowFileAccess(true);
-            settings.setAllowContentAccess(true);
-            settings.setAllowFileAccessFromFileURLs(true);
-            settings.setAllowUniversalAccessFromFileURLs(true);
 
-            // 3. Ensure hardware bridge is bound BEFORE loading
+            // 3. Ensure hardware bridge is bound before loading
             BluetoothPrinterBridge printerBridge = new BluetoothPrinterBridge(this);
             webView.addJavascriptInterface(printerBridge, "AndroidBridge");
             webView.addJavascriptInterface(this, "Android");
 
-            // 4. Initialize writable web directory (getFilesDir()/www)
+            // 4. Capacitor-native local server path handling
             File localWebDir = new File(getFilesDir(), "www");
-            ensureLocalWebDirInitialized(localWebDir);
-
-            // 5. Load WebView from the writable local directory
             File indexFile = new File(localWebDir, "index.html");
+
             if (indexFile.exists()) {
-                String localUrl = "file://" + indexFile.getAbsolutePath();
-                Log.i(TAG, "Loading local writable WebView from: " + localUrl);
-                webView.loadUrl(localUrl);
+                Log.i(TAG, "OTA bundle found in local storage. Serving from: " + localWebDir.getAbsolutePath());
+                this.bridge.setServerBasePath(localWebDir.getAbsolutePath());
             } else {
-                Log.w(TAG, "index.html missing in localWebDir! Falling back to bundled assets.");
-                webView.loadUrl("file:///android_asset/public/index.html");
+                Log.i(TAG, "No OTA bundle downloaded yet. Serving bundled APK assets.");
             }
 
-            // 6. Trigger silent OTA update check on background thread
+            // 5. Trigger silent OTA update check on background thread
             checkForSilentOtaUpdate(webView, localWebDir);
-        }
-    }
-
-    /**
-     * Copies all assets from APK assets/public to the writable localWebDir
-     * if it has not yet been initialized or if index.html is missing.
-     */
-    private void ensureLocalWebDirInitialized(File localWebDir) {
-        File indexHtml = new File(localWebDir, "index.html");
-        if (!localWebDir.exists() || !indexHtml.exists()) {
-            Log.i(TAG, "First run: extracting bundled assets/public to writable www directory...");
-            localWebDir.mkdirs();
-            try {
-                copyAssetFolder("public", localWebDir);
-                Log.i(TAG, "Bundled assets extracted successfully to: " + localWebDir.getAbsolutePath());
-            } catch (Exception e) {
-                Log.e(TAG, "Error copying assets to writable www directory", e);
-            }
-        }
-    }
-
-    /**
-     * Recursively copies an Android asset directory into a target file directory.
-     */
-    private void copyAssetFolder(String srcAssetPath, File destDir) throws IOException {
-        String[] files = getAssets().list(srcAssetPath);
-        if (files == null || files.length == 0) {
-            // It is a file: copy directly
-            copyAssetFile(srcAssetPath, destDir);
-        } else {
-            if (!destDir.exists()) {
-                destDir.mkdirs();
-            }
-            for (String file : files) {
-                String subSrc = srcAssetPath.isEmpty() ? file : (srcAssetPath + "/" + file);
-                File subDest = new File(destDir, file);
-                String[] subList = getAssets().list(subSrc);
-                if (subList != null && subList.length > 0) {
-                    copyAssetFolder(subSrc, subDest);
-                } else {
-                    copyAssetFile(subSrc, subDest);
-                }
-            }
-        }
-    }
-
-    private void copyAssetFile(String assetFilePath, File destFile) throws IOException {
-        File parent = destFile.getParentFile();
-        if (parent != null && !parent.exists()) {
-            parent.mkdirs();
-        }
-        try (InputStream in = getAssets().open(assetFilePath);
-             OutputStream out = new FileOutputStream(destFile)) {
-            byte[] buffer = new byte[8192];
-            int read;
-            while ((read = in.read(buffer)) != -1) {
-                out.write(buffer, 0, read);
-            }
-            out.flush();
         }
     }
 
     /**
      * Silent background OTA update worker.
      * Queries remote version, downloads zip bundle, extracts over localWebDir,
-     * updates SharedPreferences, and alerts frontend via window.onAppUpdated().
+     * updates SharedPreferences, and switches Capacitor base path seamlessly.
      */
     private void checkForSilentOtaUpdate(WebView webView, File localWebDir) {
         new Thread(() -> {
@@ -181,7 +107,7 @@ public class MainActivity extends BridgeActivity {
                 }
 
                 if (OTA_VERSION_URL == null || OTA_VERSION_URL.contains("your-api-or-supabase.com")) {
-                    Log.d(TAG, "OTA: Default placeholder URL detected. Skipping remote fetch until endpoint is configured.");
+                    Log.d(TAG, "OTA: Default placeholder URL detected. Skipping remote fetch.");
                     return;
                 }
 
@@ -235,8 +161,16 @@ public class MainActivity extends BridgeActivity {
                     prefs.edit().putInt(KEY_BUNDLE_VERSION, remoteVersion).apply();
                     Log.i(TAG, "OTA: Hot update to version " + remoteVersion + " successful!");
 
-                    // Post update notification to WebView on UI thread
-                    webView.post(() -> {
+                    // Switch Capacitor base path to localWebDir and notify frontend
+                    runOnUiThread(() -> {
+                        try {
+                            if (this.bridge != null) {
+                                this.bridge.setServerBasePath(localWebDir.getAbsolutePath());
+                            }
+                        } catch (Exception e) {
+                            Log.e(TAG, "Failed to switch server base path", e);
+                        }
+
                         webView.evaluateJavascript(
                             "if (window.onAppUpdated && typeof window.onAppUpdated === 'function') { window.onAppUpdated(); }",
                             null
@@ -244,7 +178,7 @@ public class MainActivity extends BridgeActivity {
                     });
                 }
             } catch (Exception e) {
-                Log.w(TAG, "OTA: Silent check/update encountered a non-fatal exception: " + e.getMessage());
+                Log.w(TAG, "OTA: Silent check/update encountered non-fatal error: " + e.getMessage());
             }
         }).start();
     }
@@ -287,7 +221,9 @@ public class MainActivity extends BridgeActivity {
             ZipEntry entry;
             byte[] buffer = new byte[8192];
             while ((entry = zis.getNextEntry()) != null) {
-                File targetFile = new File(targetDir, entry.getName());
+                // Normalize Windows backslashes to forward slashes if any
+                String normalizedName = entry.getName().replace('\\', '/');
+                File targetFile = new File(targetDir, normalizedName);
                 String canonicalTarget = targetFile.getCanonicalPath();
 
                 // Zip Slip protection
@@ -364,7 +300,7 @@ public class MainActivity extends BridgeActivity {
 
         @JavascriptInterface
         public String getBridgeVersion() {
-            return "2.2.0-silent-ota";
+            return "2.3.0-capacitor-ota";
         }
 
         @JavascriptInterface

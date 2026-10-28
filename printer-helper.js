@@ -140,6 +140,20 @@
     const shopName = (cfg.shopName || 'STUDENT BURGER').toUpperCase();
     appendLine(shopName.slice(0, 32));
     appendBytes(CMD.FONT_BOLD_OFF);
+
+    // Prominent Watermark Banner if DUPLICATE or VOIDED
+    const isVoidedOrder = Boolean(orderData.isVoided || orderData.voided || orderData.status === 'voided');
+    const isDuplicateOrder = Boolean(orderData.isDuplicate || orderData.isReprint || orderData.duplicate);
+
+    if (isVoidedOrder) {
+      appendBytes(CMD.FONT_BOLD_ON);
+      appendLine('*** VOIDED ORDER (CANCELLED) ***');
+      appendBytes(CMD.FONT_BOLD_OFF);
+    } else if (isDuplicateOrder) {
+      appendBytes(CMD.FONT_BOLD_ON);
+      appendLine('*** DUPLICATE RECEIPT ***');
+      appendBytes(CMD.FONT_BOLD_OFF);
+    }
     appendLine(DIVIDER_DASH);
 
     // 2. Token (Centered Hero Section for Kitchen - Double Height & Width)
@@ -157,8 +171,14 @@
     }
     const isOnline = orderData.paymentMode === 'online' || String(orderData.paymentMode).toLowerCase() === 'online';
     appendLine(isOnline ? 'PAYMENT: ONLINE' : 'PAYMENT: CASH');
-    if (orderData.isReprint) {
-      appendLine('*** DUPLICATE / REPRINT ***');
+    if (isVoidedOrder) {
+      appendBytes(CMD.FONT_BOLD_ON);
+      appendLine('STATUS: VOIDED (BY OWNER)');
+      appendBytes(CMD.FONT_BOLD_OFF);
+    } else if (isDuplicateOrder) {
+      appendBytes(CMD.FONT_BOLD_ON);
+      appendLine('COPY: DUPLICATE / REPRINT');
+      appendBytes(CMD.FONT_BOLD_OFF);
     }
     appendLine(DIVIDER_EQUAL);
 

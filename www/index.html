@@ -181,10 +181,13 @@
     }
 
     @keyframes pulse-reconnecting {
-      0%, 100% {
+
+      0%,
+      100% {
         opacity: 1;
         box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.4);
       }
+
       50% {
         opacity: 0.85;
         box-shadow: 0 0 0 4px rgba(245, 158, 11, 0.15);
@@ -199,7 +202,8 @@
       color: #FFFFFF !important;
     }
 
-    /* Square #18181B button with gear icon (34x34px, rounded-lg) */
+    /* Square #18181B buttons in header (34x34px, rounded-lg) */
+    .header-icon-btn,
     .owner-gear-btn {
       appearance: none;
       border: 1px solid #27272A;
@@ -217,6 +221,7 @@
       transition: transform 0.08s ease, background 0.12s ease;
     }
 
+    .header-icon-btn:active,
     .owner-gear-btn:active {
       transform: scale(0.92);
       background: #27272A;
@@ -1764,6 +1769,269 @@
       color: #71717A;
       text-align: center;
       padding: 8px 0;
+    }
+
+    /* ========================================================================
+       ORDER HISTORY & ANTI-THEFT VOID BOTTOM SHEET MODAL
+       ======================================================================== */
+    #orderHistoryModal.modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.8);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+      z-index: 9999;
+    }
+
+    #orderHistoryModal.modal-backdrop.open {
+      display: flex !important;
+    }
+
+    #orderHistoryModal .modal-sheet {
+      width: 100%;
+      max-width: 460px;
+      max-height: 90vh;
+      max-height: 90dvh;
+      background: #121214;
+      color: #F8FAFC;
+      border: 1px solid #27272A;
+      border-radius: 20px;
+      padding: 18px;
+      display: flex;
+      flex-direction: column;
+      gap: 0;
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.85);
+      overflow: hidden;
+      box-sizing: border-box;
+      animation: hisaabModalIn 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .history-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding-bottom: 12px;
+      border-bottom: 1px solid #27272A;
+      margin-bottom: 10px;
+    }
+
+    .history-summary-bar {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 10px;
+    }
+
+    .history-summary-chip {
+      flex: 1;
+      background: #18181B;
+      border: 1px solid #27272A;
+      border-radius: 10px;
+      padding: 8px 10px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .history-summary-chip .chip-label {
+      font-size: 10px;
+      font-weight: 700;
+      color: #71717A;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+    }
+
+    .history-summary-chip .chip-val {
+      font-size: 14px;
+      font-weight: 900;
+      color: #F8FAFC;
+      margin-top: 2px;
+    }
+
+    .history-summary-chip.voided .chip-val {
+      color: #EF4444;
+    }
+
+    .history-search-input {
+      width: 100%;
+      background: #18181B;
+      border: 1px solid #27272A;
+      border-radius: 10px;
+      color: #F8FAFC;
+      padding: 8px 12px;
+      font-size: 13px;
+      margin-bottom: 10px;
+      box-sizing: border-box;
+      outline: none;
+      transition: border-color 0.15s ease;
+    }
+
+    .history-search-input:focus {
+      border-color: #F59E0B;
+    }
+
+    .history-list {
+      flex: 1;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      padding-right: 2px;
+      min-height: 140px;
+      max-height: 52vh;
+    }
+
+    .history-list::-webkit-scrollbar {
+      width: 5px;
+    }
+
+    .history-list::-webkit-scrollbar-thumb {
+      background: #27272A;
+      border-radius: 4px;
+    }
+
+    .history-order-card {
+      background: #18181B;
+      border: 1px solid #27272A;
+      border-radius: 12px;
+      padding: 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 7px;
+      transition: border-color 0.15s ease;
+    }
+
+    .history-order-card.voided {
+      border-color: rgba(239, 68, 68, 0.4);
+      background: rgba(239, 68, 68, 0.06);
+    }
+
+    .history-card-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .history-card-token {
+      font-size: 14px;
+      font-weight: 900;
+      color: #F59E0B;
+      letter-spacing: 0.02em;
+    }
+
+    .history-card-time {
+      font-size: 11px;
+      color: #71717A;
+      margin-left: 6px;
+    }
+
+    .history-badge {
+      font-size: 10px;
+      font-weight: 800;
+      padding: 2px 7px;
+      border-radius: 5px;
+      letter-spacing: 0.03em;
+      text-transform: uppercase;
+    }
+
+    .history-badge.cash {
+      background: rgba(16, 185, 129, 0.15);
+      color: #10B981;
+      border: 1px solid rgba(16, 185, 129, 0.3);
+    }
+
+    .history-badge.online {
+      background: rgba(59, 130, 246, 0.15);
+      color: #3B82F6;
+      border: 1px solid rgba(59, 130, 246, 0.3);
+    }
+
+    .history-badge.voided {
+      background: rgba(239, 68, 68, 0.2);
+      color: #EF4444;
+      border: 1px solid rgba(239, 68, 68, 0.4);
+    }
+
+    .history-card-items {
+      font-size: 12px;
+      color: #E2E8F0;
+      line-height: 1.4;
+    }
+
+    .history-order-card.voided .history-card-items {
+      text-decoration: line-through;
+      color: #71717A;
+    }
+
+    .history-card-footer {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-top: 1px solid #27272A;
+      padding-top: 8px;
+      margin-top: 2px;
+    }
+
+    .history-card-total {
+      font-size: 14px;
+      font-weight: 900;
+      color: #F8FAFC;
+    }
+
+    .history-order-card.voided .history-card-total {
+      text-decoration: line-through;
+      color: #EF4444;
+    }
+
+    .history-card-actions {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .btn-history-reprint {
+      appearance: none;
+      background: #27272A;
+      border: 1px solid #3F3F46;
+      color: #F8FAFC;
+      border-radius: 6px;
+      padding: 5px 9px;
+      font-size: 11px;
+      font-weight: 700;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      transition: all 0.12s ease;
+    }
+
+    .btn-history-reprint:active {
+      transform: scale(0.95);
+      background: #3F3F46;
+    }
+
+    .btn-history-void {
+      appearance: none;
+      background: rgba(239, 68, 68, 0.12);
+      border: 1px solid rgba(239, 68, 68, 0.35);
+      color: #EF4444;
+      border-radius: 6px;
+      padding: 5px 9px;
+      font-size: 11px;
+      font-weight: 700;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      transition: all 0.12s ease;
+    }
+
+    .btn-history-void:active {
+      transform: scale(0.95);
+      background: rgba(239, 68, 68, 0.25);
     }
 
     /* ========================================================================
@@ -3544,10 +3812,17 @@
     <!-- 1. TOP APP BAR (Height: 46px, px: 16px, bg-[#09090B]) -->
     <header class="pos-top-header">
       <div class="header-left">
-        <div class="brand-title" id="shopBrandTitle">STUDENT BURGER</div>
+        <div style="display:flex;align-items:baseline;gap:6px;">
+          <div class="brand-title" id="shopBrandTitle">STUDENT BURGER</div>
+          <span style="font-size:10.5px;color:#64748B;font-weight:600;letter-spacing:0.03em;">v6</span>
+        </div>
         <div class="role-subtitle" id="roleIndicatorBadge" title="Tap to switch mode">Cashier Mode</div>
       </div>
       <div class="header-right">
+        <!-- Order History & Anti-Theft Void Button (34x34px) -->
+        <button type="button" class="header-icon-btn" id="openOrderHistoryBtn" title="Order History &amp; Anti-Theft Void">
+          📜
+        </button>
         <!-- Printer Button: [ 🖨️ Connect ] -->
         <button type="button" class="printer-connect-btn" id="printerStatus" data-state="disconnected"
           title="Printer Settings">
@@ -3677,6 +3952,40 @@
         </button>
       </div>
     </footer>
+
+    <!-- ORDER HISTORY & ANTI-THEFT VOID BOTTOM SHEET MODAL -->
+    <div class="modal-backdrop" id="orderHistoryModal" role="dialog" aria-modal="true" aria-labelledby="historyModalTitle">
+      <div class="modal-sheet">
+        <div class="history-header">
+          <div class="hisaab-modal-header-copy">
+            <span class="modal-title" id="historyModalTitle">📜 آرڈر ہسٹری (Order History)</span>
+            <span class="hisaab-modal-subtitle">Today's Orders • Anti-Theft Void &amp; Reprints</span>
+          </div>
+          <button type="button" class="modal-close-btn" id="closeOrderHistoryModalBtn" title="Close" aria-label="Close">✕</button>
+        </div>
+
+        <div class="history-summary-bar">
+          <div class="history-summary-chip">
+            <span class="chip-label">Total Orders</span>
+            <span class="chip-val" id="historyTotalOrdersCount">0</span>
+          </div>
+          <div class="history-summary-chip">
+            <span class="chip-label">Net Sales</span>
+            <span class="chip-val" id="historyTotalSalesAmount">Rs. 0</span>
+          </div>
+          <div class="history-summary-chip voided">
+            <span class="chip-label">Voided</span>
+            <span class="chip-val" id="historyVoidedCount">0</span>
+          </div>
+        </div>
+
+        <input type="text" id="historySearchInput" class="history-search-input" placeholder="🔍 Search Token # (e.g. 001) or item name..." maxlength="30">
+
+        <div class="history-list" id="historyOrdersList">
+          <!-- Populated dynamically by app.js -->
+        </div>
+      </div>
+    </div>
 
     <div class="modal-backdrop" id="hisaabModal" role="dialog" aria-modal="true" aria-labelledby="hisaabModalTitle">
       <div class="modal-sheet">
@@ -4058,6 +4367,8 @@
     <canvas id="urduReceiptCanvas" width="384" height="320" style="display:none;" aria-hidden="true"></canvas>
   </div>
 
+  <!-- Synthetic Web Audio API Sound Engine -->
+  <script src="sound-helper.js"></script>
   <!-- Native Capacitor & Android SPP Printer Bridge -->
   <script src="android-bridge.js"></script>
   <script src="printer-helper.js"></script>

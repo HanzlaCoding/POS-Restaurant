@@ -26,6 +26,7 @@ if (!fs.existsSync(outDir)) {
 const filesToBundle = [
   'index.html',
   'app.js',
+  'sound-helper.js',
   'printer-helper.js',
   'android-bridge.js',
   'sw.js',
