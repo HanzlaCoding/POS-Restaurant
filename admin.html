@@ -1,25 +1,41 @@
 <!DOCTYPE html>
-<html lang="en" class="dark">
+<html lang="en" data-theme="dark" class="dark">
 
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>BiteDash • Super-Admin Command Portal</title>
+  <title>BiteDash Control • Enterprise POS Fleet Commander</title>
   <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>⚡</text></svg>">
+
+  <!-- Immediate Theme Initializer (Zero Flash) -->
+  <script>
+    (function () {
+      var saved = localStorage.getItem('bitedash_admin_theme') || 'dark';
+      document.documentElement.setAttribute('data-theme', saved);
+      document.documentElement.classList.add(saved);
+      if (saved === 'light') {
+        document.documentElement.classList.remove('dark');
+      }
+    })();
+  </script>
 
   <!-- Tailwind CSS via CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
     tailwind.config = {
-      darkMode: 'class',
+      darkMode: ['class', '[data-theme="dark"]'],
       theme: {
         extend: {
           colors: {
-            slate: {
-              750: '#293548',
-              850: '#151F32',
-              950: '#0B1120'
-            }
+            canvas: 'var(--bg-canvas)',
+            surface: 'var(--bg-surface)',
+            'surface-elevated': 'var(--bg-surface-elevated)',
+            'border-subtle': 'var(--border-subtle)',
+            'text-primary': 'var(--text-primary)',
+            'text-muted': 'var(--text-muted)',
+            'accent-amber': 'var(--accent-amber)',
+            'accent-emerald': 'var(--accent-emerald)',
+            'accent-red': 'var(--accent-red)'
           },
           fontFamily: {
             sans: ['Inter', 'system-ui', '-apple-system', 'Segoe UI', 'Roboto', 'sans-serif'],
@@ -33,8 +49,48 @@
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@500;700;800&display=swap');
 
+    /* ==========================================================================
+       BiteDash Control Admin Design System - Theme Variables
+       ========================================================================== */
+
+    /* Dark Theme (DEFAULT) */
+    :root, [data-theme="dark"], .dark {
+      --bg-canvas: #09090B;
+      --bg-surface: #121214;
+      --bg-surface-elevated: #18181B;
+      --border-subtle: #27272A;
+      --text-primary: #FFFFFF;
+      --text-muted: #A1A1AA;
+      --accent-amber: #FBBF24;
+      --accent-emerald: #10B981;
+      --accent-red: #EF4444;
+      color-scheme: dark;
+    }
+
+    /* Light Theme */
+    [data-theme="light"], .light {
+      --bg-canvas: #F4F4F5;
+      --bg-surface: #FFFFFF;
+      --bg-surface-elevated: #E4E4E7;
+      --border-subtle: #E4E4E7;
+      --text-primary: #09090B;
+      --text-muted: #71717A;
+      --accent-amber: #D97706;
+      --accent-emerald: #059669;
+      --accent-red: #DC2626;
+      color-scheme: light;
+    }
+
+    /* Base Body & Layout */
     body {
-      font-family: 'Inter', system-ui, sans-serif;
+      background-color: var(--bg-canvas);
+      color: var(--text-primary);
+      font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      min-height: 100vh;
+      margin: 0;
+      padding: 0;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
     }
 
     .font-mono-num {
@@ -42,61 +98,77 @@
       font-feature-settings: 'tnum' on, 'lnum' on;
     }
 
-    /* Custom scrollbar for data tables */
+    /* Custom Webkit Scrollbars */
     ::-webkit-scrollbar {
-      width: 7px;
-      height: 7px;
+      width: 6px;
+      height: 6px;
     }
     ::-webkit-scrollbar-track {
-      background: #0f172a;
+      background: var(--bg-canvas);
     }
     ::-webkit-scrollbar-thumb {
-      background: #334155;
-      border-radius: 999px;
+      background: var(--border-subtle);
+      border-radius: 9999px;
     }
     ::-webkit-scrollbar-thumb:hover {
-      background: #475569;
+      background: var(--text-muted);
     }
 
-    /* Pulse animation for live online indicator */
+    /* Smooth transition for theme switching */
+    body, header, main, div, section, table, tr, td, th, button, input, select, pre {
+      transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+    }
+
+    /* Live Pulse Animation */
     @keyframes livePulse {
       0%, 100% { opacity: 1; transform: scale(1); }
-      50% { opacity: 0.4; transform: scale(1.15); }
+      50% { opacity: 0.35; transform: scale(1.15); }
     }
     .animate-live-pulse {
       animation: livePulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
     }
+
+    /* Filter Chips Base */
+    .filter-chip {
+      transition: all 0.15s ease-in-out;
+    }
+    .filter-chip.active {
+      background-color: #FBBF24 !important;
+      color: #09090B !important;
+      border-color: #FBBF24 !important;
+      font-weight: 800 !important;
+    }
   </style>
 </head>
 
-<body class="bg-slate-950 text-slate-100 min-h-screen antialiased selection:bg-emerald-500 selection:text-slate-950">
+<body class="bg-[var(--bg-canvas)] text-[var(--text-primary)] min-h-screen antialiased selection:bg-[#FBBF24] selection:text-black">
 
   <!-- ====================================================================== -->
   <!-- 1. AUTHENTICATION GATE (PIN 9999 REQUIRED)                             -->
   <!-- ====================================================================== -->
-  <div id="authGate" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/95 backdrop-blur-md p-4 transition-all duration-300">
-    <div class="w-full max-w-sm rounded-3xl border border-slate-800 bg-slate-900 p-8 shadow-2xl shadow-black/80 flex flex-col items-center text-center">
-      <div class="h-16 w-16 rounded-2xl bg-gradient-to-tr from-amber-500/20 via-emerald-500/20 to-indigo-500/20 border border-slate-700/80 flex items-center justify-center text-3xl shadow-inner mb-4">
-        👑
+  <div id="authGate" class="fixed inset-0 z-50 flex items-center justify-center bg-[var(--bg-canvas)]/95 backdrop-blur-md p-4 transition-all duration-300">
+    <div class="w-full max-w-sm rounded-3xl border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-8 shadow-2xl flex flex-col items-center text-center">
+      <div class="h-16 w-16 rounded-2xl bg-amber-400/15 border border-amber-400/30 flex items-center justify-center text-3xl shadow-inner mb-4 text-amber-400">
+        ⚡
       </div>
-      <h1 class="text-xl font-black tracking-tight text-white">BiteDash Super-Admin</h1>
-      <p class="text-xs text-slate-400 mt-1 mb-6">Central POS Fleet Monitor &amp; Keygen Portal</p>
+      <h1 class="text-xl font-black tracking-tight text-[var(--text-primary)]">BiteDash Control</h1>
+      <p class="text-xs text-[var(--text-muted)] mt-1 mb-6">Enter Master PIN to Access Enterprise Dashboard</p>
 
       <form id="authForm" class="w-full space-y-4" onsubmit="event.preventDefault(); verifyPin();">
         <div class="relative">
           <input type="password" id="authPinInput" maxlength="4" inputmode="numeric" placeholder="••••" autocomplete="off" autofocus
-            class="w-full text-center tracking-[0.75em] text-2xl font-mono font-bold bg-slate-950 border-2 border-slate-700 focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/20 rounded-2xl py-3.5 px-4 text-emerald-400 outline-none transition placeholder-slate-700">
+            class="w-full text-center tracking-[0.75em] text-2xl font-mono font-black bg-[var(--bg-canvas)] border-2 border-[var(--border-subtle)] focus:border-amber-400 focus:ring-4 focus:ring-amber-400/20 rounded-2xl py-3.5 px-4 text-amber-400 outline-none transition placeholder-[var(--text-muted)]">
         </div>
 
-        <div id="authErrorMsg" class="text-xs font-semibold text-rose-400 min-h-[1.25rem]"></div>
+        <div id="authErrorMsg" class="text-xs font-semibold text-red-500 min-h-[1.25rem]"></div>
 
         <button type="submit" id="authSubmitBtn"
-          class="w-full py-3.5 px-4 rounded-xl font-bold bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-slate-950 shadow-lg shadow-emerald-500/20 active:scale-95 transition-all text-sm flex items-center justify-center gap-2">
+          class="w-full py-3.5 px-4 rounded-xl font-black bg-[#10B981] hover:bg-emerald-400 text-black shadow-lg shadow-emerald-500/20 active:scale-95 transition-all text-sm flex items-center justify-center gap-2">
           <span>Unlock Command Center</span>
           <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>
         </button>
 
-        <p class="text-[11px] text-slate-500">Default PIN: <span class="font-mono text-slate-400">9999</span></p>
+        <p class="text-[11px] text-[var(--text-muted)]">Default PIN: <span class="font-mono text-amber-400 font-bold">9999</span></p>
       </form>
     </div>
   </div>
@@ -106,67 +178,73 @@
   <!-- ====================================================================== -->
   <div id="mainPortal" class="hidden flex flex-col min-h-screen">
 
-    <!-- Top Navigation Bar -->
-    <header class="sticky top-0 z-40 border-b border-slate-800 bg-slate-900/80 backdrop-blur-lg">
-      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-4">
+    <!-- Top Navigation Bar (Height: 58px) -->
+    <header class="sticky top-0 z-40 h-[58px] border-b border-[var(--border-subtle)] bg-[var(--bg-surface)]/95 backdrop-blur-md">
+      <div class="max-w-[1500px] mx-auto px-4 sm:px-6 h-full flex items-center justify-between gap-3">
         
-        <!-- Brand & Supabase Status -->
+        <!-- Left Side: Brand, Enterprise Pill & Live Beacon -->
         <div class="flex items-center gap-3">
-          <div class="h-10 w-10 rounded-xl bg-gradient-to-tr from-emerald-500 to-teal-400 flex items-center justify-center text-slate-950 font-black text-xl shadow-lg shadow-emerald-500/20">
+          <!-- Amber rounded badge with lightning bolt -->
+          <div class="h-9 w-9 rounded-xl bg-amber-400/15 border border-amber-400/30 flex items-center justify-center text-amber-400 text-lg font-black shadow-inner">
             ⚡
           </div>
           <div>
             <div class="flex items-center gap-2">
-              <span class="text-base font-extrabold text-white tracking-tight">BiteDash Control</span>
-              <span class="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/30">Enterprise</span>
+              <span class="text-base font-black text-[var(--text-primary)] tracking-tight">BiteDash Control</span>
+              <span class="font-mono text-[10px] uppercase font-bold px-2 py-0.5 rounded bg-[var(--bg-surface-elevated)] text-[var(--text-muted)] border border-[var(--border-subtle)]">ENTERPRISE</span>
             </div>
-            <div class="flex items-center gap-1.5 text-[11px] text-slate-400">
-              <span class="relative flex h-2 w-2">
-                <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                <span class="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
-              </span>
-              <span>Supabase Live</span>
-              <span class="text-slate-600">•</span>
-              <span class="font-mono text-[10px] text-slate-500">giyfjerwbkcbdtvgghjp</span>
-            </div>
+          </div>
+          <!-- Status Beacon: Subtle pill with green dot + truncated project ref -->
+          <div class="hidden md:flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[var(--bg-surface-elevated)] border border-[var(--border-subtle)] text-[11px] text-[var(--text-muted)] ml-2">
+            <span class="relative flex h-2 w-2">
+              <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+              <span class="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+            </span>
+            <span class="font-semibold text-emerald-500">Supabase Live</span>
+            <span class="opacity-40">•</span>
+            <span class="font-mono text-[10px] opacity-75">giyfjerwb...</span>
           </div>
         </div>
 
-        <!-- Action Buttons -->
+        <!-- Right Side: Action Controls -->
         <div class="flex items-center gap-2">
+          
+          <!-- Theme Toggle Button -->
+          <button id="themeToggleBtn" onclick="toggleTheme()" title="Toggle Light/Dark Theme"
+            class="h-9 w-9 rounded-xl flex items-center justify-center bg-[var(--bg-surface-elevated)] border border-[var(--border-subtle)] text-[var(--text-primary)] hover:border-amber-400/40 active:scale-95 transition text-sm">
+            ☀️
+          </button>
+
           <!-- Refresh Data Button with Countdown -->
           <button id="refreshDataBtn" onclick="fetchLiveFleetData(true)" title="Manual Refresh"
-            class="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700/80 active:scale-95 transition">
-            <svg id="refreshSpinner" class="w-3.5 h-3.5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            class="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold bg-[var(--bg-surface-elevated)] hover:bg-[var(--border-subtle)] text-[var(--text-muted)] hover:text-[var(--text-primary)] border border-[var(--border-subtle)] active:scale-95 transition">
+            <svg id="refreshSpinner" class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
             </svg>
             <span id="refreshTimerLabel">Refresh (<span id="autoTimerSec">60</span>s)</span>
           </button>
 
-          <!-- Copy SQL Setup Modal Trigger -->
+          <!-- Supabase SQL Utility Pill -->
           <button onclick="openSqlModal()" title="View Supabase SQL Setup"
-            class="hidden sm:flex items-center gap-1 px-3 py-2 rounded-xl text-xs font-semibold bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700/80 active:scale-95 transition">
-            <svg class="w-3.5 h-3.5 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
-            <span>Supabase SQL</span>
+            class="hidden lg:flex items-center gap-1 px-3 py-1.5 rounded-xl text-xs font-semibold bg-[var(--bg-surface-elevated)] hover:bg-[var(--border-subtle)] text-[var(--text-muted)] hover:text-[var(--text-primary)] border border-[var(--border-subtle)] active:scale-95 transition">
+            <span>🗄️ Supabase SQL</span>
           </button>
 
-          <!-- Quick Keygen Trigger -->
-          <button onclick="openQuickKeygenModal()"
-            class="flex items-center gap-1 px-3 py-2 rounded-xl text-xs font-semibold bg-indigo-600/20 hover:bg-indigo-600/30 text-indigo-300 border border-indigo-500/40 active:scale-95 transition">
-            <svg class="w-3.5 h-3.5 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"/></svg>
-            <span>Keygen</span>
+          <!-- Quick Keygen Trigger Pill -->
+          <button onclick="openQuickKeygenModal()" title="Generate POS Activation Keys"
+            class="flex items-center gap-1 px-3 py-1.5 rounded-xl text-xs font-semibold bg-[var(--bg-surface-elevated)] hover:bg-[var(--border-subtle)] text-amber-400 hover:text-amber-300 border border-[var(--border-subtle)] active:scale-95 transition">
+            <span>🔑 Keygen</span>
           </button>
 
-          <!-- Onboard Stall Trigger -->
+          <!-- Onboard Stall Trigger (Solid Emerald #10B981) -->
           <button onclick="openOnboardingModal()"
-            class="flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold bg-emerald-500 hover:bg-emerald-400 text-slate-950 shadow-md shadow-emerald-500/20 active:scale-95 transition">
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"/></svg>
-            <span>Onboard Stall</span>
+            class="flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-black bg-[#10B981] hover:bg-emerald-400 text-black shadow-md shadow-emerald-500/20 active:scale-95 transition">
+            <span>➕ Onboard Stall</span>
           </button>
 
           <!-- Lock Portal (Logout) -->
-          <button onclick="lockPortal()" title="Lock Portal"
-            class="p-2 rounded-xl text-rose-400 hover:bg-rose-500/10 border border-transparent hover:border-rose-500/20 active:scale-95 transition">
+          <button onclick="lockPortal()" title="Lock / Logout"
+            class="h-9 w-9 rounded-xl flex items-center justify-center border border-red-500/40 text-red-500 hover:bg-red-500/10 active:scale-95 transition">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>
           </button>
         </div>
@@ -174,149 +252,149 @@
     </header>
 
     <!-- Main Content Body -->
-    <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
+    <main class="flex-1 max-w-[1500px] w-full mx-auto px-4 sm:px-6 py-6 space-y-6">
 
       <!-- ================================================================== -->
-      <!-- 3. GLOBAL METRICS CARDS (TOP ROW)                                 -->
+      <!-- 3. KPI SUMMARY CARDS (4-Column Responsive Grid)                   -->
       <!-- ================================================================== -->
-      <section class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <section class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 my-2">
         
         <!-- Metric 1: Total Stalls -->
-        <div class="relative overflow-hidden rounded-2xl border border-slate-800 bg-slate-900/90 p-5 shadow-lg">
+        <div class="bg-[var(--bg-surface)] border border-[var(--border-subtle)] rounded-2xl p-4 flex flex-col justify-between shadow-sm">
           <div class="flex items-center justify-between">
-            <span class="text-xs font-bold uppercase tracking-wider text-slate-400">Total Active Stalls</span>
-            <div class="h-9 w-9 rounded-xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-center text-blue-400">
-              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>
+            <span class="text-[11px] font-bold uppercase tracking-wider text-[var(--text-muted)]">Total Active Stalls</span>
+            <div class="h-8 w-8 rounded-lg bg-[var(--bg-surface-elevated)] border border-[var(--border-subtle)] flex items-center justify-center text-[var(--text-muted)] text-sm">
+              🏬
             </div>
           </div>
-          <div class="mt-3 flex items-baseline gap-2">
-            <span id="metricTotalStalls" class="text-3xl font-black font-mono-num text-white">0</span>
-            <span class="text-xs text-slate-400">Terminals</span>
+          <div class="mt-2 flex items-baseline gap-2">
+            <span id="metricTotalStalls" class="text-[30px] leading-tight font-black font-mono-num text-[var(--text-primary)]">0</span>
+            <span class="text-xs text-[var(--text-muted)]">Terminals</span>
           </div>
-          <div class="mt-2 text-xs flex items-center gap-2">
-            <span class="text-emerald-400 font-semibold flex items-center gap-1">
-              <span class="h-1.5 w-1.5 rounded-full bg-emerald-400 inline-block"></span>
+          <div class="mt-3 flex items-center gap-2 text-xs">
+            <span class="px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-500 border border-emerald-500/20 font-semibold text-[11px] flex items-center gap-1">
+              <span class="h-1.5 w-1.5 rounded-full bg-emerald-500 inline-block"></span>
               <span id="metricOnlineStalls">0</span> Online
             </span>
-            <span class="text-slate-600">•</span>
-            <span class="text-slate-400">
+            <span class="px-2 py-0.5 rounded-full bg-[var(--bg-surface-elevated)] text-[var(--text-muted)] border border-[var(--border-subtle)] font-semibold text-[11px] flex items-center gap-1">
+              <span class="h-1.5 w-1.5 rounded-full bg-zinc-500 inline-block"></span>
               <span id="metricOfflineStalls">0</span> Offline
             </span>
           </div>
         </div>
 
         <!-- Metric 2: Today's Network Sales -->
-        <div class="relative overflow-hidden rounded-2xl border border-emerald-500/20 bg-slate-900/90 p-5 shadow-lg">
+        <div class="bg-[var(--bg-surface)] border border-[var(--border-subtle)] rounded-2xl p-4 flex flex-col justify-between shadow-sm">
           <div class="flex items-center justify-between">
-            <span class="text-xs font-bold uppercase tracking-wider text-emerald-400">Today's Network Sales</span>
-            <div class="h-9 w-9 rounded-xl bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center text-emerald-400">
-              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+            <span class="text-[11px] font-bold uppercase tracking-wider text-emerald-500">Today's Network Sales</span>
+            <div class="h-8 w-8 rounded-lg bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-500 text-sm">
+              💰
             </div>
           </div>
-          <div class="mt-3 flex items-baseline gap-1.5">
-            <span class="text-lg font-bold text-emerald-500">Rs.</span>
-            <span id="metricGrossSales" class="text-3xl font-black font-mono-num text-emerald-400">0</span>
+          <div class="mt-2 flex items-baseline gap-1.5">
+            <span class="text-base font-bold text-emerald-500">Rs.</span>
+            <span id="metricGrossSales" class="text-[30px] leading-tight font-black font-mono-num text-[#10B981]">0</span>
           </div>
-          <div class="mt-2 text-xs text-slate-400 flex items-center gap-1.5">
+          <div class="mt-3 text-xs text-[var(--text-muted)] flex items-center gap-1.5">
             <span>Orders Synced:</span>
-            <span id="metricOrdersCount" class="font-bold text-white font-mono-num">0</span>
+            <span id="metricOrdersCount" class="font-bold text-[var(--text-primary)] font-mono-num">0</span>
           </div>
         </div>
 
-        <!-- Metric 3: Payment Split (Cash vs Online) -->
-        <div class="relative overflow-hidden rounded-2xl border border-slate-800 bg-slate-900/90 p-5 shadow-lg">
+        <!-- Metric 3: Payment Breakdown (Cash: Emerald, Online: Amber) -->
+        <div class="bg-[var(--bg-surface)] border border-[var(--border-subtle)] rounded-2xl p-4 flex flex-col justify-between shadow-sm">
           <div class="flex items-center justify-between">
-            <span class="text-xs font-bold uppercase tracking-wider text-slate-400">Payment Breakdown</span>
-            <div class="h-9 w-9 rounded-xl bg-cyan-500/10 border border-cyan-500/20 flex items-center justify-center text-cyan-400">
-              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"/></svg>
+            <span class="text-[11px] font-bold uppercase tracking-wider text-[var(--text-muted)]">Payment Breakdown</span>
+            <div class="h-8 w-8 rounded-lg bg-amber-400/10 border border-amber-400/20 flex items-center justify-center text-amber-400 text-sm">
+              💳
             </div>
           </div>
-          <div class="mt-3 flex items-center justify-between text-xs font-mono-num">
-            <div class="text-emerald-400 font-bold">
+          <div class="mt-2 flex items-center justify-between text-xs font-mono-num">
+            <div class="text-emerald-500 font-bold">
               <span>Cash: Rs. </span><span id="metricCashSales">0</span>
             </div>
-            <div class="text-cyan-400 font-bold">
+            <div class="text-amber-400 font-bold">
               <span>Online: Rs. </span><span id="metricOnlineSales">0</span>
             </div>
           </div>
           <!-- Progress bar -->
-          <div class="w-full bg-slate-800 rounded-full h-2 mt-2.5 overflow-hidden flex">
-            <div id="barCash" class="bg-emerald-500 h-full transition-all duration-500" style="width: 50%"></div>
-            <div id="barOnline" class="bg-cyan-500 h-full transition-all duration-500" style="width: 50%"></div>
+          <div class="w-full bg-[var(--bg-surface-elevated)] rounded-full h-2 mt-2.5 overflow-hidden flex border border-[var(--border-subtle)]">
+            <div id="barCash" class="bg-[#10B981] h-full transition-all duration-500" style="width: 50%"></div>
+            <div id="barOnline" class="bg-[#FBBF24] h-full transition-all duration-500" style="width: 50%"></div>
           </div>
-          <div class="mt-2 text-[11px] text-slate-400 flex justify-between">
+          <div class="mt-2 text-[11px] text-[var(--text-muted)] flex justify-between font-mono-num">
             <span id="percentCash">50% Cash</span>
-            <span id="percentOnline">50% Digital</span>
+            <span id="percentOnline">50% Online</span>
           </div>
         </div>
 
         <!-- Metric 4: Total Expenses & Net Drawer -->
-        <div class="relative overflow-hidden rounded-2xl border border-slate-800 bg-slate-900/90 p-5 shadow-lg">
+        <div class="bg-[var(--bg-surface)] border border-[var(--border-subtle)] rounded-2xl p-4 flex flex-col justify-between shadow-sm">
           <div class="flex items-center justify-between">
-            <span class="text-xs font-bold uppercase tracking-wider text-slate-400">Network Expenses</span>
-            <div class="h-9 w-9 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-400">
-              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+            <span class="text-[11px] font-bold uppercase tracking-wider text-amber-500">Network Expenses &amp; Net</span>
+            <div class="h-8 w-8 rounded-lg bg-amber-400/10 border border-amber-400/20 flex items-center justify-center text-amber-400 text-sm">
+              📊
             </div>
           </div>
-          <div class="mt-3 flex items-baseline gap-1.5">
-            <span class="text-lg font-bold text-amber-500">Rs.</span>
-            <span id="metricTotalExpenses" class="text-3xl font-black font-mono-num text-amber-400">0</span>
+          <div class="mt-2 flex items-baseline gap-1.5">
+            <span class="text-base font-bold text-amber-500">Rs.</span>
+            <span id="metricTotalExpenses" class="text-[30px] leading-tight font-black font-mono-num text-[#FBBF24]">0</span>
           </div>
-          <div class="mt-2 text-xs text-slate-400 flex items-center justify-between">
+          <div class="mt-3 text-xs text-[var(--text-muted)] flex items-center justify-between">
             <span>Drawer Net Cash:</span>
-            <span class="font-bold text-emerald-400 font-mono-num">Rs. <span id="metricNetCash">0</span></span>
+            <span class="font-bold text-emerald-500 font-mono-num">Rs. <span id="metricNetCash">0</span></span>
           </div>
         </div>
 
       </section>
 
       <!-- ================================================================== -->
-      <!-- 4. SEARCH, FILTER & ACTION BAR                                    -->
+      <!-- 4. SEARCH & FILTER TOOLBAR                                         -->
       <!-- ================================================================== -->
-      <section class="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 bg-slate-900/60 border border-slate-800 p-3 rounded-2xl">
+      <section class="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 mb-4">
         
         <!-- Search Input -->
         <div class="relative flex-1">
-          <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-500">
+          <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-[var(--text-muted)]">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
           </div>
           <input type="text" id="stallSearchInput" placeholder="Filter by Stall ID (e.g. BD-5694), Shop Name, or Phone..."
             oninput="renderStallsTable()"
-            class="w-full bg-slate-950 border border-slate-700/80 rounded-xl pl-10 pr-4 py-2 text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 transition">
+            class="w-full bg-[var(--bg-surface-elevated)] border border-[var(--border-subtle)] rounded-xl pl-10 pr-4 py-2.5 text-xs text-[var(--text-primary)] placeholder-[var(--text-muted)] outline-none focus:border-amber-400 transition">
         </div>
 
         <!-- Filter Chips -->
         <div class="flex items-center gap-1.5 overflow-x-auto pb-1 sm:pb-0 text-xs">
-          <button class="filter-chip active px-3 py-1.5 rounded-lg font-semibold bg-emerald-500/20 text-emerald-400 border border-emerald-500/40" data-filter="all" onclick="setTableFilter('all', this)">All</button>
-          <button class="filter-chip px-3 py-1.5 rounded-lg font-semibold bg-slate-800 text-slate-400 hover:text-white border border-slate-700/60" data-filter="online" onclick="setTableFilter('online', this)">🟢 Online</button>
-          <button class="filter-chip px-3 py-1.5 rounded-lg font-semibold bg-slate-800 text-slate-400 hover:text-white border border-slate-700/60" data-filter="offline" onclick="setTableFilter('offline', this)">⚪ Offline</button>
-          <button class="filter-chip px-3 py-1.5 rounded-lg font-semibold bg-slate-800 text-slate-400 hover:text-white border border-slate-700/60" data-filter="trial" onclick="setTableFilter('trial', this)">🟡 Trial</button>
-          <button class="filter-chip px-3 py-1.5 rounded-lg font-semibold bg-slate-800 text-slate-400 hover:text-white border border-slate-700/60" data-filter="expired" onclick="setTableFilter('expired', this)">🔴 Expired</button>
+          <button class="filter-chip active px-3 py-1.5 rounded-lg font-black bg-[#FBBF24] text-[#09090B] border border-[#FBBF24]" data-filter="all" onclick="setTableFilter('all', this)">All</button>
+          <button class="filter-chip px-3 py-1.5 rounded-lg font-semibold bg-[var(--bg-surface-elevated)] text-[var(--text-muted)] hover:text-[var(--text-primary)] border border-[var(--border-subtle)]" data-filter="online" onclick="setTableFilter('online', this)">🟢 Online</button>
+          <button class="filter-chip px-3 py-1.5 rounded-lg font-semibold bg-[var(--bg-surface-elevated)] text-[var(--text-muted)] hover:text-[var(--text-primary)] border border-[var(--border-subtle)]" data-filter="offline" onclick="setTableFilter('offline', this)">⚪ Offline</button>
+          <button class="filter-chip px-3 py-1.5 rounded-lg font-semibold bg-[var(--bg-surface-elevated)] text-[var(--text-muted)] hover:text-[var(--text-primary)] border border-[var(--border-subtle)]" data-filter="trial" onclick="setTableFilter('trial', this)">🟡 Trial</button>
+          <button class="filter-chip px-3 py-1.5 rounded-lg font-semibold bg-[var(--bg-surface-elevated)] text-[var(--text-muted)] hover:text-[var(--text-primary)] border border-[var(--border-subtle)]" data-filter="expired" onclick="setTableFilter('expired', this)">🔴 Expired</button>
         </div>
       </section>
 
       <!-- ================================================================== -->
-      <!-- 5. STALL MONITORING GRID / TABLE                                   -->
+      <!-- 5. STALL TABLE DIRECTORY                                           -->
       <!-- ================================================================== -->
-      <section class="rounded-2xl border border-slate-800 bg-slate-900/80 shadow-xl overflow-hidden">
+      <section class="rounded-2xl border border-[var(--border-subtle)] bg-[var(--bg-surface)] shadow-sm overflow-hidden">
         <div class="overflow-x-auto">
           <table class="w-full text-left text-xs">
-            <thead class="bg-slate-950/80 text-slate-400 font-bold uppercase tracking-wider border-b border-slate-800">
+            <thead class="bg-[var(--bg-surface-elevated)]/60 text-[var(--text-muted)] font-bold uppercase tracking-wider text-[11px] border-b border-[var(--border-subtle)]">
               <tr>
-                <th scope="col" class="py-3.5 px-4">Stall ID</th>
-                <th scope="col" class="py-3.5 px-4">Shop Name</th>
-                <th scope="col" class="py-3.5 px-4">Owner Phone</th>
-                <th scope="col" class="py-3.5 px-4">Status</th>
-                <th scope="col" class="py-3.5 px-4 text-right">Today's Sales</th>
-                <th scope="col" class="py-3.5 px-4 text-right">Drawer Cash</th>
-                <th scope="col" class="py-3.5 px-4 text-center">License</th>
-                <th scope="col" class="py-3.5 px-4 text-center">Quick Actions</th>
+                <th scope="col" class="py-3 px-4">Stall ID</th>
+                <th scope="col" class="py-3 px-4">Shop Name</th>
+                <th scope="col" class="py-3 px-4">Owner Phone</th>
+                <th scope="col" class="py-3 px-4">Status</th>
+                <th scope="col" class="py-3 px-4 text-right">Today's Sales</th>
+                <th scope="col" class="py-3 px-4 text-right">Drawer Cash</th>
+                <th scope="col" class="py-3 px-4 text-center">License</th>
+                <th scope="col" class="py-3 px-4 text-center">Quick Actions</th>
               </tr>
             </thead>
-            <tbody id="stallsTableBody" class="divide-y divide-slate-800/80">
+            <tbody id="stallsTableBody" class="divide-y divide-[var(--border-subtle)]">
               <!-- Dynamically populated via renderStallsTable() -->
               <tr>
-                <td colspan="8" class="py-12 text-center text-slate-500">
+                <td colspan="8" class="py-12 text-center text-[var(--text-muted)]">
                   <div class="inline-block animate-spin mb-2">⏳</div>
                   <div>Loading live stalls from Supabase...</div>
                 </td>
@@ -332,14 +410,14 @@
   <!-- ====================================================================== -->
   <!-- 6. NEW STALL ONBOARDING MODAL                                          -->
   <!-- ====================================================================== -->
-  <div id="onboardingModal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-slate-950/85 backdrop-blur-sm p-4">
-    <div class="w-full max-w-lg rounded-3xl border border-slate-800 bg-slate-900 p-6 shadow-2xl space-y-4">
-      <div class="flex items-center justify-between pb-3 border-b border-slate-800">
+  <div id="onboardingModal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/75 backdrop-blur-md p-4">
+    <div class="w-full max-w-lg rounded-3xl border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-6 shadow-2xl space-y-4">
+      <div class="flex items-center justify-between pb-3 border-b border-[var(--border-subtle)]">
         <div class="flex items-center gap-2">
           <span class="text-xl">🍔</span>
-          <h2 class="text-base font-bold text-white">Onboard New POS Stall</h2>
+          <h2 class="text-base font-bold text-[var(--text-primary)]">Onboard New POS Stall</h2>
         </div>
-        <button onclick="closeOnboardingModal()" class="text-slate-400 hover:text-white p-1 rounded-lg">✕</button>
+        <button onclick="closeOnboardingModal()" class="h-8 w-8 rounded-full bg-[var(--bg-surface-elevated)] text-[var(--text-muted)] hover:text-[var(--text-primary)] flex items-center justify-center transition">✕</button>
       </div>
 
       <form id="onboardingForm" onsubmit="event.preventDefault(); submitOnboardStall();" class="space-y-4">
@@ -347,63 +425,63 @@
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <!-- Stall ID -->
           <div>
-            <label class="block text-xs font-semibold text-slate-400 mb-1">Stall ID / Shop Code</label>
+            <label class="block text-xs font-semibold text-[var(--text-muted)] mb-1">Stall ID / Shop Code</label>
             <div class="flex items-center gap-1.5">
               <input type="text" id="newStallId" required maxlength="10" placeholder="BD-5694"
-                class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs font-mono font-bold text-amber-400 uppercase focus:border-emerald-500 focus:outline-none">
+                class="w-full bg-[var(--bg-canvas)] border border-[var(--border-subtle)] rounded-xl px-3 py-2 text-xs font-mono font-bold text-amber-400 uppercase focus:border-amber-400 focus:outline-none">
               <button type="button" onclick="generateRandomStallId()" title="Generate Random ID"
-                class="px-2.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs border border-slate-700 font-bold">🎲</button>
+                class="px-2.5 py-2 rounded-xl bg-[var(--bg-surface-elevated)] hover:bg-[var(--border-subtle)] text-[var(--text-primary)] text-xs border border-[var(--border-subtle)] font-bold">🎲</button>
             </div>
           </div>
 
           <!-- Shop Name -->
           <div>
-            <label class="block text-xs font-semibold text-slate-400 mb-1">Shop / Stall Name</label>
+            <label class="block text-xs font-semibold text-[var(--text-muted)] mb-1">Shop / Stall Name</label>
             <input type="text" id="newShopName" required placeholder="e.g. Student Burger"
-              class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:border-emerald-500 focus:outline-none">
+              class="w-full bg-[var(--bg-canvas)] border border-[var(--border-subtle)] rounded-xl px-3 py-2 text-xs text-[var(--text-primary)] focus:border-amber-400 focus:outline-none">
           </div>
         </div>
 
         <!-- Owner Phone -->
         <div>
-          <label class="block text-xs font-semibold text-slate-400 mb-1">Owner WhatsApp / Phone</label>
+          <label class="block text-xs font-semibold text-[var(--text-muted)] mb-1">Owner WhatsApp / Phone</label>
           <input type="text" id="newOwnerPhone" placeholder="03001234567"
-            class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs font-mono text-white focus:border-emerald-500 focus:outline-none">
+            class="w-full bg-[var(--bg-canvas)] border border-[var(--border-subtle)] rounded-xl px-3 py-2 text-xs font-mono text-[var(--text-primary)] focus:border-amber-400 focus:outline-none">
         </div>
 
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <!-- Default Owner PIN -->
           <div>
-            <label class="block text-xs font-semibold text-slate-400 mb-1">Owner 4-Digit PIN</label>
+            <label class="block text-xs font-semibold text-[var(--text-muted)] mb-1">Owner 4-Digit PIN</label>
             <input type="text" id="newOwnerPin" maxlength="4" value="1234"
-              class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs font-mono text-white focus:border-emerald-500 focus:outline-none">
+              class="w-full bg-[var(--bg-canvas)] border border-[var(--border-subtle)] rounded-xl px-3 py-2 text-xs font-mono text-[var(--text-primary)] focus:border-amber-400 focus:outline-none">
           </div>
 
           <!-- Default Cashier PIN -->
           <div>
-            <label class="block text-xs font-semibold text-slate-400 mb-1">Cashier 4-Digit PIN</label>
+            <label class="block text-xs font-semibold text-[var(--text-muted)] mb-1">Cashier 4-Digit PIN</label>
             <input type="text" id="newCashierPin" maxlength="4" value="0000"
-              class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs font-mono text-white focus:border-emerald-500 focus:outline-none">
+              class="w-full bg-[var(--bg-canvas)] border border-[var(--border-subtle)] rounded-xl px-3 py-2 text-xs font-mono text-[var(--text-primary)] focus:border-amber-400 focus:outline-none">
           </div>
         </div>
 
         <!-- Initial License Expiry -->
         <div>
-          <label class="block text-xs font-semibold text-slate-400 mb-1">Initial License Plan</label>
+          <label class="block text-xs font-semibold text-[var(--text-muted)] mb-1">Initial License Plan</label>
           <select id="newLicensePlan"
-            class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:border-emerald-500 focus:outline-none">
+            class="w-full bg-[var(--bg-canvas)] border border-[var(--border-subtle)] rounded-xl px-3 py-2 text-xs text-[var(--text-primary)] focus:border-amber-400 focus:outline-none">
             <option value="trial_30">30-Day Free Trial</option>
             <option value="year_1">1-Year Commercial License</option>
             <option value="lifetime">Lifetime Unlimited Access</option>
           </select>
         </div>
 
-        <div id="onboardError" class="text-xs font-semibold text-rose-400 min-h-[1rem]"></div>
+        <div id="onboardError" class="text-xs font-semibold text-red-500 min-h-[1rem]"></div>
 
-        <div class="flex items-center justify-end gap-2 pt-2 border-t border-slate-800">
-          <button type="button" onclick="closeOnboardingModal()" class="px-4 py-2 text-xs font-semibold rounded-xl text-slate-400 hover:text-white">Cancel</button>
+        <div class="flex items-center justify-end gap-2 pt-2 border-t border-[var(--border-subtle)]">
+          <button type="button" onclick="closeOnboardingModal()" class="px-4 py-2 text-xs font-semibold rounded-xl text-[var(--text-muted)] hover:text-[var(--text-primary)]">Cancel</button>
           <button type="submit" id="onboardSubmitBtn"
-            class="px-5 py-2 text-xs font-bold rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 shadow-md shadow-emerald-500/20 active:scale-95 transition">
+            class="px-5 py-2 text-xs font-black rounded-xl bg-[#10B981] hover:bg-emerald-400 text-black shadow-md shadow-emerald-500/20 active:scale-95 transition">
             Save &amp; Activate Stall
           </button>
         </div>
@@ -414,27 +492,27 @@
   <!-- ====================================================================== -->
   <!-- 7. ORDERS & EXPENSES JSON VIEWER MODAL                                 -->
   <!-- ====================================================================== -->
-  <div id="jsonModal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-slate-950/85 backdrop-blur-sm p-4">
-    <div class="w-full max-w-2xl max-h-[90vh] flex flex-col rounded-3xl border border-slate-800 bg-slate-900 shadow-2xl overflow-hidden">
-      <div class="flex items-center justify-between p-4 border-b border-slate-800 bg-slate-950/50">
+  <div id="jsonModal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/75 backdrop-blur-md p-4">
+    <div class="w-full max-w-2xl max-h-[90vh] flex flex-col rounded-3xl border border-[var(--border-subtle)] bg-[var(--bg-surface)] shadow-2xl overflow-hidden">
+      <div class="flex items-center justify-between p-4 border-b border-[var(--border-subtle)] bg-[var(--bg-surface-elevated)]/50">
         <div>
-          <h2 class="text-sm font-bold text-white flex items-center gap-2">
+          <h2 class="text-sm font-bold text-[var(--text-primary)] flex items-center gap-2">
             <span>📦 Sync Payload Viewer</span>
-            <span id="jsonModalStallBadge" class="font-mono text-xs px-2 py-0.5 rounded bg-amber-400/10 text-amber-300 border border-amber-400/20">BD-0000</span>
+            <span id="jsonModalStallBadge" class="font-mono text-xs px-2 py-0.5 rounded bg-amber-400/10 text-amber-400 border border-amber-400/25">BD-0000</span>
           </h2>
-          <p id="jsonModalTimestamp" class="text-[11px] text-slate-400">Latest Sync Time: --</p>
+          <p id="jsonModalTimestamp" class="text-[11px] text-[var(--text-muted)]">Latest Sync Time: --</p>
         </div>
-        <button onclick="closeJsonModal()" class="text-slate-400 hover:text-white p-1 rounded-lg">✕</button>
+        <button onclick="closeJsonModal()" class="h-8 w-8 rounded-full bg-[var(--bg-surface-elevated)] text-[var(--text-muted)] hover:text-[var(--text-primary)] flex items-center justify-center transition">✕</button>
       </div>
 
       <div class="p-4 overflow-y-auto space-y-4 text-xs">
         <div class="flex items-center justify-between">
-          <span class="text-slate-400 font-semibold">Raw Orders &amp; Expenses JSON:</span>
-          <button onclick="copyRawJson()" class="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 font-mono text-[11px] border border-slate-700">
+          <span class="text-[var(--text-muted)] font-semibold">Raw Orders &amp; Expenses JSON:</span>
+          <button onclick="copyRawJson()" class="px-2.5 py-1 rounded-lg bg-[var(--bg-surface-elevated)] hover:bg-[var(--border-subtle)] text-[var(--text-primary)] font-mono text-[11px] border border-[var(--border-subtle)] transition">
             📋 Copy JSON
           </button>
         </div>
-        <pre id="jsonModalContent" class="bg-slate-950 p-4 rounded-xl font-mono text-[11px] text-emerald-400 overflow-x-auto border border-slate-800 max-h-96"></pre>
+        <pre id="jsonModalContent" class="bg-[var(--bg-canvas)] p-4 rounded-xl font-mono text-[11px] text-emerald-400 overflow-x-auto border border-[var(--border-subtle)] max-h-96"></pre>
       </div>
     </div>
   </div>
@@ -442,64 +520,64 @@
   <!-- ====================================================================== -->
   <!-- 8. QUICK KEYGEN & WHATSAPP MODAL                                      -->
   <!-- ====================================================================== -->
-  <div id="keygenModal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-slate-950/85 backdrop-blur-sm p-4">
-    <div class="w-full max-w-md rounded-3xl border border-slate-800 bg-slate-900 p-6 shadow-2xl space-y-4">
-      <div class="flex items-center justify-between pb-3 border-b border-slate-800">
+  <div id="keygenModal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/75 backdrop-blur-md p-4">
+    <div class="w-full max-w-md rounded-3xl border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-6 shadow-2xl space-y-4">
+      <div class="flex items-center justify-between pb-3 border-b border-[var(--border-subtle)]">
         <div class="flex items-center gap-2">
           <span class="text-xl">🔑</span>
-          <h2 class="text-base font-bold text-white">BiteDash Key Generator</h2>
+          <h2 class="text-base font-bold text-[var(--text-primary)]">BiteDash Key Generator</h2>
         </div>
-        <button onclick="closeQuickKeygenModal()" class="text-slate-400 hover:text-white p-1 rounded-lg">✕</button>
+        <button onclick="closeQuickKeygenModal()" class="h-8 w-8 rounded-full bg-[var(--bg-surface-elevated)] text-[var(--text-muted)] hover:text-[var(--text-primary)] flex items-center justify-center transition">✕</button>
       </div>
 
       <div class="space-y-3 text-xs">
         <div>
-          <label class="block text-slate-400 font-semibold mb-1">Target Stall ID</label>
+          <label class="block text-[var(--text-muted)] font-semibold mb-1">Target Stall ID</label>
           <input type="text" id="keygenStallIdInput" oninput="updateKeygenResults()" placeholder="e.g. BD-5694"
-            class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-sm font-mono font-bold text-amber-400 uppercase focus:border-emerald-500 focus:outline-none">
+            class="w-full bg-[var(--bg-canvas)] border border-[var(--border-subtle)] rounded-xl px-3 py-2 text-sm font-mono font-bold text-amber-400 uppercase focus:border-amber-400 focus:outline-none">
         </div>
 
         <div class="space-y-2 pt-2">
           <!-- 30 Days -->
-          <div class="p-3 rounded-xl bg-slate-950 border border-slate-800 flex items-center justify-between">
+          <div class="p-3 rounded-xl bg-[var(--bg-canvas)] border border-[var(--border-subtle)] flex items-center justify-between">
             <div>
-              <div class="font-bold text-white">30-Day Extension Key</div>
-              <div class="text-[10px] text-slate-500">Extends license by 30 days</div>
+              <div class="font-bold text-[var(--text-primary)]">30-Day Extension Key</div>
+              <div class="text-[10px] text-[var(--text-muted)]">Extends license by 30 days</div>
             </div>
             <div class="flex items-center gap-2">
               <span id="resKey30" class="font-mono font-black text-amber-400 tracking-wider text-sm">--</span>
-              <button onclick="copySingleKey('resKey30')" class="p-1 rounded text-slate-400 hover:text-white">📋</button>
+              <button onclick="copySingleKey('resKey30')" class="p-1 rounded text-[var(--text-muted)] hover:text-[var(--text-primary)]">📋</button>
             </div>
           </div>
 
           <!-- 1 Year -->
-          <div class="p-3 rounded-xl bg-slate-950 border border-slate-800 flex items-center justify-between">
+          <div class="p-3 rounded-xl bg-[var(--bg-canvas)] border border-[var(--border-subtle)] flex items-center justify-between">
             <div>
-              <div class="font-bold text-white">1-Year Commercial Key</div>
-              <div class="text-[10px] text-slate-500">Extends license by 365 days</div>
+              <div class="font-bold text-[var(--text-primary)]">1-Year Commercial Key</div>
+              <div class="text-[10px] text-[var(--text-muted)]">Extends license by 365 days</div>
             </div>
             <div class="flex items-center gap-2">
-              <span id="resKey1Year" class="font-mono font-black text-emerald-400 tracking-wider text-sm">--</span>
-              <button onclick="copySingleKey('resKey1Year')" class="p-1 rounded text-slate-400 hover:text-white">📋</button>
+              <span id="resKey1Year" class="font-mono font-black text-emerald-500 tracking-wider text-sm">--</span>
+              <button onclick="copySingleKey('resKey1Year')" class="p-1 rounded text-[var(--text-muted)] hover:text-[var(--text-primary)]">📋</button>
             </div>
           </div>
 
           <!-- Lifetime -->
-          <div class="p-3 rounded-xl bg-slate-950 border border-slate-800 flex items-center justify-between">
+          <div class="p-3 rounded-xl bg-[var(--bg-canvas)] border border-[var(--border-subtle)] flex items-center justify-between">
             <div>
-              <div class="font-bold text-white">Lifetime Activation Key</div>
-              <div class="text-[10px] text-slate-500">Permanent unlock</div>
+              <div class="font-bold text-[var(--text-primary)]">Lifetime Activation Key</div>
+              <div class="text-[10px] text-[var(--text-muted)]">Permanent unlock</div>
             </div>
             <div class="flex items-center gap-2">
-              <span id="resKeyLife" class="font-mono font-black text-indigo-400 tracking-wider text-sm">--</span>
-              <button onclick="copySingleKey('resKeyLife')" class="p-1 rounded text-slate-400 hover:text-white">📋</button>
+              <span id="resKeyLife" class="font-mono font-black text-amber-400 tracking-wider text-sm">--</span>
+              <button onclick="copySingleKey('resKeyLife')" class="p-1 rounded text-[var(--text-muted)] hover:text-[var(--text-primary)]">📋</button>
             </div>
           </div>
         </div>
 
         <!-- WhatsApp Dispatch -->
         <button onclick="copyWhatsAppMessage()"
-          class="w-full py-2.5 rounded-xl font-bold bg-emerald-600 hover:bg-emerald-500 text-white flex items-center justify-center gap-1.5 text-xs shadow-md shadow-emerald-700/30 active:scale-95 transition">
+          class="w-full py-2.5 rounded-xl font-black bg-[#10B981] hover:bg-emerald-400 text-black flex items-center justify-center gap-1.5 text-xs shadow-md shadow-emerald-500/20 active:scale-95 transition">
           <span>📲 Copy WhatsApp Activation Message</span>
         </button>
       </div>
@@ -509,25 +587,25 @@
   <!-- ====================================================================== -->
   <!-- 9. SUPABASE SQL SETUP MODAL                                           -->
   <!-- ====================================================================== -->
-  <div id="sqlModal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-slate-950/85 backdrop-blur-sm p-4">
-    <div class="w-full max-w-2xl rounded-3xl border border-slate-800 bg-slate-900 p-6 shadow-2xl space-y-4">
-      <div class="flex items-center justify-between pb-3 border-b border-slate-800">
+  <div id="sqlModal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/75 backdrop-blur-md p-4">
+    <div class="w-full max-w-2xl rounded-3xl border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-6 shadow-2xl space-y-4">
+      <div class="flex items-center justify-between pb-3 border-b border-[var(--border-subtle)]">
         <div class="flex items-center gap-2">
           <span class="text-xl">🗄️</span>
-          <h2 class="text-base font-bold text-white">Supabase SQL Schema &amp; RLS Policies</h2>
+          <h2 class="text-base font-bold text-[var(--text-primary)]">Supabase SQL Schema &amp; RLS Policies</h2>
         </div>
-        <button onclick="closeSqlModal()" class="text-slate-400 hover:text-white p-1 rounded-lg">✕</button>
+        <button onclick="closeSqlModal()" class="h-8 w-8 rounded-full bg-[var(--bg-surface-elevated)] text-[var(--text-muted)] hover:text-[var(--text-primary)] flex items-center justify-center transition">✕</button>
       </div>
 
-      <p class="text-xs text-slate-400">
+      <p class="text-xs text-[var(--text-muted)]">
         If you haven't enabled table policies on Supabase yet, copy and execute this SQL script in your
-        <a href="https://supabase.com/dashboard/project/giyfjerwbkcbdtvgghjp/sql/new" target="_blank" rel="noopener" class="text-emerald-400 underline font-semibold">Supabase SQL Editor</a>.
+        <a href="https://supabase.com/dashboard/project/giyfjerwbkcbdtvgghjp/sql/new" target="_blank" rel="noopener" class="text-amber-400 underline font-semibold">Supabase SQL Editor</a>.
       </p>
 
-      <pre id="sqlSetupCode" class="bg-slate-950 p-4 rounded-xl font-mono text-[11px] text-slate-300 overflow-x-auto border border-slate-800 max-h-72"></pre>
+      <pre id="sqlSetupCode" class="bg-[var(--bg-canvas)] p-4 rounded-xl font-mono text-[11px] text-emerald-400 overflow-x-auto border border-[var(--border-subtle)] max-h-72"></pre>
 
       <div class="flex justify-end gap-2 pt-2">
-        <button onclick="copySqlSetup()" class="px-4 py-2 rounded-xl text-xs font-bold bg-indigo-600 hover:bg-indigo-500 text-white flex items-center gap-1.5">
+        <button onclick="copySqlSetup()" class="px-4 py-2 rounded-xl text-xs font-black bg-[#FBBF24] hover:bg-amber-300 text-black flex items-center gap-1.5 shadow-md transition">
           📋 Copy SQL to Clipboard
         </button>
       </div>
@@ -535,7 +613,7 @@
   </div>
 
   <!-- Toast Notification Box -->
-  <div id="adminToast" class="fixed bottom-5 right-5 z-50 transform translate-y-20 opacity-0 pointer-events-none transition-all duration-300 bg-slate-900 border border-slate-700 text-white px-4 py-3 rounded-2xl shadow-2xl text-xs font-semibold flex items-center gap-2">
+  <div id="adminToast" class="fixed bottom-5 right-5 z-50 transform translate-y-20 opacity-0 pointer-events-none transition-all duration-300 bg-[var(--bg-surface-elevated)] border border-[var(--border-subtle)] text-[var(--text-primary)] px-4 py-3 rounded-2xl shadow-2xl text-xs font-semibold flex items-center gap-2">
     <span id="toastIcon">⚡</span>
     <span id="toastMsg">Success</span>
   </div>
@@ -544,13 +622,11 @@
   <!-- 10. JAVASCRIPT CONTROLLER                                              -->
   <!-- ====================================================================== -->
   <script>
-    // ========================================================================
-    // SUPABASE CREDENTIALS & CONSTANTS
-    // ========================================================================
+    // 1. SUPABASE CREDENTIALS & CONSTANTS
     const SUPABASE_URL = 'https://giyfjerwbkcbdtvgghjp.supabase.co/rest/v1';
     const SUPABASE_ANON_KEY = 'sb_publishable_ICpRf007sA4GPPkkroSM5g_43PZIU1b';
     const AUTH_SESSION_KEY = 'bitedash_admin_authenticated';
-    const LOCAL_CRM_KEY = 'bitedash_admin_crm_cache';
+    const THEME_STORAGE_KEY = 'bitedash_admin_theme';
     const MASTER_PIN = '9999';
 
     const SUPABASE_SQL_SCRIPT = `-- 1. Stalls table
@@ -593,6 +669,7 @@ create policy "Allow anon all stalls" on public.stalls for all to anon using (tr
 drop policy if exists "Allow anon all sync_logs" on public.stall_sync_logs;
 create policy "Allow anon all sync_logs" on public.stall_sync_logs for all to anon using (true) with check (true);`;
 
+    // Runtime State
     let stallsData = [];
     let syncLogsData = [];
     let currentFilter = 'all';
@@ -600,9 +677,43 @@ create policy "Allow anon all sync_logs" on public.stall_sync_logs for all to an
     let autoRefreshCountdown = 60;
     let selectedStallForJson = null;
 
-    // ========================================================================
-    // AUTHENTICATION PIN VERIFICATION
-    // ========================================================================
+    // 2. THEME SWITCHING & PERSISTENCE
+    function initTheme() {
+      const cached = localStorage.getItem(THEME_STORAGE_KEY) || 'dark';
+      applyTheme(cached);
+    }
+
+    function applyTheme(theme) {
+      const root = document.documentElement;
+      if (theme === 'light') {
+        root.setAttribute('data-theme', 'light');
+        root.classList.remove('dark');
+        root.classList.add('light');
+      } else {
+        root.setAttribute('data-theme', 'dark');
+        root.classList.remove('light');
+        root.classList.add('dark');
+      }
+      localStorage.setItem(THEME_STORAGE_KEY, theme);
+      updateThemeToggleIcon(theme);
+    }
+
+    function toggleTheme() {
+      const current = document.documentElement.getAttribute('data-theme') || 
+        (document.documentElement.classList.contains('light') ? 'light' : 'dark');
+      const next = current === 'dark' ? 'light' : 'dark';
+      applyTheme(next);
+      showToast(`Switched to ${next.toUpperCase()} theme`, next === 'dark' ? '🌙' : '☀️');
+    }
+
+    function updateThemeToggleIcon(theme) {
+      const btn = document.getElementById('themeToggleBtn');
+      if (!btn) return;
+      btn.innerHTML = theme === 'dark' ? '<span>☀️</span>' : '<span>🌙</span>';
+      btn.setAttribute('title', theme === 'dark' ? 'Switch to Light Theme' : 'Switch to Dark Theme');
+    }
+
+    // 3. AUTHENTICATION (MASTER PIN)
     function verifyPin() {
       const pinInput = document.getElementById('authPinInput');
       const errEl = document.getElementById('authErrorMsg');
@@ -630,11 +741,10 @@ create policy "Allow anon all sync_logs" on public.stall_sync_logs for all to an
       document.getElementById('authPinInput').focus();
     }
 
-    // ========================================================================
-    // TOAST NOTIFIER
-    // ========================================================================
+    // 4. TOAST NOTIFIER
     function showToast(msg, icon = '⚡') {
       const toast = document.getElementById('adminToast');
+      if (!toast) return;
       document.getElementById('toastMsg').textContent = msg;
       document.getElementById('toastIcon').textContent = icon;
       toast.classList.remove('translate-y-20', 'opacity-0');
@@ -644,9 +754,7 @@ create policy "Allow anon all sync_logs" on public.stall_sync_logs for all to an
       }, 3000);
     }
 
-    // ========================================================================
-    // DETERMINISTIC 8-DIGIT KEY GENERATOR (MATCHES CLIENT 100%)
-    // ========================================================================
+    // 5. DETERMINISTIC 8-DIGIT KEY GENERATOR (MATCHES CLIENT 100%)
     function generateKeysForStallId(stallIdInput) {
       const clean = String(stallIdInput || 'BD-7842').trim().toUpperCase();
       const digits = parseInt(clean.replace(/\D/g, ''), 10) || 1000;
@@ -662,9 +770,7 @@ create policy "Allow anon all sync_logs" on public.stall_sync_logs for all to an
       };
     }
 
-    // ========================================================================
-    // DATA FETCHING & SYNC LOGS AGGREGATION
-    // ========================================================================
+    // 6. DATA FETCHING (SUPABASE)
     async function fetchLiveFleetData(isManual = false) {
       const spinner = document.getElementById('refreshSpinner');
       if (spinner) spinner.classList.add('animate-spin');
@@ -705,9 +811,7 @@ create policy "Allow anon all sync_logs" on public.stall_sync_logs for all to an
       }
     }
 
-    // ========================================================================
-    // RENDER TOP METRICS
-    // ========================================================================
+    // 7. RENDER KPI SUMMARY METRICS
     function renderGlobalMetrics() {
       const now = Date.now();
       let onlineCount = 0;
@@ -723,9 +827,12 @@ create policy "Allow anon all sync_logs" on public.stall_sync_logs for all to an
         }
       });
 
-      document.getElementById('metricTotalStalls').textContent = stallsData.length;
-      document.getElementById('metricOnlineStalls').textContent = onlineCount;
-      document.getElementById('metricOfflineStalls').textContent = offlineCount;
+      const totalEl = document.getElementById('metricTotalStalls');
+      const onlineEl = document.getElementById('metricOnlineStalls');
+      const offlineEl = document.getElementById('metricOfflineStalls');
+      if (totalEl) totalEl.textContent = stallsData.length;
+      if (onlineEl) onlineEl.textContent = onlineCount;
+      if (offlineEl) offlineEl.textContent = offlineCount;
 
       // Aggregate latest sync logs for today's numbers
       let totalGross = 0;
@@ -752,33 +859,44 @@ create policy "Allow anon all sync_logs" on public.stall_sync_logs for all to an
 
       const netCash = Math.max(0, totalCash - totalExpenses);
 
-      document.getElementById('metricGrossSales').textContent = totalGross.toLocaleString();
-      document.getElementById('metricOrdersCount').textContent = totalOrders.toLocaleString();
-      document.getElementById('metricCashSales').textContent = totalCash.toLocaleString();
-      document.getElementById('metricOnlineSales').textContent = totalOnline.toLocaleString();
-      document.getElementById('metricTotalExpenses').textContent = totalExpenses.toLocaleString();
-      document.getElementById('metricNetCash').textContent = netCash.toLocaleString();
+      const grossEl = document.getElementById('metricGrossSales');
+      const ordersEl = document.getElementById('metricOrdersCount');
+      const cashEl = document.getElementById('metricCashSales');
+      const onlineSalesEl = document.getElementById('metricOnlineSales');
+      const expEl = document.getElementById('metricTotalExpenses');
+      const netCashEl = document.getElementById('metricNetCash');
 
-      // Progress bar split
+      if (grossEl) grossEl.textContent = totalGross.toLocaleString();
+      if (ordersEl) ordersEl.textContent = totalOrders.toLocaleString();
+      if (cashEl) cashEl.textContent = totalCash.toLocaleString();
+      if (onlineSalesEl) onlineSalesEl.textContent = totalOnline.toLocaleString();
+      if (expEl) expEl.textContent = totalExpenses.toLocaleString();
+      if (netCashEl) netCashEl.textContent = netCash.toLocaleString();
+
+      // Progress bar split (Cash: Emerald, Online: Amber)
       const totalPayments = (totalCash + totalOnline) || 1;
       const cashPercent = Math.round((totalCash / totalPayments) * 100);
       const onlinePercent = 100 - cashPercent;
 
-      document.getElementById('barCash').style.width = `${cashPercent}%`;
-      document.getElementById('barOnline').style.width = `${onlinePercent}%`;
-      document.getElementById('percentCash').textContent = `${cashPercent}% Cash`;
-      document.getElementById('percentOnline').textContent = `${onlinePercent}% Digital`;
+      const barCash = document.getElementById('barCash');
+      const barOnline = document.getElementById('barOnline');
+      const percentCash = document.getElementById('percentCash');
+      const percentOnline = document.getElementById('percentOnline');
+
+      if (barCash) barCash.style.width = `${cashPercent}%`;
+      if (barOnline) barOnline.style.width = `${onlinePercent}%`;
+      if (percentCash) percentCash.textContent = `${cashPercent}% Cash`;
+      if (percentOnline) percentOnline.textContent = `${onlinePercent}% Online`;
     }
 
-    // ========================================================================
-    // RENDER STALLS TABLE
-    // ========================================================================
+    // 8. RENDER STALL TABLE DIRECTORY
     function renderStallsTable() {
       const tbody = document.getElementById('stallsTableBody');
-      const searchQuery = (document.getElementById('stallSearchInput').value || '').trim().toLowerCase();
+      if (!tbody) return;
+      const searchInput = document.getElementById('stallSearchInput');
+      const searchQuery = (searchInput ? searchInput.value : '').trim().toLowerCase();
       const now = Date.now();
 
-      // Filter stalls
       let filtered = stallsData.filter(stall => {
         const stallId = (stall.stall_id || '').toLowerCase();
         const shopName = (stall.shop_name || '').toLowerCase();
@@ -802,15 +920,15 @@ create policy "Allow anon all sync_logs" on public.stall_sync_logs for all to an
       if (filtered.length === 0) {
         tbody.innerHTML = `
           <tr>
-            <td colspan="8" class="py-10 text-center text-slate-500">
-              No stalls found matching criteria. Click <button onclick="openOnboardingModal()" class="text-emerald-400 font-bold underline">Onboard Stall</button> to add one.
+            <td colspan="8" class="py-12 text-center text-[var(--text-muted)]">
+              <div class="text-2xl mb-1">🔍</div>
+              <div>No stalls found matching criteria. Click <button onclick="openOnboardingModal()" class="text-amber-400 font-bold underline">Onboard Stall</button> to add one.</div>
             </td>
           </tr>
         `;
         return;
       }
 
-      // Latest sync logs indexed by stall_id
       const logsByStall = {};
       syncLogsData.forEach(log => {
         if (!logsByStall[log.stall_id]) {
@@ -823,7 +941,7 @@ create policy "Allow anon all sync_logs" on public.stall_sync_logs for all to an
         const diffMin = Math.round((now - lastSync) / 60000);
         const isOnline = diffMin <= 10;
         
-        const relativeTime = diffMin < 1 ? 'Just now' : diffMin < 60 ? `${diffMin}m ago` : `${Math.round(diffMin/60)}h ago`;
+        const relativeTime = diffMin < 1 ? 'Just now' : diffMin < 60 ? `${diffMin}m ago` : `${Math.round(diffMin / 60)}h ago`;
         const log = logsByStall[stall.stall_id] || {};
 
         const grossSales = Number(log.total_sales || 0);
@@ -835,75 +953,75 @@ create policy "Allow anon all sync_logs" on public.stall_sync_logs for all to an
         const status = (stall.license_status || 'trial').toLowerCase();
         let licenseBadge = '';
         if (status === 'active') {
-          licenseBadge = '<span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/30">Active</span>';
+          licenseBadge = '<span class="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-bold bg-emerald-500/10 text-emerald-500 border border-emerald-500/20">Active</span>';
         } else if (status === 'expired') {
-          licenseBadge = '<span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-rose-500/10 text-rose-400 border border-rose-500/30">Expired / Locked</span>';
+          licenseBadge = '<span class="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-bold bg-red-500/10 text-red-500 border border-red-500/20">Expired</span>';
         } else {
-          licenseBadge = '<span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-500/10 text-amber-400 border border-amber-500/30">Trial</span>';
+          licenseBadge = '<span class="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-bold bg-amber-500/10 text-amber-500 border border-amber-500/20">Trial</span>';
         }
 
         const cleanPhone = (stall.owner_phone || '').replace(/\D/g, '');
         const waLink = cleanPhone ? `https://wa.me/${cleanPhone.startsWith('92') ? cleanPhone : '92' + cleanPhone.replace(/^0/, '')}` : null;
 
         return `
-          <tr class="hover:bg-slate-800/40 transition-colors">
+          <tr class="hover:bg-[var(--bg-surface-elevated)]/50 transition-colors border-b border-[var(--border-subtle)]">
             
             <!-- Stall ID -->
             <td class="py-3.5 px-4 whitespace-nowrap">
-              <div class="flex items-center gap-1.5">
-                <span class="font-mono font-bold text-amber-300 bg-amber-400/10 px-2 py-0.5 rounded border border-amber-400/20 text-xs">
+              <div class="inline-flex items-center gap-1.5">
+                <span class="font-mono font-bold text-amber-400 bg-amber-400/10 px-2 py-0.5 rounded border border-amber-400/25 text-xs">
                   ${escapeHtml(stall.stall_id)}
                 </span>
-                <button onclick="copyToClipboard('${escapeHtml(stall.stall_id)}', 'Stall ID copied!')" title="Copy ID" class="text-slate-500 hover:text-slate-300 text-xs">📋</button>
+                <button onclick="copyToClipboard('${escapeHtml(stall.stall_id)}', 'Stall ID copied!')" title="Copy ID" class="text-[var(--text-muted)] hover:text-[var(--text-primary)] text-xs">📋</button>
               </div>
             </td>
 
             <!-- Shop Name -->
             <td class="py-3.5 px-4 whitespace-nowrap">
-              <div class="font-bold text-white text-xs">${escapeHtml(stall.shop_name || 'BiteDash Stall')}</div>
-              <div class="text-[10px] text-slate-500 font-mono">App: ${escapeHtml(stall.app_version || 'v2.0')}</div>
+              <div class="font-bold text-[var(--text-primary)] text-sm">${escapeHtml(stall.shop_name || 'BiteDash Stall')}</div>
+              <div class="text-[11px] text-[var(--text-muted)] font-mono">App: ${escapeHtml(stall.app_version || 'v2.0')}</div>
             </td>
 
             <!-- Owner Phone -->
             <td class="py-3.5 px-4 whitespace-nowrap">
               ${waLink ? `
-                <a href="${waLink}" target="_blank" rel="noopener" class="inline-flex items-center gap-1 text-slate-300 hover:text-emerald-400 font-mono text-xs">
+                <a href="${waLink}" target="_blank" rel="noopener" class="inline-flex items-center gap-1 text-[var(--text-muted)] hover:text-emerald-500 font-mono text-xs">
                   <span>📱 ${escapeHtml(stall.owner_phone)}</span>
-                  <span class="text-[10px] text-emerald-400 font-bold">(WA)</span>
+                  <span class="text-[10px] text-emerald-500 font-bold">(WA)</span>
                 </a>
-              ` : `<span class="text-slate-600 font-mono text-xs">--</span>`}
+              ` : `<span class="text-[var(--text-muted)] opacity-50 font-mono text-xs">--</span>`}
             </td>
 
             <!-- Heartbeat Status -->
             <td class="py-3.5 px-4 whitespace-nowrap">
               ${isOnline ? `
-                <div class="flex items-center gap-1.5">
+                <div class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-emerald-500/10 text-emerald-500 border border-emerald-500/20 text-xs font-semibold">
                   <span class="relative flex h-2 w-2">
                     <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
                     <span class="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
                   </span>
-                  <span class="text-emerald-400 font-semibold text-xs">Online</span>
-                  <span class="text-[10px] text-slate-500">(${relativeTime})</span>
+                  <span>Online</span>
+                  <span class="text-[10px] opacity-75">(${relativeTime})</span>
                 </div>
               ` : `
-                <div class="flex items-center gap-1.5">
-                  <span class="h-2 w-2 rounded-full bg-slate-600 inline-block"></span>
-                  <span class="text-slate-400 text-xs">Offline</span>
-                  <span class="text-[10px] text-slate-600">(${relativeTime})</span>
+                <div class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-[var(--bg-surface-elevated)] text-[var(--text-muted)] border border-[var(--border-subtle)] text-xs font-medium">
+                  <span class="h-2 w-2 rounded-full bg-zinc-500 inline-block"></span>
+                  <span>Offline</span>
+                  <span class="text-[10px] opacity-75">(${relativeTime})</span>
                 </div>
               `}
             </td>
 
             <!-- Today's Sales -->
             <td class="py-3.5 px-4 text-right whitespace-nowrap">
-              <div class="font-bold font-mono text-white text-xs">Rs. ${grossSales.toLocaleString()}</div>
-              <div class="text-[10px] text-slate-400 font-mono">${ordersCount} Orders</div>
+              <div class="font-bold font-mono text-[var(--text-primary)] text-xs">Rs. ${grossSales.toLocaleString()}</div>
+              <div class="text-[10px] text-[var(--text-muted)] font-mono">${ordersCount} Orders</div>
             </td>
 
             <!-- Drawer Net Cash -->
             <td class="py-3.5 px-4 text-right whitespace-nowrap">
-              <div class="font-bold font-mono text-emerald-400 text-xs">Rs. ${drawerCash.toLocaleString()}</div>
-              <div class="text-[10px] text-slate-500 font-mono">Exp: Rs. ${expenses.toLocaleString()}</div>
+              <div class="font-bold font-mono text-emerald-500 text-xs">Rs. ${drawerCash.toLocaleString()}</div>
+              <div class="text-[10px] text-[var(--text-muted)] font-mono">Exp: Rs. ${expenses.toLocaleString()}</div>
             </td>
 
             <!-- License Status -->
@@ -915,19 +1033,19 @@ create policy "Allow anon all sync_logs" on public.stall_sync_logs for all to an
             <td class="py-3.5 px-4 text-center whitespace-nowrap">
               <div class="inline-flex items-center gap-1.5">
                 <button onclick="extendStallLicense('${escapeHtml(stall.stall_id)}')" title="Extend +30 Days"
-                  class="px-2 py-1 rounded-lg bg-emerald-600/20 hover:bg-emerald-600/30 text-emerald-300 border border-emerald-500/30 text-[11px] font-bold transition">
+                  class="px-2.5 py-1 rounded-lg bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-500 border border-emerald-500/30 text-xs font-bold transition">
                   ⚡ +30d
                 </button>
                 <button onclick="lockStallLicense('${escapeHtml(stall.stall_id)}')" title="Lock / Expire Stall"
-                  class="px-2 py-1 rounded-lg bg-rose-600/20 hover:bg-rose-600/30 text-rose-300 border border-rose-500/30 text-[11px] font-bold transition">
+                  class="px-2.5 py-1 rounded-lg bg-red-500/10 hover:bg-red-500/20 text-red-500 border border-red-500/30 text-xs font-bold transition">
                   🔒 Lock
                 </button>
                 <button onclick="openKeygenForStall('${escapeHtml(stall.stall_id)}')" title="Keygen &amp; WhatsApp"
-                  class="px-2 py-1 rounded-lg bg-indigo-600/20 hover:bg-indigo-600/30 text-indigo-300 border border-indigo-500/30 text-[11px] font-bold transition">
+                  class="px-2.5 py-1 rounded-lg bg-[var(--bg-surface-elevated)] hover:bg-[var(--border-subtle)] text-[var(--text-primary)] border border-[var(--border-subtle)] text-xs font-bold transition">
                   🔑 Key
                 </button>
                 <button onclick="viewStallJson('${escapeHtml(stall.stall_id)}')" title="View Synced JSON"
-                  class="px-2 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 text-[11px] font-semibold transition">
+                  class="px-2.5 py-1 rounded-lg bg-[var(--bg-surface-elevated)] hover:bg-[var(--border-subtle)] text-[var(--text-primary)] border border-[var(--border-subtle)] text-xs font-semibold transition">
                   📄 JSON
                 </button>
               </div>
@@ -938,21 +1056,17 @@ create policy "Allow anon all sync_logs" on public.stall_sync_logs for all to an
       }).join('');
     }
 
-    // ========================================================================
-    // FILTER CHIPS CONTROLLER
-    // ========================================================================
+    // 9. FILTER CHIPS CONTROLLER
     function setTableFilter(filter, btn) {
       currentFilter = filter;
       document.querySelectorAll('.filter-chip').forEach(el => {
-        el.className = 'filter-chip px-3 py-1.5 rounded-lg font-semibold bg-slate-800 text-slate-400 hover:text-white border border-slate-700/60';
+        el.className = 'filter-chip px-3 py-1.5 rounded-lg font-semibold bg-[var(--bg-surface-elevated)] text-[var(--text-muted)] hover:text-[var(--text-primary)] border border-[var(--border-subtle)] text-xs transition';
       });
-      btn.className = 'filter-chip active px-3 py-1.5 rounded-lg font-semibold bg-emerald-500/20 text-emerald-400 border border-emerald-500/40';
+      btn.className = 'filter-chip active px-3 py-1.5 rounded-lg font-black bg-[#FBBF24] text-[#09090B] border border-[#FBBF24] text-xs shadow-sm transition';
       renderStallsTable();
     }
 
-    // ========================================================================
-    // ACTION HANDLERS: EXTEND, LOCK & ONBOARD
-    // ========================================================================
+    // 10. ACTION HANDLERS: EXTEND, LOCK & ONBOARD
     async function extendStallLicense(stallId) {
       if (!confirm(`Extend license by +30 days for stall ${stallId}?`)) return;
 
@@ -972,7 +1086,7 @@ create policy "Allow anon all sync_logs" on public.stall_sync_logs for all to an
         });
 
         if (res.ok) {
-          showToast(`License extended for ${stallId}!`, '⚡');
+          showToast(`License extended (+30d) for ${stallId}!`, '⚡');
           fetchLiveFleetData();
         } else {
           showToast('Failed to update Supabase record', '❌');
@@ -1009,9 +1123,7 @@ create policy "Allow anon all sync_logs" on public.stall_sync_logs for all to an
       }
     }
 
-    // ========================================================================
-    // NEW STALL ONBOARDING
-    // ========================================================================
+    // 11. NEW STALL ONBOARDING MODAL
     function openOnboardingModal() {
       generateRandomStallId();
       document.getElementById('newShopName').value = '';
@@ -1103,9 +1215,7 @@ create policy "Allow anon all sync_logs" on public.stall_sync_logs for all to an
       }
     }
 
-    // ========================================================================
-    // JSON VIEWER MODAL
-    // ========================================================================
+    // 12. JSON VIEWER MODAL
     function viewStallJson(stallId) {
       selectedStallForJson = stallId;
       document.getElementById('jsonModalStallBadge').textContent = stallId;
@@ -1136,9 +1246,7 @@ create policy "Allow anon all sync_logs" on public.stall_sync_logs for all to an
       copyToClipboard(text, 'JSON copied to clipboard!');
     }
 
-    // ========================================================================
-    // KEYGEN & WHATSAPP MODAL
-    // ========================================================================
+    // 13. KEYGEN & WHATSAPP MODAL
     function openQuickKeygenModal() {
       document.getElementById('keygenStallIdInput').value = stallsData[0]?.stall_id || 'BD-5694';
       updateKeygenResults();
@@ -1177,9 +1285,7 @@ create policy "Allow anon all sync_logs" on public.stall_sync_logs for all to an
       copyToClipboard(msg, 'WhatsApp message copied! Ready to paste into WhatsApp.');
     }
 
-    // ========================================================================
-    // SUPABASE SQL MODAL
-    // ========================================================================
+    // 14. SUPABASE SQL MODAL
     function openSqlModal() {
       document.getElementById('sqlSetupCode').textContent = SUPABASE_SQL_SCRIPT;
       document.getElementById('sqlModal').classList.remove('hidden');
@@ -1193,9 +1299,7 @@ create policy "Allow anon all sync_logs" on public.stall_sync_logs for all to an
       copyToClipboard(SUPABASE_SQL_SCRIPT, 'SQL copied! Paste into Supabase SQL Editor.');
     }
 
-    // ========================================================================
-    // UTILITY HELPERS
-    // ========================================================================
+    // 15. UTILITIES
     function copyToClipboard(text, successToast = 'Copied to clipboard!') {
       if (navigator.clipboard && navigator.clipboard.writeText) {
         navigator.clipboard.writeText(text).then(() => showToast(successToast, '📋'));
@@ -1218,13 +1322,10 @@ create policy "Allow anon all sync_logs" on public.stall_sync_logs for all to an
         .replace(/"/g, '&quot;');
     }
 
-    // ========================================================================
-    // DASHBOARD INITIALIZATION
-    // ========================================================================
+    // 16. DASHBOARD LIFECYCLE
     function initDashboard() {
       fetchLiveFleetData();
 
-      // 60-Second Auto Refresh Loop with countdown
       clearInterval(autoRefreshInterval);
       autoRefreshCountdown = 60;
       autoRefreshInterval = setInterval(() => {
@@ -1239,14 +1340,19 @@ create policy "Allow anon all sync_logs" on public.stall_sync_logs for all to an
       }, 1000);
     }
 
-    // On page load check session
+    // Run on page load
     window.addEventListener('DOMContentLoaded', () => {
+      initTheme();
+
       if (sessionStorage.getItem(AUTH_SESSION_KEY) === 'true') {
-        document.getElementById('authGate').classList.add('hidden');
-        document.getElementById('mainPortal').classList.remove('hidden');
+        const gate = document.getElementById('authGate');
+        const portal = document.getElementById('mainPortal');
+        if (gate) gate.classList.add('hidden');
+        if (portal) portal.classList.remove('hidden');
         initDashboard();
       } else {
-        document.getElementById('authPinInput').focus();
+        const pin = document.getElementById('authPinInput');
+        if (pin) pin.focus();
       }
     });
   </script>

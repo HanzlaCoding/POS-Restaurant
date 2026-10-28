@@ -184,6 +184,70 @@
   /**
    * Builds a 58mm (32-char width) ESC/POS Kitchen Order Ticket byte buffer.
    */
+  function formatItemLines(rawName, qtyStr, amountStr) {
+    const name = toPrintableAscii(rawName || 'Item');
+    const col1Width = 18;
+    const col2Width = 4;
+    const col3Width = 10;
+
+    const c2 = String(qtyStr || '').padStart(col2Width, ' ').slice(-col2Width);
+    const c3 = String(amountStr || '').padStart(col3Width, ' ').slice(-col3Width);
+
+    if (name.length <= col1Width) {
+      return [name.padEnd(col1Width, ' ') + c2 + c3];
+    }
+
+    const words = name.split(/\s+/);
+    const lines = [];
+    let currentLine = '';
+
+    for (let i = 0; i < words.length; i++) {
+      const word = words[i];
+      if (word.length > col1Width) {
+        if (currentLine) {
+          lines.push(currentLine);
+          currentLine = '';
+        }
+        let rem = word;
+        while (rem.length > col1Width) {
+          lines.push(rem.slice(0, col1Width));
+          rem = rem.slice(col1Width);
+        }
+        currentLine = rem;
+        continue;
+      }
+
+      const testLine = currentLine ? (currentLine + ' ' + word) : word;
+      if (testLine.length <= col1Width) {
+        currentLine = testLine;
+      } else {
+        lines.push(currentLine);
+        currentLine = word;
+      }
+    }
+    if (currentLine) {
+      lines.push(currentLine);
+    }
+
+    if (lines.length <= 1) {
+      return [lines[0].padEnd(col1Width, ' ') + c2 + c3];
+    }
+
+    const output = [];
+    for (let i = 0; i < lines.length - 1; i++) {
+      output.push(lines[i].padEnd(col1Width, ' '));
+    }
+
+    const lastLineText = '  ' + lines[lines.length - 1];
+    const paddedLast = lastLineText.slice(0, col1Width).padEnd(col1Width, ' ');
+    output.push(paddedLast + c2 + c3);
+
+    return output;
+  }
+
+  /**
+   * Builds a 58mm (32-char width) ESC/POS Kitchen Order Ticket byte buffer.
+   */
   function buildKotEscPosBytes(order) {
     const bytes = [];
 
@@ -201,58 +265,81 @@
       bytes.push(LF);
     }
 
-    const tokenNum = String(order.token || 0).padStart(3, '0');
-    const customerRaw = toPrintableAscii(order.customer || '').toUpperCase().slice(0, 20);
+    const tokenNum = String(order.token || 1).padStart(3, '0');
+    const customerRaw = toPrintableAscii(order.customer || '').slice(0, 22);
     const dt = formatDateTimePK(order.timestamp ? new Date(order.timestamp) : new Date());
     const items = Array.isArray(order.items) ? order.items : [];
     const grandTotal = Math.round(Number(order.total || 0));
+    const DIVIDER_DASH = '--------------------------------';
+    const DIVIDER_EQUAL = '================================';
 
-    // 1. Initialize printer & select standard PC437 character table
-    pushCmd(ESC, 0x40);       // ESC @ (Reset)
-    pushCmd(ESC, 0x74, 0x00); // ESC t 0 (PC437)
+    // 1. Initialize printer & select PC437
+    pushCmd(ESC, 0x40);       // Reset
+    pushCmd(ESC, 0x74, 0x00); // PC437
 
-    // 2. Centered Header: Bold Shop Name + Bold TOKEN #XXX + Date/Time
+    // 2. Centered Header: Shop Name (Bold)
     pushCmd(ESC, 0x61, 0x01); // Center align
     pushCmd(ESC, 0x45, 0x01); // Bold ON
-    pushLine('STUDENT BURGER & SHAWARMA');
-    pushCmd(GS, 0x21, 0x11);  // 2x width, 2x height (16 chars max per line)
+    const shopName = String(order.shopName || (typeof shopConfig !== 'undefined' && shopConfig.shopName) || 'STUDENT BURGER').toUpperCase();
+    pushLine(shopName.slice(0, 32));
+    pushCmd(ESC, 0x45, 0x00); // Bold OFF
+    pushLine(DIVIDER_DASH);
+
+    // 3. Token Hero Section (Centered, Double Height + Double Width)
+    pushCmd(ESC, 0x61, 0x01); // Center align
+    pushCmd(GS, 0x21, 0x11);  // 2x size
     pushLine('TOKEN #' + tokenNum);
     pushCmd(GS, 0x21, 0x00);  // Normal size
-    pushCmd(ESC, 0x45, 0x00); // Bold OFF
-    pushLine(dt.date + ' | ' + dt.time);
+    pushLine(DIVIDER_DASH);
 
-    // 3. Left-Aligned Table
+    // 4. Order Metadata (Left Aligned)
     pushCmd(ESC, 0x61, 0x00); // Left align
+    pushLine('Date: ' + dt.date + '  ' + dt.time);
     if (customerRaw) {
-      pushLine('CUSTOMER: ' + customerRaw);
+      pushLine('Customer: ' + customerRaw);
     }
-    pushLine('--------------------------------');
-    pushCmd(ESC, 0x45, 0x01);
-    pushLine(formatThreeColumns('ITEM', 'QTY', 'AMOUNT'));
-    pushCmd(ESC, 0x45, 0x00);
-    pushLine('--------------------------------');
+    const isOnline = order.paymentMode === 'online' || String(order.paymentMode).toLowerCase() === 'online';
+    pushLine(isOnline ? 'PAYMENT: ONLINE' : 'PAYMENT: CASH');
+    if (order.isReprint) {
+      pushLine('*** DUPLICATE / REPRINT ***');
+    }
+    pushLine(DIVIDER_EQUAL);
 
-    // 4. Ordered Line Items: Left-aligned Item, Centered Qty ("x1"), Right-aligned Price ("Rs. 150")
+    // 5. Items Table (Fixed 32-Column Grid)
+    pushCmd(ESC, 0x45, 0x01); // Bold ON
+    pushLine('ITEM'.padEnd(18, ' ') + 'QTY'.padStart(4, ' ') + 'AMOUNT'.padStart(10, ' '));
+    pushCmd(ESC, 0x45, 0x00); // Bold OFF
+    pushLine(DIVIDER_DASH);
+
     for (let i = 0; i < items.length; i++) {
-      const item = items[i];
-      const qty = Number(item.quantity || item.qty || 0);
+      const it = items[i];
+      const qty = Number(it.quantity || it.qty || 0);
       if (qty <= 0) continue;
 
-      const nameAscii = toPrintableAscii(item.name || item.englishName || item.id).toUpperCase();
-      const lineTotal = Math.round(Number(item.lineTotal || (qty * Number(item.unitPrice || item.price || 0))));
-      pushLine(formatThreeColumns(nameAscii, 'x' + qty, 'Rs. ' + lineTotal));
+      const rawName = it.name || it.englishName || it.nameEn || it.id || 'Item';
+      const qtyStr = 'x' + qty;
+      const lineTotal = Math.round(Number(it.lineTotal != null ? it.lineTotal : (qty * Number(it.unitPrice || it.price || 0))));
+      const priceStr = 'Rs.' + lineTotal;
+
+      const lines = formatItemLines(rawName, qtyStr, priceStr);
+      for (let j = 0; j < lines.length; j++) {
+        pushLine(lines[j]);
+      }
     }
 
-    // 5. Summary with Double Divider Lines
-    pushLine('================================');
-    pushCmd(ESC, 0x45, 0x01);
-    pushLine(formatColumns('TOTAL BILL:', 'Rs. ' + grandTotal.toLocaleString('en-US'), PAPER_WIDTH_CHARS));
-    pushCmd(ESC, 0x45, 0x00);
-    pushLine('================================');
+    pushLine(DIVIDER_DASH);
 
-    // 6. End of bill: Clean paper feed (3 blank lines) + optional partial cut
-    pushCmd(LF, LF, LF);
-    pushCmd(GS, 0x56, 0x42, 0x00);
+    // 6. Total Summary (Bold)
+    pushCmd(ESC, 0x45, 0x01); // Bold ON
+    pushLine('TOTAL:'.padEnd(16, ' ') + ('Rs. ' + grandTotal.toLocaleString()).padStart(16, ' '));
+    pushCmd(ESC, 0x45, 0x00); // Bold OFF
+    pushLine(DIVIDER_DASH);
+
+    // 7. Footer (Centered) & 1-Line Tear-Off Feed
+    pushCmd(ESC, 0x61, 0x01); // Center align
+    const footerMsg = String(order.footerNote || (typeof shopConfig !== 'undefined' && shopConfig.footerNote) || 'Thank You For Coming');
+    pushLine(footerMsg);
+    pushCmd(ESC, 0x64, 0x05); // Feed 5 lines (ESC d 5) to clear metal teeth
 
     return new Uint8Array(bytes);
   }
@@ -304,7 +391,7 @@
     pushCmd(ESC, 0x61, 0x01); // Center
     pushLine('READY FOR KITCHEN KOT PRINTING');
     pushCmd(ESC, 0x61, 0x00);
-    pushCmd(LF, LF, LF, LF);
+    pushCmd(ESC, 0x64, 0x05); // Feed 5 lines (ESC d 5) to clear metal teeth
 
     return new Uint8Array(bytes);
   }
@@ -378,11 +465,29 @@
      * Open Android System Bluetooth Settings for initial printer pairing.
      */
     openBluetoothSettings: async function () {
-      const plugin = getNativePlugin();
-      if (!plugin) {
-        throw new Error('Android Bluetooth Settings is only available inside the Android app.');
+      if (typeof window !== 'undefined') {
+        if (window.AndroidBridge && typeof window.AndroidBridge.openBluetoothSettings === 'function') {
+          try {
+            window.AndroidBridge.openBluetoothSettings();
+            return { opened: true, via: 'AndroidBridge' };
+          } catch (e) {
+            console.warn('[AndroidPOSBridge] AndroidBridge.openBluetoothSettings error:', e);
+          }
+        }
+        if (window.Android && typeof window.Android.openBluetoothSettings === 'function') {
+          try {
+            window.Android.openBluetoothSettings();
+            return { opened: true, via: 'Android' };
+          } catch (e) {
+            console.warn('[AndroidPOSBridge] Android.openBluetoothSettings error:', e);
+          }
+        }
       }
-      return plugin.openBluetoothSettings();
+      const plugin = getNativePlugin();
+      if (plugin && typeof plugin.openBluetoothSettings === 'function') {
+        return plugin.openBluetoothSettings();
+      }
+      throw new Error('Android Bluetooth Settings is only available inside the Android app.');
     },
 
     /**
@@ -443,11 +548,30 @@
       );
       if (result && result.connected) {
         try {
-          localStorage.setItem('bitedash_last_printer_mac', result.address || address.trim());
-          localStorage.setItem('bitedash_last_printer_name', result.name || 'Thermal Printer');
+          const addr = result.address || address.trim();
+          const name = result.name || 'Thermal Printer';
+          localStorage.setItem('last_printer_mac', addr);
+          localStorage.setItem('last_printer_name', name);
+          localStorage.setItem('bitedash_last_printer_mac', addr);
+          localStorage.setItem('bitedash_last_printer_name', name);
         } catch (e) {}
       }
       return result;
+    },
+
+    /**
+     * Silent non-blocking connection attempt to a printer address.
+     */
+    trySilentConnect: async function (address, timeoutMs) {
+      const addr = address || localStorage.getItem('last_printer_mac') || localStorage.getItem('bitedash_last_printer_mac');
+      if (!addr) return false;
+      try {
+        if (await this.isConnected()) return true;
+        const res = await this.connect(addr, timeoutMs || 2500);
+        return Boolean(res && res.connected);
+      } catch (e) {
+        return false;
+      }
     },
 
     /**

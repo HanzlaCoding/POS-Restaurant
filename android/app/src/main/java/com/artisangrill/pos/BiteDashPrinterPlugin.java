@@ -99,13 +99,33 @@ public class BiteDashPrinterPlugin extends Plugin {
                     closeActiveSocketInternal("Bluetooth turned off on phone");
                 }
             } else if (BluetoothDevice.ACTION_ACL_DISCONNECTED.equals(action)) {
-                BluetoothDevice device = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
+                BluetoothDevice device;
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                    device = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE, BluetoothDevice.class);
+                } else {
+                    device = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
+                }
                 if (device != null && device.getAddress() != null) {
                     synchronized (socketLock) {
                         if (connectedAddress != null && connectedAddress.equalsIgnoreCase(device.getAddress())) {
                             closeActiveSocketInternal("Printer disconnected (" + device.getAddress() + ")");
                         }
                     }
+                }
+            } else if (BluetoothDevice.ACTION_ACL_CONNECTED.equals(action)) {
+                BluetoothDevice device;
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                    device = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE, BluetoothDevice.class);
+                } else {
+                    device = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
+                }
+                if (device != null && device.getAddress() != null) {
+                    JSObject payload = new JSObject();
+                    payload.put("state", "acl_connected");
+                    payload.put("name", device.getName() != null ? device.getName() : device.getAddress());
+                    payload.put("address", device.getAddress());
+                    payload.put("message", "Bluetooth device reached (" + device.getAddress() + ")");
+                    notifyListeners("printerStateChanged", payload);
                 }
             }
         }
@@ -130,6 +150,7 @@ public class BiteDashPrinterPlugin extends Plugin {
         IntentFilter filter = new IntentFilter();
         filter.addAction(BluetoothAdapter.ACTION_STATE_CHANGED);
         filter.addAction(BluetoothDevice.ACTION_ACL_DISCONNECTED);
+        filter.addAction(BluetoothDevice.ACTION_ACL_CONNECTED);
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             getContext().registerReceiver(bluetoothReceiver, filter, Context.RECEIVER_EXPORTED);
         } else {
@@ -221,10 +242,25 @@ public class BiteDashPrinterPlugin extends Plugin {
         try {
             Intent intent = new Intent(Settings.ACTION_BLUETOOTH_SETTINGS);
             intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-            getContext().startActivity(intent);
+            if (getActivity() != null) {
+                getActivity().startActivity(intent);
+            } else {
+                getContext().startActivity(intent);
+            }
             call.resolve();
         } catch (Exception e) {
-            call.reject("Could not open Android Bluetooth Settings: " + e.getMessage(), "SETTINGS_FAILED");
+            try {
+                Intent fallback = new Intent(Settings.ACTION_SETTINGS);
+                fallback.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                if (getActivity() != null) {
+                    getActivity().startActivity(fallback);
+                } else {
+                    getContext().startActivity(fallback);
+                }
+                call.resolve();
+            } catch (Exception ex) {
+                call.reject("Could not open Android Bluetooth Settings: " + e.getMessage(), "SETTINGS_FAILED");
+            }
         }
     }
 

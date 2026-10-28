@@ -231,11 +231,11 @@ function applyRoleUI() {
   const badge = document.getElementById('roleIndicatorBadge');
   if (badge) {
     if (currentRole === 'owner') {
-      badge.textContent = '👑 Owner Active';
+      badge.textContent = '👑 Owner Mode';
       badge.classList.add('owner');
       badge.title = 'Tap to switch back to Cashier Mode';
     } else {
-      badge.textContent = '👤 Cashier';
+      badge.textContent = 'Cashier Mode';
       badge.classList.remove('owner');
       badge.title = 'Cashier Mode Active (Tap to unlock Owner)';
     }
@@ -387,6 +387,7 @@ async function handleLoginGatewaySubmit() {
   btn.textContent = '🚀 Start POS Counter / لاگ ان';
   showToast(`Welcome! Logged in as ${role === 'owner' ? '👑 Owner' : '👤 Cashier'}`, 'success');
   syncToCloud();
+  sendStallHeartbeat();
 }
 
 function logoutSession() {
@@ -472,7 +473,15 @@ function escapeHtml(str) {
 
 function getSavedPrinterMac() {
   try {
-    return (localStorage.getItem(LAST_PRINTER_MAC_KEY) || '').trim();
+    return (localStorage.getItem('last_printer_mac') || localStorage.getItem(LAST_PRINTER_MAC_KEY) || '').trim();
+  } catch (e) {
+    return '';
+  }
+}
+
+function getSavedPrinterName() {
+  try {
+    return (localStorage.getItem('last_printer_name') || localStorage.getItem(LAST_PRINTER_NAME_KEY) || '').trim();
   } catch (e) {
     return '';
   }
@@ -481,9 +490,13 @@ function getSavedPrinterMac() {
 function savePrinterMac(address, name) {
   if (!address) return;
   try {
-    localStorage.setItem(LAST_PRINTER_MAC_KEY, String(address).trim());
+    const cleanAddr = String(address).trim();
+    localStorage.setItem('last_printer_mac', cleanAddr);
+    localStorage.setItem(LAST_PRINTER_MAC_KEY, cleanAddr);
     if (name) {
-      localStorage.setItem(LAST_PRINTER_NAME_KEY, String(name).trim());
+      const cleanName = String(name).trim();
+      localStorage.setItem('last_printer_name', cleanName);
+      localStorage.setItem(LAST_PRINTER_NAME_KEY, cleanName);
     }
   } catch (e) {}
 }
@@ -746,6 +759,9 @@ function completeOrderAndAdvanceToken() {
   syncPaymentModeToggleUI();
   savePersistedState();
   updateUI();
+  if (window.pendingOtaReload) {
+    setTimeout(() => { window.location.reload(); }, 1200);
+  }
   return printedToken;
 }
 
@@ -769,18 +785,28 @@ function updateUI() {
   MENU_ITEMS.forEach(item => {
     const qty = state.cart[item.id] || 0;
     const tile = document.getElementById(`tile-${item.id}`);
+    const pricePill = document.getElementById(`price-pill-${item.id}`);
+    const stepper = document.getElementById(`stepper-${item.id}`);
+    const stepperQty = document.getElementById(`stepper-qty-${item.id}`);
+    const stepperTotal = document.getElementById(`stepper-total-${item.id}`);
     const badge = document.getElementById(`badge-${item.id}`);
-    if (!tile || !badge) return;
+    if (!tile) return;
 
     if (qty > 0) {
       tile.classList.add('active');
-      badge.textContent = `${qty}`;
+      if (pricePill) pricePill.classList.add('hidden');
+      if (stepper) stepper.classList.remove('hidden');
+      if (stepperQty) stepperQty.textContent = `${qty}x`;
+      if (stepperTotal) stepperTotal.textContent = `Rs. ${(item.price * qty).toLocaleString()}`;
+      if (badge) badge.textContent = `${qty}x`;
       totalQty += qty;
       grandTotal += item.price * qty;
       activeEntries.push({ item, qty });
     } else {
       tile.classList.remove('active');
-      badge.textContent = '0';
+      if (pricePill) pricePill.classList.remove('hidden');
+      if (stepper) stepper.classList.add('hidden');
+      if (badge) badge.textContent = '';
     }
   });
 
@@ -864,23 +890,59 @@ function renderMenu() {
     const grid = document.getElementById(`grid-${cat}`);
     if (!grid) return;
     const items = MENU_ITEMS.filter(i => i.cat === cat);
-    grid.innerHTML = items.map(item => `
-      <div class="tile" data-id="${escapeHtml(item.id)}" data-cat="${escapeHtml(item.cat)}" id="tile-${escapeHtml(item.id)}" role="button" tabindex="0" aria-label="${escapeHtml(item.name)} Rs. ${item.price}">
-        <div class="tile-header">
-          <div class="item-name-urdu" lang="ur">${escapeHtml(item.urdu)}</div>
-          <div class="qty-badge" id="badge-${escapeHtml(item.id)}">0</div>
+    grid.innerHTML = items.map(item => {
+      const qty = state.cart[item.id] || 0;
+      return `
+        <div class="tile ${qty > 0 ? 'active' : ''}" data-id="${escapeHtml(item.id)}" data-cat="${escapeHtml(item.cat)}" id="tile-${escapeHtml(item.id)}" role="button" tabindex="0" aria-label="${escapeHtml(item.urdu)} ${escapeHtml(item.name)} Rs. ${item.price}">
+          <span id="badge-${escapeHtml(item.id)}" class="hidden" style="display:none;"></span>
+          <div class="card-content">
+            <div class="item-name-urdu" lang="ur">${escapeHtml(item.urdu)}</div>
+            <div class="item-name-en">${escapeHtml(item.name)}</div>
+          </div>
+
+          <!-- Unselected State: Centered Price Pill -->
+          <div class="card-price-pill ${qty > 0 ? 'hidden' : ''}" id="price-pill-${escapeHtml(item.id)}">
+            <span>Rs. ${item.price.toLocaleString()}</span>
+          </div>
+
+          <!-- Selected State: Flush Edge-to-Edge Stepper -->
+          <div class="card-stepper ${qty > 0 ? '' : 'hidden'}" id="stepper-${escapeHtml(item.id)}">
+            <button type="button" class="stepper-btn minus" data-action="minus" data-id="${escapeHtml(item.id)}" aria-label="Decrease">−</button>
+            <div class="stepper-center">
+              <span class="stepper-qty text-black font-black text-base" id="stepper-qty-${escapeHtml(item.id)}">${qty}x</span>
+              <span class="stepper-total" id="stepper-total-${escapeHtml(item.id)}" style="display:none;">Rs. ${(item.price * qty).toLocaleString()}</span>
+            </div>
+            <button type="button" class="stepper-btn plus" data-action="plus" data-id="${escapeHtml(item.id)}" aria-label="Increase">+</button>
+          </div>
         </div>
-        <div class="item-name-en">${escapeHtml(item.name)}</div>
-        <div class="item-footer">
-          <span class="item-price">Rs. ${item.price.toLocaleString()}</span>
-          ${item.key ? `<span class="hotkey-pill">[${escapeHtml(item.key)}]</span>` : ''}
-        </div>
-      </div>
-    `).join('');
+      `;
+    }).join('');
   });
 
   if (!menuListenersBound) {
     document.getElementById('menuContainer').addEventListener('click', (e) => {
+      // 1. Check if stepper button clicked
+      const stepBtn = e.target.closest('.stepper-btn');
+      if (stepBtn) {
+        e.stopPropagation();
+        const action = stepBtn.dataset.action;
+        const id = stepBtn.dataset.id;
+        if (action === 'minus') {
+          decrementItem(id);
+        } else if (action === 'plus') {
+          incrementItem(id);
+        }
+        return;
+      }
+
+      // 2. Prevent card increment if tapped inside stepper center
+      const stepCenter = e.target.closest('.stepper-center');
+      if (stepCenter) {
+        e.stopPropagation();
+        return;
+      }
+
+      // 3. Card click: adds 1 qty
       const tile = e.target.closest('.tile');
       if (tile && tile.dataset.id) {
         incrementItem(tile.dataset.id);
@@ -971,12 +1033,12 @@ function renderHisaabModal() {
 
   const topItemsList = document.getElementById('hisaabTopItemsList');
   if (summary.topItems.length === 0) {
-    topItemsList.innerHTML = '<div class="status-card-sub">No confirmed orders recorded today yet.</div>';
+    topItemsList.innerHTML = '<div class="status-card-sub" style="text-align:center;padding:8px 0;font-style:italic;color:#71717A;">No confirmed orders recorded today yet.</div>';
   } else {
     topItemsList.innerHTML = summary.topItems.map(it => `
-      <div class="hisaab-row">
-        <div>
-          <span class="hisaab-item-title">${escapeHtml(it.urdu)} (${escapeHtml(it.name)})</span>
+      <div class="hisaab-item-row">
+        <div class="hisaab-item-left">
+          <span class="hisaab-item-title">${escapeHtml(it.name || it.urdu)}</span>
           <span class="hisaab-item-qty">${it.quantity} sold</span>
         </div>
         <span class="hisaab-item-amt">Rs. ${it.revenue.toLocaleString('en-PK')}</span>
@@ -1074,7 +1136,7 @@ function buildDailyHisaabEscPosBytes() {
 
   appendBytes([ESC, 0x61, 0x01]); // Center
   appendLine('*** END OF SHIFT SUMMARY ***');
-  appendBytes([ESC, 0x64, 0x04]); // Feed 4 lines
+  appendBytes([ESC, 0x64, 0x05]); // Feed 5 lines (ESC d 5) to clear tear blade
 
   return new Uint8Array(bytes);
 }
@@ -1266,11 +1328,13 @@ function showToast(message, tone = 'default') {
 
 function setPrinterStatus(status, message) {
   printerStatus.dataset.state = status;
-  let badgeLabel = '🖨️ پرنٹر بند ہے (Connect)';
+  let badgeLabel = 'Connect';
   if (status === 'ready') {
-    badgeLabel = '🖨️ پرنٹر چالو ہے (Ready)';
+    badgeLabel = 'Ready';
   } else if (status === 'connecting' || status === 'printing') {
-    badgeLabel = '⏳ پرنٹر جڑ رہا ہے...';
+    badgeLabel = 'Connecting...';
+  } else if (status === 'reconnecting') {
+    badgeLabel = 'Reconnecting...';
   }
   if (printerStatusLabel) {
     printerStatusLabel.textContent = badgeLabel;
@@ -1396,13 +1460,98 @@ async function sendBytesOverWebBluetooth(uint8ArrayData) {
   }
 }
 
+function toPrintableAscii(str) {
+  if (!str) return '';
+  return String(str)
+    .replace(/[\u2018\u2019]/g, "'")
+    .replace(/[\u201C\u201D]/g, '"')
+    .replace(/[\u2013\u2014]/g, '-')
+    .replace(/[^\x20-\x7E]/g, '')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+function formatItemLinesFor58mm(rawName, qtyStr, amountStr) {
+  const name = toPrintableAscii(rawName || 'Item');
+  const col1Width = 18;
+  const col2Width = 4;
+  const col3Width = 10;
+
+  const c2 = String(qtyStr || '').padStart(col2Width, ' ').slice(-col2Width);
+  const c3 = String(amountStr || '').padStart(col3Width, ' ').slice(-col3Width);
+
+  if (name.length <= col1Width) {
+    return [name.padEnd(col1Width, ' ') + c2 + c3];
+  }
+
+  const words = name.split(/\s+/);
+  const lines = [];
+  let currentLine = '';
+
+  for (let i = 0; i < words.length; i++) {
+    const word = words[i];
+    if (word.length > col1Width) {
+      if (currentLine) {
+        lines.push(currentLine);
+        currentLine = '';
+      }
+      let rem = word;
+      while (rem.length > col1Width) {
+        lines.push(rem.slice(0, col1Width));
+        rem = rem.slice(col1Width);
+      }
+      currentLine = rem;
+      continue;
+    }
+
+    const testLine = currentLine ? (currentLine + ' ' + word) : word;
+    if (testLine.length <= col1Width) {
+      currentLine = testLine;
+    } else {
+      lines.push(currentLine);
+      currentLine = word;
+    }
+  }
+  if (currentLine) {
+    lines.push(currentLine);
+  }
+
+  if (lines.length <= 1) {
+    return [lines[0].padEnd(col1Width, ' ') + c2 + c3];
+  }
+
+  const output = [];
+  for (let i = 0; i < lines.length - 1; i++) {
+    output.push(lines[i].padEnd(col1Width, ' '));
+  }
+
+  const lastLineText = '  ' + lines[lines.length - 1];
+  const paddedLast = lastLineText.slice(0, col1Width).padEnd(col1Width, ' ');
+  output.push(paddedLast + c2 + c3);
+
+  return output;
+}
+
 function buildLocalKotEscPosBytes(orderData) {
   const ESC = 0x1B;
   const GS = 0x1D;
+
+  const CMD = {
+    INIT: [ESC, 0x40],
+    ALIGN_CENTER: [ESC, 0x61, 0x01],
+    ALIGN_LEFT: [ESC, 0x61, 0x00],
+    ALIGN_RIGHT: [ESC, 0x61, 0x02],
+    FONT_REGULAR: [GS, 0x21, 0x00],
+    FONT_BOLD_ON: [ESC, 0x45, 0x01],
+    FONT_BOLD_OFF: [ESC, 0x45, 0x00],
+    FONT_LARGE_TOKEN: [GS, 0x21, 0x11],
+    FEED_TEAR_OFF: [ESC, 0x64, 0x05] // Feed 5 lines (~18-20mm) to clear Speedx M450 physical tear blade
+  };
+
   const bytes = [];
 
   function appendBytes(arr) {
-    for (let i = 0; i < arr.length; i++) bytes.push(arr[i]);
+    for (let i = 0; i < arr.length; i++) bytes.push(arr[i] & 0xFF);
   }
 
   function appendText(str) {
@@ -1416,74 +1565,189 @@ function buildLocalKotEscPosBytes(orderData) {
     appendText(str + '\n');
   }
 
-  function centerText(str, width = 32) {
-    const s = String(str || '').slice(0, width);
-    const leftPad = Math.max(0, Math.floor((width - s.length) / 2));
-    const rightPad = Math.max(0, width - s.length - leftPad);
-    return ' '.repeat(leftPad) + s + ' '.repeat(rightPad);
-  }
-
-  function formatThreeColumns(col1, col2, col3, width = 32) {
-    const c2 = String(col2 || '');
-    const c3 = String(col3 || '');
-    const rightSide = c2 + '  ' + c3;
-    const maxC1Len = Math.max(6, width - rightSide.length - 1);
-    const c1 = String(col1 || '').slice(0, maxC1Len);
-    const spaces = Math.max(1, width - c1.length - rightSide.length);
-    return c1 + ' '.repeat(spaces) + rightSide;
-  }
-
-  const tokenStr = `#${String(orderData.token).padStart(3, '0')}`;
+  const tokenStr = `#${String(orderData.token || 1).padStart(3, '0')}`;
   const dateObj = new Date(orderData.timestamp || Date.now());
   const dateStr = formatDatePK(dateObj);
   const timeStr = formatTime12Hour(dateObj);
+  const DIVIDER_DASH = '--------------------------------';
+  const DIVIDER_EQUAL = '================================';
 
-  appendBytes([ESC, 0x40]); // Initialize
-  appendBytes([ESC, 0x61, 0x01]); // Center
-  appendBytes([ESC, 0x21, 0x30]); // Double height & width bold
-  appendLine((shopConfig.shopName || 'STUDENT BURGER').toUpperCase());
-  appendBytes([ESC, 0x21, 0x00]); // Reset font
-  appendLine('--------------------------------');
+  // 1. Header (Centered, Bold)
+  appendBytes(CMD.INIT);
+  appendBytes(CMD.ALIGN_CENTER);
+  appendBytes(CMD.FONT_BOLD_ON);
+  const shopName = (shopConfig.shopName || 'STUDENT BURGER').toUpperCase();
+  appendLine(shopName.slice(0, 32));
+  appendBytes(CMD.FONT_BOLD_OFF);
+  appendLine(DIVIDER_DASH);
 
-  appendBytes([ESC, 0x21, 0x30]); // Big Bold Token
+  // 2. Token (Centered Hero Section for Kitchen - Double Height & Width)
+  appendBytes(CMD.ALIGN_CENTER);
+  appendBytes(CMD.FONT_LARGE_TOKEN);
   appendLine(`TOKEN ${tokenStr}`);
-  appendBytes([ESC, 0x21, 0x00]); // Reset font
-  appendLine('--------------------------------');
+  appendBytes(CMD.FONT_REGULAR);
+  appendLine(DIVIDER_DASH);
 
-  appendBytes([ESC, 0x61, 0x00]); // Left align
+  // 3. Order Metadata (Left Aligned)
+  appendBytes(CMD.ALIGN_LEFT);
   appendLine(`Date: ${dateStr}  ${timeStr}`);
   if (orderData.customer && String(orderData.customer).trim()) {
-    appendLine(`Customer: ${String(orderData.customer).trim().slice(0, 22)}`);
+    appendLine(`Customer: ${toPrintableAscii(orderData.customer).slice(0, 22)}`);
   }
-  const payLabel = orderData.paymentMode === 'online' ? 'ONLINE (EASYPAISA/JAZZCASH)' : 'CASH';
-  appendLine(`PAYMENT: ${payLabel}`);
+  const isOnline = orderData.paymentMode === 'online' || String(orderData.paymentMode).toLowerCase() === 'online';
+  const payLabel = isOnline ? 'PAYMENT: ONLINE' : 'PAYMENT: CASH';
+  appendLine(payLabel);
   if (orderData.isReprint) {
     appendLine('*** DUPLICATE / REPRINT ***');
   }
-  appendLine('================================');
+  appendLine(DIVIDER_EQUAL);
 
-  appendLine(formatThreeColumns('ITEM', 'QTY', 'AMOUNT'));
-  appendLine('--------------------------------');
+  // 4. Items Table (Fixed 32-Column Grid)
+  appendBytes(CMD.FONT_BOLD_ON);
+  appendLine('ITEM'.padEnd(18, ' ') + 'QTY'.padStart(4, ' ') + 'AMOUNT'.padStart(10, ' '));
+  appendBytes(CMD.FONT_BOLD_OFF);
+  appendLine(DIVIDER_DASH);
 
   (orderData.items || []).forEach(it => {
-    const itemName = String(it.name || it.urdu || 'Item');
-    const qtyStr = `x${it.quantity}`;
-    const priceStr = `Rs.${(it.lineTotal || (it.unitPrice * it.quantity)).toLocaleString()}`;
-    appendLine(formatThreeColumns(itemName, qtyStr, priceStr));
+    const qty = Number(it.quantity || it.qty || 0);
+    if (qty <= 0) return;
+    const rawName = it.name || it.nameEn || it.englishName || it.id || 'Item';
+    const qtyStr = `x${qty}`;
+    const lineTotal = Math.round(Number(it.lineTotal != null ? it.lineTotal : (qty * Number(it.unitPrice || it.price || 0))));
+    const priceStr = `Rs.${lineTotal}`;
+    const lines = formatItemLinesFor58mm(rawName, qtyStr, priceStr);
+    lines.forEach(line => appendLine(line));
   });
 
-  appendLine('================================');
-  appendBytes([ESC, 0x21, 0x30]); // Big bold total
-  appendLine(`TOTAL: Rs. ${(orderData.total || 0).toLocaleString()}`);
-  appendBytes([ESC, 0x21, 0x00]); // Reset font
-  appendLine('--------------------------------');
+  appendLine(DIVIDER_DASH);
 
-  appendBytes([ESC, 0x61, 0x01]); // Center
+  // 5. Total Summary (Bold)
+  appendBytes(CMD.FONT_BOLD_ON);
+  const totalAmount = Math.round(Number(orderData.total || 0));
+  appendLine('TOTAL:'.padEnd(16, ' ') + `Rs. ${totalAmount.toLocaleString()}`.padStart(16, ' '));
+  appendBytes(CMD.FONT_BOLD_OFF);
+  appendLine(DIVIDER_DASH);
+
+  // 6. Footer (Centered) & 1-Line Tear-Off Feed
+  appendBytes(CMD.ALIGN_CENTER);
   appendLine(shopConfig.footerNote || 'Thank You For Coming');
-  appendBytes([ESC, 0x64, 0x03]); // Feed 3 lines
+  appendBytes([ESC, 0x64, 0x05]); // Feed 5 lines (ESC d 5) to clear metal teeth
 
   return new Uint8Array(bytes);
 }
+
+let reconnectInterval = null;
+let isReconnecting = false;
+let userDisconnectedManually = false;
+
+function isPrinterConnected() {
+  if (bleDevice && bleDevice.gatt && bleDevice.gatt.connected && bleCharacteristic) {
+    return true;
+  }
+  const statusEl = document.getElementById('printerStatus');
+  return statusEl && statusEl.dataset.state === 'ready';
+}
+
+async function isPrinterConnectedAsync() {
+  const bridge = window.AndroidPOSBridge;
+  if (bridge && typeof bridge.isNative === 'function' && bridge.isNative()) {
+    try {
+      if (typeof bridge.isConnected === 'function') {
+        return await bridge.isConnected();
+      }
+      const s = await bridge.getStatus();
+      return Boolean(s && s.connected);
+    } catch (e) {
+      return false;
+    }
+  }
+  return Boolean(bleDevice && bleDevice.gatt && bleDevice.gatt.connected && bleCharacteristic);
+}
+
+async function trySilentConnect(mac) {
+  const targetMac = mac || getSavedPrinterMac();
+  if (!targetMac) return false;
+
+  const bridge = window.AndroidPOSBridge;
+  if (bridge && typeof bridge.isNative === 'function' && bridge.isNative()) {
+    try {
+      const isConn = typeof bridge.isConnected === 'function'
+        ? await bridge.isConnected()
+        : Boolean((await bridge.getStatus()).connected);
+      if (isConn) {
+        return true;
+      }
+      const res = await bridge.connect(targetMac, 2500);
+      if (res && res.connected) {
+        savePrinterMac(res.address || targetMac, res.name);
+        return true;
+      }
+    } catch (e) {
+      return false;
+    }
+  } else if (bleDevice && bleDevice.gatt) {
+    try {
+      if (bleDevice.gatt.connected && bleCharacteristic) return true;
+      await connectToWebBluetoothGatt(bleDevice);
+      return true;
+    } catch (e) {
+      return false;
+    }
+  }
+  return false;
+}
+
+function startAutoReconnect() {
+  if (reconnectInterval) return;
+  if (userDisconnectedManually) return;
+  const savedMac = getSavedPrinterMac();
+  if (!savedMac) return;
+
+  setPrinterStatus('reconnecting');
+
+  reconnectInterval = setInterval(async () => {
+    if (isReconnecting || isPrinting) return;
+    const currentMac = getSavedPrinterMac();
+    if (!currentMac || userDisconnectedManually) {
+      stopAutoReconnect();
+      return;
+    }
+
+    isReconnecting = true;
+    console.log("Attempting silent reconnect to:", currentMac);
+    try {
+      const success = await trySilentConnect(currentMac);
+      if (success) {
+        stopAutoReconnect();
+        setPrinterStatus('ready'); // Green "Ready" pill
+        showToast('🖨️ پرنٹر دوبارہ جڑ گیا! (Printer Reconnected)', 'success');
+        await syncPrinterStatusFromBridge();
+        if (printerModal && printerModal.classList.contains('open')) {
+          await loadBondedDevicesInModal();
+        }
+      }
+    } catch (err) {
+      console.warn("Silent reconnect attempt failed:", err);
+    } finally {
+      isReconnecting = false;
+    }
+  }, 4000);
+}
+
+function stopAutoReconnect(isManual = false) {
+  if (reconnectInterval) {
+    clearInterval(reconnectInterval);
+    reconnectInterval = null;
+  }
+  if (isManual) {
+    userDisconnectedManually = true;
+  }
+}
+
+window.isPrinterConnected = isPrinterConnected;
+window.trySilentConnect = trySilentConnect;
+window.startAutoReconnect = startAutoReconnect;
+window.stopAutoReconnect = stopAutoReconnect;
 
 async function ensureSilentPrinterConnection() {
   const bridge = window.AndroidPOSBridge;
@@ -1546,8 +1810,8 @@ async function syncPrinterStatusFromBridge() {
     const name = bleDevice.name || 'Bluetooth Thermal Printer';
     setPrinterStatus('ready');
     if (banner) banner.dataset.tone = 'connected';
-    if (stateText) stateText.textContent = `🟢 پرنٹر جڑا ہوا ہے (${name})`;
-    if (hintText) hintText.textContent = '(Printer connect hai, receipt nikalne ke liye taiyar hai)';
+    if (stateText) stateText.textContent = 'پرنٹر تیار ہے (Connected)';
+    if (hintText) hintText.textContent = `Device: ${name} (Ready)`;
     if (connectBtn) {
       connectBtn.disabled = true;
       connectBtn.style.opacity = '0.5';
@@ -1560,8 +1824,8 @@ async function syncPrinterStatusFromBridge() {
   if (!bridge || typeof bridge.getStatus !== 'function') {
     setPrinterStatus('disconnected');
     if (banner) banner.dataset.tone = 'idle';
-    if (stateText) stateText.textContent = '⚠️ پرنٹر کنیکٹ نہیں ہے۔ نیچے دیے گئے پیلے بٹن کو دبائیں۔';
-    if (hintText) hintText.textContent = '(Printer connect nahi hai, neechay button dabayein)';
+    if (stateText) stateText.textContent = 'پرنٹر بند ہے (Disconnected)';
+    if (hintText) hintText.textContent = 'Make sure Bluetooth & printer are ON';
     if (connectBtn) {
       connectBtn.disabled = false;
       connectBtn.style.opacity = '1';
@@ -1576,11 +1840,12 @@ async function syncPrinterStatusFromBridge() {
     const isConn = Boolean(status.connected);
 
     if (isConn) {
+      stopAutoReconnect();
       const printerName = status.name || getSavedPrinterMac() || 'Speedx M450';
       setPrinterStatus('ready');
       if (banner) banner.dataset.tone = 'connected';
-      if (stateText) stateText.textContent = `🟢 پرنٹر چالو ہے (${printerName})`;
-      if (hintText) hintText.textContent = '(Printer connect hai, receipt nikalne ke liye taiyar hai)';
+      if (stateText) stateText.textContent = 'پرنٹر تیار ہے (Connected)';
+      if (hintText) hintText.textContent = `Device: ${printerName} (Ready)`;
       if (connectBtn) {
         connectBtn.disabled = true;
         connectBtn.style.opacity = '0.5';
@@ -1588,10 +1853,17 @@ async function syncPrinterStatusFromBridge() {
       if (testBtn) testBtn.disabled = false;
       if (disconnectBtn) disconnectBtn.disabled = false;
     } else {
-      setPrinterStatus('disconnected');
-      if (banner) banner.dataset.tone = 'idle';
-      if (stateText) stateText.textContent = '⚠️ پرنٹر کنیکٹ نہیں ہے۔ نیچے دیے گئے پیلے بٹن کو دبائیں۔';
-      if (hintText) hintText.textContent = '(Printer connect nahi hai, neechay button dabayein)';
+      if (reconnectInterval) {
+        setPrinterStatus('reconnecting');
+        if (banner) banner.dataset.tone = 'connecting';
+        if (stateText) stateText.textContent = 'پرنٹر دوبارہ جوڑا جا رہا ہے (Reconnecting...)';
+        if (hintText) hintText.textContent = 'Attempting auto-reconnect every 4s...';
+      } else {
+        setPrinterStatus('disconnected');
+        if (banner) banner.dataset.tone = 'idle';
+        if (stateText) stateText.textContent = 'پرنٹر بند ہے (Disconnected)';
+        if (hintText) hintText.textContent = 'Make sure Bluetooth & printer are ON';
+      }
       if (connectBtn) {
         connectBtn.disabled = false;
         connectBtn.style.opacity = '1';
@@ -1604,10 +1876,56 @@ async function syncPrinterStatusFromBridge() {
   }
 }
 
+async function triggerOpenBluetoothSettings() {
+  const bridge = window.AndroidPOSBridge;
+  try {
+    if (bridge && typeof bridge.openBluetoothSettings === 'function') {
+      await bridge.openBluetoothSettings();
+      return true;
+    }
+    if (window.AndroidBridge && typeof window.AndroidBridge.openBluetoothSettings === 'function') {
+      window.AndroidBridge.openBluetoothSettings();
+      return true;
+    }
+    if (window.Android && typeof window.Android.openBluetoothSettings === 'function') {
+      window.Android.openBluetoothSettings();
+      return true;
+    }
+  } catch (e) {
+    console.warn('Could not launch Bluetooth settings:', e);
+  }
+  return false;
+}
+window.triggerOpenBluetoothSettings = triggerOpenBluetoothSettings;
+
 async function loadBondedDevicesInModal() {
   const bridge = window.AndroidPOSBridge;
   const listEl = document.getElementById('bondedDevicesList');
   if (!listEl) return;
+
+  if (!listEl.dataset.hasClickListener) {
+    listEl.dataset.hasClickListener = 'true';
+    listEl.addEventListener('click', async (e) => {
+      const item = e.target.closest('.bonded-item');
+      if (!item) return;
+      const mac = item.getAttribute('data-mac');
+      const name = item.getAttribute('data-name');
+      if (!mac || !bridge) return;
+
+      try {
+        showToast(`⏳ ${name || 'Printer'} کنیکٹ ہو رہا ہے...`, 'default');
+        await bridge.connect(mac, 12000);
+        savePrinterMac(mac, name);
+        showToast(`پرنٹر (${name || 'Printer'}) کنیکٹ ہو گیا!`, 'success');
+        closePrinterModal();
+      } catch (err) {
+        showToast(getFriendlyPrinterErrorMessage(err), 'error');
+      } finally {
+        await syncPrinterStatusFromBridge();
+        await loadBondedDevicesInModal();
+      }
+    });
+  }
 
   if (!bridge || typeof bridge.listBondedDevices !== 'function') {
     listEl.innerHTML = '';
@@ -1617,15 +1935,22 @@ async function loadBondedDevicesInModal() {
   try {
     const devices = await bridge.listBondedDevices();
     if (!Array.isArray(devices) || devices.length === 0) {
-      listEl.innerHTML = '<div class="bonded-empty">Android Bluetooth Settings mein koi printer pair nahi mila.</div>';
+      listEl.innerHTML = `
+        <div class="bonded-empty" style="padding:14px 10px;text-align:center;background:#18181B;border:1px dashed #27272A;border-radius:12px;">
+          <div style="color:#A1A1AA;font-size:12px;margin-bottom:10px;">Android Bluetooth Settings mein koi printer pair nahi mila.</div>
+          <button type="button" onclick="triggerOpenBluetoothSettings()" style="background:#FBBF24;color:#09090B;font-weight:800;border:none;padding:8px 16px;border-radius:10px;font-size:12px;cursor:pointer;display:inline-flex;align-items:center;gap:6px;box-shadow:0 2px 8px rgba(251,191,36,0.25);">
+            ⚙️ Open Bluetooth Settings / بلوٹوتھ کھولیں
+          </button>
+        </div>
+      `;
       return;
     }
 
     const savedMac = getSavedPrinterMac();
     listEl.innerHTML = devices.map(d => `
-      <div class="bonded-item" data-mac="${d.address}" data-name="${d.name || ''}">
-        <div class="bonded-name">${d.name || 'Unnamed Device'}</div>
-        <div class="bonded-mac">${d.address} ${d.address === savedMac ? '★ (Last Used)' : ''}</div>
+      <div class="bonded-item" data-mac="${escapeHtml(d.address)}" data-name="${escapeHtml(d.name || '')}">
+        <div class="bonded-name">${escapeHtml(d.name || 'Unnamed Device')}</div>
+        <div class="bonded-mac">${escapeHtml(d.address)} ${d.address === savedMac ? '★ (Last Used)' : ''}</div>
       </div>
     `).join('');
   } catch (err) {
@@ -1653,25 +1978,38 @@ async function handlePrinterStatusBarTap() {
 }
 
 async function handleConnectPrinterModalClick() {
+  userDisconnectedManually = false;
   const bridge = window.AndroidPOSBridge;
 
   if (bridge && typeof bridge.isNative === 'function' && bridge.isNative()) {
     connectPrinterModalBtn.disabled = true;
     connectPrinterModalBtn.textContent = '⏳ پرنٹر تلاش کر رہا ہے...';
     try {
-      const res = await bridge.pairOrSelectPrinter();
-      if (res && res.connected) {
-        savePrinterMac(res.address, res.name);
-        showToast('پرنٹر کنیکٹ ہو گیا ہے! (Connected)', 'success');
+      const devices = await bridge.listBondedDevices();
+      if (!Array.isArray(devices) || devices.length === 0) {
+        showToast('کوئی پیئرڈ پرنٹر نہیں ملا، بلوٹوتھ سیٹنگز کھولی جا رہی ہیں...', 'default');
+        await triggerOpenBluetoothSettings();
+        return;
+      }
+
+      // If devices exist, connect to saved printer MAC or first/matching device
+      const savedMac = getSavedPrinterMac();
+      let targetDevice = devices.find(d => d.address === savedMac) ||
+                         devices.find(d => /speed|m450|bt-450|mpt|pos|printer|thermal|zj|rpp/i.test(d.name || '')) ||
+                         devices[0];
+
+      if (targetDevice && targetDevice.address) {
+        connectPrinterModalBtn.textContent = `⏳ ${targetDevice.name || 'Printer'} کنیکٹ ہو رہا ہے...`;
+        await bridge.connect(targetDevice.address, 12000);
+        savePrinterMac(targetDevice.address, targetDevice.name);
+        showToast(`پرنٹر (${targetDevice.name || 'Thermal Printer'}) کنیکٹ ہو گیا!`, 'success');
         closePrinterModal();
-      } else {
-        showToast('پرنٹر کنیکٹ نہیں ہوا (Not connected)', 'error');
       }
     } catch (err) {
       showToast(getFriendlyPrinterErrorMessage(err), 'error');
     } finally {
       connectPrinterModalBtn.disabled = false;
-      connectPrinterModalBtn.textContent = '🔗 پرنٹر کنیکٹ کریں (Search Printer)';
+      connectPrinterModalBtn.textContent = '🔍 پرنٹر تلاش کریں (Connect Printer)';
       await syncPrinterStatusFromBridge();
       await loadBondedDevicesInModal();
     }
@@ -1689,7 +2027,7 @@ async function handleConnectPrinterModalClick() {
     showToast(getFriendlyPrinterErrorMessage(err), 'error');
   } finally {
     connectPrinterModalBtn.disabled = false;
-    connectPrinterModalBtn.textContent = '🔗 پرنٹر کنیکٹ کریں (Search Printer)';
+    connectPrinterModalBtn.textContent = '🔍 پرنٹر تلاش کریں (Connect Printer)';
     await syncPrinterStatusFromBridge();
   }
 }
@@ -1745,24 +2083,26 @@ async function printKitchenKOT() {
 
   try {
     if (bridge && typeof bridge.isNative === 'function' && bridge.isNative()) {
-      let isConnected = typeof bridge.isConnected === 'function'
-        ? await bridge.isConnected()
-        : Boolean((await bridge.getStatus()).connected);
+      let isConnected = await isPrinterConnectedAsync();
 
       if (!isConnected) {
-        const silentConnected = await ensureSilentPrinterConnection();
-        if (silentConnected) {
+        const savedMac = localStorage.getItem('last_printer_mac') || getSavedPrinterMac();
+        if (savedMac) {
+          showToast("Printer reconnect ho raha hai...", "default");
+          setPrinterStatus('connecting');
+          const connected = await trySilentConnect(savedMac);
+          if (!connected) {
+            setPrinterStatus('reconnecting');
+            startAutoReconnect();
+            alert("Printer band hai ya range se bahar hai. Please on karein.");
+            return;
+          }
           isConnected = true;
+          setPrinterStatus('ready');
+        } else {
+          openPrinterModal();
+          return;
         }
-      }
-
-      if (!isConnected) {
-        state.uncertainToken = orderData.token;
-        savePersistedState();
-        updateUI();
-        openPrinterModal();
-        showToast('پرنٹر کنیکٹ نہیں ہے! پیلا بٹن دبائیں (Printer connect karein)', 'error');
-        return;
       }
 
       const res = await bridge.sendEscPosBytes(asciiBytes);
@@ -1772,13 +2112,18 @@ async function printKitchenKOT() {
     } else if (bleDevice && bleDevice.gatt && bleDevice.gatt.connected && bleCharacteristic) {
       await sendBytesOverWebBluetooth(asciiBytes);
     } else {
-      const reconnected = await autoReconnectWebBluetoothOnStartup();
-      if (!reconnected) {
-        state.uncertainToken = orderData.token;
-        savePersistedState();
-        updateUI();
+      const savedMac = localStorage.getItem('last_printer_mac') || getSavedPrinterMac();
+      if (savedMac) {
+        showToast("Printer reconnect ho raha hai...", "default");
+        const reconnected = await autoReconnectWebBluetoothOnStartup();
+        if (!reconnected) {
+          setPrinterStatus('reconnecting');
+          startAutoReconnect();
+          alert("Printer band hai ya range se bahar hai. Please on karein.");
+          return;
+        }
+      } else {
         openPrinterModal();
-        showToast('پرنٹر کنیکٹ نہیں ہے! (Printer connect karein)', 'error');
         return;
       }
       await sendBytesOverWebBluetooth(asciiBytes);
@@ -1927,7 +2272,7 @@ function resetMenuItemForm() {
   document.getElementById('itemNameUrInput').value = '';
   document.getElementById('itemCategorySelect').value = 'burger';
   document.getElementById('itemPriceInput').value = '';
-  document.getElementById('menuFormHeading').textContent = '🍔 Add New Menu Item';
+  document.getElementById('menuFormHeading').textContent = '🍔 ADD MENU ITEM';
   document.getElementById('saveMenuItemBtn').textContent = '➕ Add Menu Item';
   document.getElementById('resetItemFormBtn').style.display = 'none';
 }
@@ -1937,24 +2282,26 @@ function renderMenuEditorList() {
   if (!listEl) return;
 
   if (MENU_ITEMS.length === 0) {
-    listEl.innerHTML = '<div class="status-card-sub">No menu items configured.</div>';
+    listEl.innerHTML = '<div class="status-card-sub" style="padding:12px;text-align:center;">No menu items configured.</div>';
     return;
   }
 
   listEl.innerHTML = MENU_ITEMS.map(item => `
     <div class="menu-editor-row">
       <div class="menu-editor-info">
-        <span class="menu-editor-title">${escapeHtml(item.name)} (${escapeHtml(item.urdu)})</span>
-        <span class="menu-editor-sub">Rs. ${item.price} • ${escapeHtml(item.category || item.cat)}</span>
+        <div class="menu-editor-title">
+          <span class="urdu-title" lang="ur">${escapeHtml(item.urdu)}</span>
+          <span class="en-title">${escapeHtml(item.name)}</span>
+        </div>
+        <div class="menu-editor-price">Rs. ${item.price.toLocaleString()}</div>
       </div>
       <div class="menu-editor-actions">
-        <button type="button" class="mini-btn" data-edit-item="${escapeHtml(item.id)}">Edit</button>
+        <button type="button" class="mini-btn edit" data-edit-item="${escapeHtml(item.id)}">Edit</button>
         <button type="button" class="mini-btn del" data-del-item="${escapeHtml(item.id)}">Del</button>
       </div>
     </div>
   `).join('');
 }
-
 // ============================================================================
 // 11. ROZ KA KHARCHA / EXPENSE MODAL (RBAC GATED)
 // ============================================================================
@@ -1969,25 +2316,25 @@ function renderExpenseModalList() {
   const totalExp = expenses.reduce((sum, ex) => sum + (Number(ex.amount) || 0), 0);
 
   if (totalBadgeEl) {
-    totalBadgeEl.textContent = `Total: Rs. ${totalExp.toLocaleString('en-PK')}`;
+    totalBadgeEl.textContent = `Rs. ${totalExp.toLocaleString('en-PK')}`;
   }
   if (!listEl) return;
 
   if (expenses.length === 0) {
-    listEl.innerHTML = '<div class="status-card-sub">Aaj koi kharcha darj nahi hua. (No expenses today)</div>';
+    listEl.innerHTML = '<div class="status-card-sub" style="text-align:center;padding:8px 0;font-style:italic;color:#71717A;">آج کوئی خرچہ درج نہیں ہوا (No expenses recorded)</div>';
     return;
   }
 
   // RBAC: Only Owner can delete existing expenses; Cashier cannot delete
   listEl.innerHTML = expenses.slice().reverse().map(ex => `
-    <div class="menu-editor-row">
-      <div class="menu-editor-info">
-        <span class="menu-editor-title">${escapeHtml(ex.title)}</span>
-        <span class="menu-editor-sub">${escapeHtml(ex.time || '')}</span>
+    <div class="expense-item-row">
+      <div class="expense-item-info">
+        <span class="expense-item-title">${escapeHtml(ex.title)}</span>
+        <span class="expense-item-time">${escapeHtml(ex.time || '')}</span>
       </div>
-      <div style="display:flex;align-items:center;gap:8px;">
-        <strong style="color:#DC2626;font-size:12.5px;">- Rs. ${(Number(ex.amount) || 0).toLocaleString('en-PK')}</strong>
-        ${currentRole === 'owner' ? `<button type="button" class="mini-btn del" data-del-expense="${escapeHtml(String(ex.id))}">✕</button>` : ''}
+      <div class="expense-item-actions">
+        <span class="expense-amount-badge">- Rs. ${(Number(ex.amount) || 0).toLocaleString('en-PK')}</span>
+        ${currentRole === 'owner' ? `<button type="button" class="mini-btn del" data-del-expense="${escapeHtml(String(ex.id))}" title="Delete Expense">✕</button>` : ''}
       </div>
     </div>
   `).join('');
@@ -2428,6 +2775,37 @@ function markBatchAsSynced(syncedIdsSet) {
   saveSyncOutbox(outbox);
 }
 
+// ============================================================================
+// 12.5. LIGHTWEIGHT STALL HEARTBEAT ENGINE (KEEPS POS "ONLINE" IN ADMIN)
+// ============================================================================
+async function sendStallHeartbeat() {
+  if (typeof navigator !== 'undefined' && !navigator.onLine) return;
+  try {
+    const stallId = getOrCreateStallId();
+    const shopName = (shopConfig && shopConfig.shopName) ? shopConfig.shopName : 'Student Burger';
+    const nowIso = new Date().toISOString();
+    const supabaseHeaders = {
+      'apikey': SUPABASE_ANON_KEY,
+      'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+      'Content-Type': 'application/json'
+    };
+    await fetch(`${SUPABASE_URL}/stalls?on_conflict=stall_id`, {
+      method: 'POST',
+      headers: { ...supabaseHeaders, 'Prefer': 'resolution=merge-duplicates' },
+      body: JSON.stringify({
+        stall_id: stallId,
+        shop_name: shopName,
+        last_synced_at: nowIso,
+        app_version: 'v2.0'
+      }),
+      keepalive: true
+    }).catch(() => null);
+  } catch (e) {
+    // Silent fail
+  }
+}
+window.sendStallHeartbeat = sendStallHeartbeat;
+
 async function syncToCloud() {
   if (isCloudSyncRunning) return false;
   if (typeof navigator !== 'undefined' && !navigator.onLine) {
@@ -2436,6 +2814,7 @@ async function syncToCloud() {
 
   const batch = collectPendingSyncBatch();
   if (batch.orders.length === 0 && batch.expenses.length === 0) {
+    sendStallHeartbeat();
     return true;
   }
 
@@ -2958,16 +3337,17 @@ testPrintBtn.addEventListener('click', async () => {
     } else {
       await sendBytesOverWebBluetooth(asciiBytes);
     }
-    showToast('✅ چیک پرچی پرنٹ ہو گئی! (Test Print OK)', 'success');
+    showToast('✅ ٹیسٹ پرچی پرنٹ ہو گئی! (Test Slip OK)', 'success');
   } catch (err) {
     showToast(getFriendlyPrinterErrorMessage(err), 'error');
   } finally {
-    testPrintBtn.textContent = '📄 چیک پرچی (Test Print)';
+    testPrintBtn.textContent = '📄 ٹیسٹ پرچی (Test Slip)';
     await syncPrinterStatusFromBridge();
   }
 });
 
 disconnectPrinterBtn.addEventListener('click', async () => {
+  stopAutoReconnect(true); // User explicitly clicked disconnect
   const bridge = window.AndroidPOSBridge;
   if (bleDevice && bleDevice.gatt && bleDevice.gatt.connected) {
     bleDevice.gatt.disconnect();
@@ -2979,6 +3359,7 @@ disconnectPrinterBtn.addEventListener('click', async () => {
   }
   if (!bridge || !bridge.isNative()) return;
   await bridge.disconnect();
+  setPrinterStatus('disconnected');
   await syncPrinterStatusFromBridge();
   await loadBondedDevicesInModal();
   showToast('پرنٹر بند کر دیا گیا (Disconnected)');
@@ -3116,25 +3497,79 @@ window.addEventListener('load', async () => {
   document.getElementById('customerInput').value = state.customer || '';
   renderMenu();
   updateUI();
+  sendStallHeartbeat();
   syncToCloud();
+  setInterval(sendStallHeartbeat, 120000);
   await syncPrinterStatusFromBridge();
 
   // Auto-reconnect Web Bluetooth or Android SPP
   const bridge = window.AndroidPOSBridge;
   if (bridge && typeof bridge.isNative === 'function' && bridge.isNative()) {
-    if (getSavedPrinterMac()) {
-      ensureSilentPrinterConnection().then(() => syncPrinterStatusFromBridge());
+    const savedMac = getSavedPrinterMac();
+    if (savedMac) {
+      trySilentConnect(savedMac).then((ok) => {
+        syncPrinterStatusFromBridge();
+        if (!ok) {
+          startAutoReconnect();
+        }
+      });
     }
   } else {
-    await autoReconnectWebBluetoothOnStartup();
+    autoReconnectWebBluetoothOnStartup().then((ok) => {
+      if (!ok && getSavedPrinterMac()) {
+        startAutoReconnect();
+      }
+    });
   }
 
   if (window.AndroidPOSBridge && typeof window.AndroidPOSBridge.onStateChange === 'function') {
-    window.AndroidPOSBridge.onStateChange(() => {
+    window.AndroidPOSBridge.onStateChange((event) => {
+      console.log('[POS] Printer state event:', event);
+      const state = event && event.state;
+      if (state === 'disconnected') {
+        if (!userDisconnectedManually && getSavedPrinterMac()) {
+          startAutoReconnect();
+        } else {
+          setPrinterStatus('disconnected');
+        }
+      } else if (state === 'ready') {
+        stopAutoReconnect();
+        setPrinterStatus('ready');
+      } else if (state === 'acl_connected') {
+        if (!userDisconnectedManually && getSavedPrinterMac()) {
+          trySilentConnect(getSavedPrinterMac()).then((ok) => {
+            if (ok) {
+              stopAutoReconnect();
+              setPrinterStatus('ready');
+              showToast('🖨️ پرنٹر دوبارہ جڑ گیا! (Printer Reconnected)', 'success');
+              syncPrinterStatusFromBridge();
+            }
+          });
+        }
+      }
       syncPrinterStatusFromBridge();
-      if (printerModal.classList.contains('open')) {
+      if (printerModal && printerModal.classList.contains('open')) {
         loadBondedDevicesInModal();
       }
     });
   }
 });
+
+
+// ============================================================================
+// 16. SILENT IN-APP HOT UPDATE (OTA) HANDLER
+// ============================================================================
+window.onAppUpdated = function() {
+  const isCartEmpty = !state || !state.cart || Object.values(state.cart).reduce((a, b) => a + Number(b || 0), 0) === 0;
+
+  if (isCartEmpty) {
+    console.log('[BiteDash OTA] Silent hot update ready. Reloading POS now...');
+    window.location.reload();
+  } else {
+    console.log('[BiteDash OTA] Silent hot update ready. Deferred until current order completes.');
+    window.pendingOtaReload = true;
+    if (typeof showToast === 'function') {
+      showToast('Naya update tayyar hai. Agle order par refresh ho jaye ga.', 'info');
+    }
+  }
+};

@@ -3,6 +3,9 @@
 
 <head>
   <meta charset="UTF-8">
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="0">
   <meta name="viewport"
     content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <title>Student Burger • POS Terminal</title>
@@ -12,7 +15,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link
-    href="https://fonts.googleapis.com/css2?family=Noto+Nastaliq+Urdu:wght@600;700&family=Noto+Sans+Arabic:wght@700;800;900&display=swap"
+    href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700;800;900&family=Noto+Sans+Arabic:wght@600;700;800&display=swap"
     rel="stylesheet">
   <style>
     :root {
@@ -27,8 +30,8 @@
       --accent-hover: #D97706;
       --danger: #EF4444;
       --success: #10B981;
-      --font-sans: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-      --font-urdu: "Noto Nastaliq Urdu", "Noto Sans Arabic", "Noto Naskh Arabic", "Geeza Pro", "Segoe UI", Tahoma, sans-serif;
+      --font-sans: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+      --font-urdu: 'Noto Sans Arabic', 'Plus Jakarta Sans', sans-serif;
     }
 
     * {
@@ -59,10 +62,11 @@
     /* Mobile POS Viewport Container (360px - 420px) */
     .pos-screen {
       width: 100%;
-      max-width: 420px;
+      max-width: 480px;
+      margin: 0 auto;
       height: 100vh;
       height: 100dvh;
-      background: #F1F5F9;
+      background: #0B1120;
       display: flex;
       flex-direction: column;
       position: relative;
@@ -70,154 +74,164 @@
       box-shadow: 0 25px 60px rgba(0, 0, 0, 0.85);
     }
 
-    /* 1. Cohesive Dark Commercial Header (#111827) with Broad Printer Focal Badge */
-    header {
-      background: var(--bg-header);
+    /* ========================================================================
+    /* ========================================================================
+       1. TOP APP BAR (Height: 46px, px: 16px, bg-[#09090B])
+       ======================================================================== */
+    header,
+    .pos-top-header {
+      background: #09090B;
       color: #FFFFFF;
-      padding: 8px 10px;
-      min-height: 54px;
+      padding: 0 16px;
+      height: 46px;
+      min-height: 46px;
+      max-height: 46px;
       display: flex;
       align-items: center;
       justify-content: space-between;
-      gap: 6px;
+      gap: 12px;
       flex-shrink: 0;
-      border-bottom: 1px solid #1F2937;
-      z-index: 25;
+      border-bottom: 1px solid #18181B;
+      z-index: 40;
     }
 
-    .brand-wrap {
+    .header-left {
       display: flex;
-      align-items: center;
-      gap: 5px;
+      flex-direction: column;
+      justify-content: center;
       min-width: 0;
       flex-shrink: 1;
+      line-height: 1.15;
     }
 
-    .brand {
-      font-size: 12.5px;
+    .brand-title {
+      font-size: 16px;
       font-weight: 900;
       letter-spacing: -0.01em;
-      color: #F8FAFC;
+      color: #FFFFFF;
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
       text-transform: uppercase;
-      max-width: 125px;
     }
 
+    .role-subtitle {
+      font-size: 11px;
+      font-weight: 600;
+      color: #71717A;
+      letter-spacing: 0.02em;
+      cursor: pointer;
+    }
+
+    .role-subtitle.owner {
+      color: #FBBF24;
+    }
+
+    .header-right {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-shrink: 0;
+    }
+
+    /* Printer Button: [ 🖨️ Connect ] (Red #DC2626 when offline, Green pill when connected) */
+    .printer-status,
+    .printer-connect-btn {
+      appearance: none;
+      border: none;
+      background: #DC2626;
+      color: #FFFFFF;
+      font-family: var(--font-sans);
+      font-size: 12px;
+      font-weight: 800;
+      padding: 0 12px;
+      height: 34px;
+      border-radius: 8px;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      white-space: nowrap;
+      transition: all 0.15s ease;
+    }
+
+    .printer-status .status-dot {
+      display: none;
+    }
+
+    .printer-status[data-state="ready"],
+    .printer-connect-btn[data-state="ready"] {
+      background: #10B981 !important;
+      color: #000000 !important;
+    }
+
+    .printer-status[data-state="connecting"],
+    .printer-status[data-state="printing"],
+    .printer-connect-btn[data-state="connecting"],
+    .printer-connect-btn[data-state="printing"] {
+      background: #F59E0B !important;
+      color: #000000 !important;
+    }
+
+    .printer-status[data-state="reconnecting"],
+    .printer-connect-btn[data-state="reconnecting"] {
+      background: #F59E0B !important;
+      color: #000000 !important;
+      animation: pulse-reconnecting 1.5s ease-in-out infinite;
+    }
+
+    @keyframes pulse-reconnecting {
+      0%, 100% {
+        opacity: 1;
+        box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.4);
+      }
+      50% {
+        opacity: 0.85;
+        box-shadow: 0 0 0 4px rgba(245, 158, 11, 0.15);
+      }
+    }
+
+    .printer-status[data-state="disconnected"],
+    .printer-status[data-state="error"],
+    .printer-connect-btn[data-state="disconnected"],
+    .printer-connect-btn[data-state="error"] {
+      background: #DC2626 !important;
+      color: #FFFFFF !important;
+    }
+
+    /* Square #18181B button with gear icon (34x34px, rounded-lg) */
     .owner-gear-btn {
       appearance: none;
-      border: 1px solid #334155;
-      background: #1E293B;
-      color: #CBD5E1;
-      width: 28px;
-      height: 28px;
+      border: 1px solid #27272A;
+      background: #18181B;
+      color: #A1A1AA;
+      width: 34px;
+      height: 34px;
       border-radius: 8px;
-      font-size: 13px;
+      font-size: 15px;
       display: inline-flex;
       align-items: center;
       justify-content: center;
       cursor: pointer;
       flex-shrink: 0;
-      transition: transform 0.1s ease, background 0.15s ease;
+      transition: transform 0.08s ease, background 0.12s ease;
     }
 
     .owner-gear-btn:active {
       transform: scale(0.92);
-      background: #334155;
+      background: #27272A;
     }
 
-    /* Middle Glowing Token Pill */
-    .token-tag {
-      appearance: none;
-      border: 1.5px solid #FBBF24;
-      background: linear-gradient(135deg, #F59E0B 0%, #D97706 100%);
-      color: #111827;
-      font-size: 11px;
-      font-weight: 900;
-      padding: 5px 9px;
-      min-height: 30px;
-      border-radius: 999px;
-      white-space: nowrap;
-      letter-spacing: 0.03em;
-      font-variant-numeric: tabular-nums;
-      flex-shrink: 0;
-      cursor: pointer;
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      box-shadow: 0 0 12px rgba(245, 158, 11, 0.38);
-      transition: transform 0.08s ease, box-shadow 0.12s ease;
-    }
-
-    .token-tag:active {
-      transform: scale(0.94);
-    }
-
-    /* Broad Printer Focal Badge (Solid Red #DC2626 Disconnected / Solid Emerald #059669 Connected) */
-    .printer-status {
-      appearance: none;
-      background: #DC2626;
-      color: #FFFFFF;
-      border: 1.5px solid #F87171;
-      font-size: 11.5px;
-      font-weight: 900;
-      padding: 6px 12px;
-      min-height: 34px;
-      border-radius: 10px;
-      flex-shrink: 0;
-      white-space: nowrap;
-      cursor: pointer;
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      gap: 5px;
-      box-shadow: 0 3px 10px rgba(220, 38, 38, 0.4);
-      transition: transform 0.08s ease, background-color 0.12s ease, border-color 0.12s ease, box-shadow 0.12s ease;
-    }
-
-    #printerStatusLabel {
-      display: inline-block;
-      white-space: nowrap;
-      letter-spacing: 0.01em;
-    }
-
-    .printer-status:active {
-      transform: scale(0.95);
-    }
-
-    .status-dot {
-      display: none;
-    }
-
-    .printer-status[data-state="ready"] {
-      background: #059669;
-      color: #FFFFFF;
-      border-color: #34D399;
-      box-shadow: 0 3px 10px rgba(5, 150, 105, 0.4);
-    }
-
-    .printer-status[data-state="connecting"],
-    .printer-status[data-state="printing"] {
-      background: #D97706;
-      color: #FFFFFF;
-      border-color: #FBBF24;
-      box-shadow: 0 3px 10px rgba(217, 119, 6, 0.4);
-    }
-
-    .printer-status[data-state="error"],
-    .printer-status[data-state="disconnected"] {
-      background: #DC2626;
-      color: #FFFFFF;
-      border-color: #F87171;
-      box-shadow: 0 3px 10px rgba(220, 38, 38, 0.4);
-    }
-
-    /* 2. Modern Horizontal Pill Category Filter Bar */
+    /* ========================================================================
+       2. CATEGORY FILTER STRIP (Row 2, Height: 38px, px: 16px, gap: 8px)
+       ======================================================================== */
     .category-bar {
-      background: var(--bg-header);
-      border-bottom: 1px solid #1F2937;
-      padding: 2px 12px 10px;
+      background: #09090B;
+      border-bottom: none;
+      padding: 0 16px;
+      height: 38px;
+      min-height: 38px;
+      max-height: 38px;
       display: flex;
       align-items: center;
       gap: 8px;
@@ -232,20 +246,23 @@
 
     .cat-chip {
       appearance: none;
-      border: 1.5px solid #374151;
-      background: #1F2937;
-      color: #9CA3AF;
-      font-family: var(--font-urdu);
-      font-size: 13px;
-      font-weight: 800;
-      padding: 6px 14px;
-      min-height: 34px;
+      border: 1px solid #27272A;
+      background: #18181B;
+      color: #A1A1AA;
+      font-family: var(--font-sans);
+      font-size: 12px;
+      font-weight: 700;
+      padding: 0 14px;
+      height: 30px;
       border-radius: 999px;
       cursor: pointer;
       white-space: nowrap;
-      flex: 1;
-      text-align: center;
-      transition: transform 0.06s ease, background-color 0.12s ease, color 0.12s ease, border-color 0.12s ease;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.12s ease;
+      line-height: 1;
+      flex-shrink: 0;
     }
 
     .cat-chip:active {
@@ -253,239 +270,448 @@
     }
 
     .cat-chip.active {
-      background: var(--accent);
-      color: #111827;
-      border-color: #FBBF24;
-      box-shadow: 0 2px 10px rgba(245, 158, 11, 0.35);
+      background: #FBBF24 !important;
+      color: #000000 !important;
+      border-color: #FBBF24 !important;
+      font-weight: 900;
+      box-shadow: 0 2px 8px rgba(251, 191, 36, 0.35);
     }
 
-    /* 3. Commercial POS Punch Grid */
+    /* ========================================================================
+       3. STICKY HERO TOKEN BADGE (Row 3, Solid #FBBF24, pitch black text)
+       ======================================================================== */
+    .token-strip {
+      padding: 6px 16px 10px 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #09090B;
+      flex-shrink: 0;
+    }
+
+    .hero-token-pill {
+      appearance: none;
+      border: none;
+      background: #FBBF24;
+      color: #000000;
+      font-family: var(--font-sans);
+      font-size: 14px;
+      font-weight: 900;
+      letter-spacing: 0.04em;
+      padding: 6px 26px;
+      border-radius: 999px;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      line-height: 1;
+      box-shadow: 0 3px 10px rgba(251, 191, 36, 0.4);
+      transition: transform 0.08s ease;
+    }
+
+    .hero-token-pill:active {
+      transform: scale(0.96);
+    }
+
+    /* ========================================================================
+       4. BORDER-LESS CARDS & EDGE-TO-EDGE BOTTOM STEPPER
+       ======================================================================== */
     .menu-container {
       flex: 1;
-      min-height: 0;
       overflow-y: auto;
-      overflow-x: hidden;
-      padding: 10px 10px 14px;
-      background: #E2E8F0;
       -webkit-overflow-scrolling: touch;
-      overscroll-behavior-y: contain;
-      touch-action: pan-y;
+      padding: 0 16px 16px 16px;
+      min-height: 0;
     }
 
     .menu-section {
-      margin-bottom: 14px;
+      margin-bottom: 16px;
     }
 
-    .menu-section:last-child {
-      margin-bottom: 4px;
-    }
-
-    .section-title {
-      font-size: 11px;
-      font-weight: 900;
-      text-transform: uppercase;
-      color: #334155;
-      margin-bottom: 7px;
-      padding: 0 4px;
-      letter-spacing: 0.06em;
+    .section-divider {
       display: flex;
       align-items: center;
-      justify-content: space-between;
+      gap: 12px;
+      margin: 4px 0 12px 0;
     }
 
-    .section-title-urdu {
-      font-family: var(--font-urdu);
-      font-size: 13px;
-      font-weight: 800;
-      color: #0F172A;
+    .section-divider-line {
+      flex: 1;
+      height: 1px;
+      background: #27272A;
+    }
+
+    .section-divider-title {
+      color: #FBBF24;
+      font-family: var(--font-sans);
+      font-size: 11.5px;
+      font-weight: 900;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
     }
 
     .grid-2col {
       display: grid;
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-      gap: 8px;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 10px;
     }
 
-    /* Modern Tactile Rounded-XL Punch Tiles (Min 78px Height) */
+    /* Card Container: High-Contrast Light Elevated Surface (#FFFFFF) with warm amber border */
     .tile {
-      border-radius: 14px;
-      padding: 10px 8px;
-      min-height: 86px;
+      background: #FFFFFF;
+      border: 1.5px solid #FDE68A !important;
+      border-radius: 16px;
+      padding: 12px 10px 10px 10px;
+      min-height: 132px;
       display: flex;
       flex-direction: column;
+      justify-content: space-between;
       align-items: center;
-      justify-content: center;
       text-align: center;
-      gap: 5px;
-      cursor: pointer;
       position: relative;
+      cursor: pointer;
+      user-select: none;
+      -webkit-tap-highlight-color: transparent;
+      touch-action: manipulation;
       overflow: hidden;
-      transition: transform 0.06s cubic-bezier(0.2, 0, 0, 1), box-shadow 0.1s ease, background 0.1s ease;
-      touch-action: pan-y;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+      transition: transform 0.08s ease, background 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
     }
 
-    /* Category Theme 1: Burgers — Warm Amber / Slate */
-    .tile[data-cat="burgers"] {
-      background: linear-gradient(145deg, #FFFBEB 0%, #FEF3C7 100%);
-      border: 1.5px solid #F59E0B;
-      border-bottom: 3.5px solid #D97706;
-      box-shadow: 0 3px 6px rgba(180, 83, 9, 0.12);
+    .tile:active {
+      transform: scale(0.97);
     }
 
-    .tile[data-cat="burgers"] .item-name-urdu {
-      color: #3B1302;
-    }
-
-    .tile[data-cat="burgers"] .item-name-en {
-      color: #78350F;
-    }
-
-    .tile[data-cat="burgers"] .item-price {
-      color: #92400E;
-    }
-
-    /* Category Theme 2: Shawarma — Clean Emerald / Teal */
-    .tile[data-cat="shawarma"] {
-      background: linear-gradient(145deg, #ECFDF5 0%, #D1FAE5 100%);
-      border: 1.5px solid #10B981;
-      border-bottom: 3.5px solid #059669;
-      box-shadow: 0 3px 6px rgba(6, 95, 70, 0.12);
-    }
-
-    .tile[data-cat="shawarma"] .item-name-urdu {
-      color: #022C22;
-    }
-
-    .tile[data-cat="shawarma"] .item-name-en {
-      color: #065F46;
-    }
-
-    .tile[data-cat="shawarma"] .item-price {
-      color: #047857;
-    }
-
-    /* Category Theme 3: Sandwiches & Fries — Royal Indigo / Blue */
-    .tile[data-cat="sandwiches"] {
-      background: linear-gradient(145deg, #EEF2FF 0%, #E0E7FF 100%);
-      border: 1.5px solid #6366F1;
-      border-bottom: 3.5px solid #4F46E5;
-      box-shadow: 0 3px 6px rgba(55, 48, 163, 0.12);
-    }
-
-    .tile[data-cat="sandwiches"] .item-name-urdu {
-      color: #0F172A;
-    }
-
-    .tile[data-cat="sandwiches"] .item-name-en {
-      color: #312E81;
-    }
-
-    .tile[data-cat="sandwiches"] .item-price {
-      color: #3730A3;
-    }
-
-    /* Tactile Press Down Effect */
-    .tile.pressed {
-      transform: scale(0.96);
-    }
-
-    /* Active Distinct Border, Shadow & Inline Counter when Qty > 0 */
+    /* Selected / Active Card State (Qty >= 1) */
     .tile.active {
-      background: #0F172A !important;
-      border: 2.5px solid #10B981 !important;
-      border-bottom: 4px solid #059669 !important;
-      box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.28), 0 8px 18px rgba(15, 23, 42, 0.42) !important;
+      background: #FEF3C7 !important;
+      border: 2px solid #D97706 !important;
+      box-shadow: 0 4px 12px rgba(217, 119, 6, 0.18);
     }
 
-    .tile.active .item-name-urdu {
-      color: #FFFFFF !important;
-      font-size: 14px;
-      -webkit-line-clamp: 1;
-    }
-
-    .tile.active .item-name-en {
-      display: none;
-    }
-
-    .tile-header {
+    .card-content {
+      width: 100%;
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      text-align: center;
-      gap: 2px;
-      width: 100%;
       min-width: 0;
+      padding: 0 2px;
     }
 
-    /* High-Weight Urdu Item Name for Sunlight / Counter Readability */
+    /* Urdu Title: Deep Jet Black (#111827), font-black (900), 18px 'Noto Sans Arabic' */
     .item-name-urdu {
-      font-family: var(--font-sans);
-      font-size: 16.5px;
+      font-family: 'Noto Sans Arabic', sans-serif !important;
+      font-size: 18px;
       font-weight: 900;
+      color: #111827;
       direction: rtl;
       text-align: center;
-      line-height: 1.28;
-      letter-spacing: 0.01em;
+      line-height: 1.25;
       width: 100%;
-      display: -webkit-box;
-      -webkit-line-clamp: 2;
-      -webkit-box-orient: vertical;
-      overflow: hidden;
-    }
-
-    /* Subtle Centered English Name Underneath */
-    .item-name-en {
-      font-family: var(--font-sans);
-      font-size: 11.5px;
-      font-weight: 700;
-      text-align: center;
-      line-height: 1.2;
-      width: 100%;
-      opacity: 0.85;
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
     }
 
-    .tile-footer {
+    /* English Subtitle: Charcoal Gray (#4B5563), 11px font-semibold (600) centered */
+    .item-name-en {
+      font-family: var(--font-sans);
+      font-size: 11px;
+      font-weight: 600;
+      color: #4B5563;
+      text-align: center;
+      line-height: 1.2;
+      width: 100%;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      margin-top: 3px;
+    }
+
+    /* Unselected Price Pill (Bottom Centered): Solid Dark Slate (#0F172A) pill with Yellow text (#FBBF24) */
+    .card-price-pill {
+      background: #0F172A;
+      color: #FBBF24;
+      font-family: var(--font-sans);
+      font-size: 13.5px;
+      font-weight: 900;
+      padding: 6px 16px;
+      border-radius: 9999px;
+      margin-top: 8px;
+      margin-bottom: 2px;
+      line-height: 1;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
+      transition: opacity 0.12s ease;
+    }
+
+    .card-price-pill.hidden {
+      display: none !important;
+    }
+
+    /* Selected Edge-to-Edge Flush Stepper (height: 38px, w-full, rounded-b-2xl) */
+    .card-stepper {
+      width: calc(100% + 20px);
+      margin-left: -10px;
+      margin-right: -10px;
+      margin-bottom: -10px;
+      height: 38px;
+      display: flex;
+      align-items: stretch;
+      justify-content: space-between;
+      border-radius: 0 0 14px 14px;
+      overflow: hidden;
+      background: #FEF3C7;
+      border-top: 1px solid #FDE68A;
+    }
+
+    .card-stepper.hidden {
+      display: none !important;
+    }
+
+    .stepper-btn {
+      appearance: none;
+      border: none;
+      width: 44px;
+      height: 100%;
+      font-size: 18px;
+      font-weight: 900;
+      cursor: pointer;
       display: flex;
       align-items: center;
       justify-content: center;
-      width: 100%;
-      margin-top: 2px;
+      line-height: 1;
+      transition: opacity 0.1s ease, background 0.1s ease;
+      user-select: none;
     }
 
-    /* Clean High-Contrast Price Text ("Rs. 150") — No Heavy Black Pill */
-    .item-price {
-      background: transparent;
-      font-size: 13.5px;
+    /* Left [-] button: Solid Dark Slate (#1E293B) with Amber text #FBBF24, font-black 18px */
+    .stepper-btn.minus {
+      background: #1E293B;
+      color: #FBBF24;
+    }
+
+    .stepper-btn.minus:active {
+      background: #0F172A;
+      opacity: 0.9;
+    }
+
+    /* Right [+] button: Solid Golden Amber (#F59E0B) with Pure Black text, font-black 18px */
+    .stepper-btn.plus {
+      background: #F59E0B;
+      color: #000000;
+    }
+
+    .stepper-btn.plus:active {
+      background: #D97706;
+      opacity: 0.9;
+    }
+
+    /* Center info: Pure Black bold quantity text (No subtotal text inside stepper) */
+    .stepper-center {
+      flex: 1;
+      height: 100%;
+      background: #FEF3C7;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      line-height: 1;
+      user-select: none;
+    }
+
+    .stepper-qty {
+      color: #000000;
+      font-size: 16px;
       font-weight: 900;
-      padding: 0;
-      white-space: nowrap;
-      font-variant-numeric: tabular-nums;
-      letter-spacing: -0.01em;
+      font-family: var(--font-sans);
     }
 
-    .tile.active .tile-footer {
-      display: none;
+    .stepper-total {
+      display: none !important;
     }
 
-    /* Inline Counter [−] Qty [+] Inside Active Tile */
-    .tile-stepper {
-      display: none;
+    /* ========================================================================
+       5. CLEAN BOTTOM DOCK
+       ======================================================================== */
+    footer,
+    .pos-checkout-dock {
+      flex-shrink: 0;
+      background: #09090B;
+      border-top: 1px solid #27272A;
+      padding: 10px 16px max(12px, env(safe-area-inset-bottom));
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      z-index: 35;
+    }
+
+    .dock-row-1 {
+      display: flex;
       align-items: center;
       justify-content: space-between;
-      width: 100%;
-      margin-top: auto;
-      padding: 3px 4px 0;
-      gap: 6px;
+      gap: 8px;
+      height: 36px;
     }
 
-    .tile.active .tile-stepper {
+    .dock-kharcha-btn {
+      appearance: none;
+      background: #18181B;
+      border: 1px solid #3F3F46;
+      color: #FBBF24;
+      font-family: var(--font-sans);
+      font-size: 12px;
+      font-weight: 800;
+      padding: 0 12px;
+      height: 34px;
+      border-radius: 8px;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      white-space: nowrap;
+      flex-shrink: 0;
+      transition: transform 0.08s ease, background 0.12s ease;
+    }
+
+    .dock-kharcha-btn:active {
+      transform: scale(0.96);
+      background: #27272A;
+    }
+
+    .dock-pay-segment {
       display: flex;
+      align-items: center;
+      background: #18181B;
+      border: 1px solid #27272A;
+      border-radius: 8px;
+      padding: 2px;
+      height: 34px;
+      flex-shrink: 0;
     }
 
+    .dock-pay-segment .pay-mode-btn {
+      appearance: none;
+      border: none;
+      background: transparent;
+      color: #71717A;
+      font-family: var(--font-sans);
+      font-size: 12px;
+      font-weight: 700;
+      padding: 0 14px;
+      height: 30px;
+      border-radius: 6px;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      white-space: nowrap;
+      transition: all 0.15s ease;
+    }
+
+    .dock-pay-segment .pay-mode-btn.active {
+      background: #FFFFFF !important;
+      color: #000000 !important;
+      font-weight: 900;
+      box-shadow: 0 1px 4px rgba(0, 0, 0, 0.4);
+    }
+
+    .dock-dustbin-btn {
+      appearance: none;
+      background: #18181B;
+      border: 1px solid #3F3F46;
+      color: #EF4444;
+      font-size: 15px;
+      width: 38px;
+      height: 34px;
+      border-radius: 8px;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      transition: transform 0.08s ease;
+    }
+
+    .dock-dustbin-btn:not(:disabled):active {
+      transform: scale(0.94);
+      background: rgba(239, 68, 68, 0.15);
+    }
+
+    .dock-dustbin-btn:disabled {
+      opacity: 0.35;
+      cursor: not-allowed;
+    }
+
+    .dock-row-2 {
+      display: flex;
+      align-items: stretch;
+      gap: 12px;
+      height: 52px;
+    }
+
+    .dock-subtotal-box {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      min-width: 105px;
+      flex-shrink: 0;
+    }
+
+    .dock-item-count {
+      font-size: 10px;
+      font-weight: 800;
+      color: #71717A;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      line-height: 1;
+    }
+
+    .dock-grand-total {
+      font-family: var(--font-sans);
+      font-size: 26px;
+      font-weight: 900;
+      color: #FBBF24;
+      letter-spacing: -0.02em;
+      line-height: 1.1;
+      white-space: nowrap;
+    }
+
+    .dock-print-btn {
+      appearance: none;
+      flex: 1;
+      background: #10B981;
+      color: #000000;
+      border: none;
+      border-radius: 12px;
+      font-family: var(--font-sans);
+      font-size: 18px;
+      font-weight: 900;
+      letter-spacing: 0.06em;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      height: 52px;
+      box-shadow: 0 4px 14px rgba(16, 185, 129, 0.4);
+      transition: transform 0.06s ease, filter 0.1s ease;
+    }
+
+    .dock-print-btn:not(:disabled):active {
+      transform: scale(0.97);
+      filter: brightness(1.1);
+    }
+
+    .dock-print-btn:disabled {
+      background: #27272A;
+      color: #52525B;
+      box-shadow: none;
+      cursor: not-allowed;
+    }
+
+    /* Cart Drawer Stepper Buttons & Helpers */
     .step-btn {
       appearance: none;
       border: 1.5px solid rgba(255, 255, 255, 0.2);
@@ -507,34 +733,29 @@
       background: #EF4444;
       border-color: #F87171;
       color: #FFFFFF;
-      box-shadow: 0 2px 6px rgba(239, 68, 68, 0.4);
-    }
-
-    .step-btn.minus:active {
-      transform: scale(0.9);
-      background: #DC2626;
     }
 
     .step-btn.plus {
       background: #10B981;
       border-color: #34D399;
       color: #FFFFFF;
-      box-shadow: 0 2px 6px rgba(16, 185, 129, 0.4);
     }
 
-    .step-btn.plus:active {
-      transform: scale(0.9);
-      background: #059669;
-    }
-
-    .qty-badge {
+    .drawer-controls .qty-badge {
       flex: 1;
       text-align: center;
-      font-size: 19px;
+      font-size: 17px;
       font-weight: 900;
       color: #34D399;
-      font-variant-numeric: tabular-nums;
       line-height: 1;
+    }
+
+    .customer-input-wrap {
+      display: none;
+    }
+
+    .customer-input-wrap.open {
+      display: block;
     }
 
     /* Uncertain Print Recovery Banner */
@@ -1164,323 +1385,858 @@
       cursor: not-allowed;
     }
 
-    /* Dark Vercel-Style Streamlined Bluetooth Printer Modal */
+    /* Modern Apple-Style Dark POS Hardware Connection Sheet */
+    #printerModal.modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.75);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+      z-index: 9999;
+    }
+
+    #printerModal.modal-backdrop.open {
+      display: flex !important;
+    }
+
     #printerModal .modal-sheet {
-      background: #090D16;
+      width: 100%;
+      max-width: 420px;
+      max-height: 90vh;
+      background: #121214;
       color: #F8FAFC;
-      border-top: 1px solid #1E293B;
-      border-radius: 20px 20px 0 0;
-      padding: 18px 16px 20px;
-      gap: 14px;
-      box-shadow: 0 -16px 40px rgba(0, 0, 0, 0.65);
+      border: 1px solid #27272A;
+      border-radius: 20px;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 0;
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.85);
+      overflow-y: auto;
+      animation: printerModalIn 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+      box-sizing: border-box;
+    }
+
+    @keyframes printerModalIn {
+      from {
+        opacity: 0;
+        transform: scale(0.96) translateY(8px);
+      }
+
+      to {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+      }
     }
 
     #printerModal .modal-header {
-      border-bottom: 1px solid #1E293B;
-      padding-bottom: 12px;
-    }
-
-    #printerModal .modal-title {
-      color: #F8FAFC;
-      font-size: 16px;
-      font-weight: 800;
-      letter-spacing: -0.01em;
-    }
-
-    #printerModal .modal-close-btn {
-      background: #1E293B;
-      border: 1px solid #334155;
-      color: #E2E8F0;
-      font-size: 12px;
-      font-weight: 700;
-      padding: 6px 12px;
-      border-radius: 8px;
-    }
-
-    .printer-status-banner {
-      background: rgba(245, 158, 11, 0.15);
-      border: 1.5px solid #F59E0B;
-      border-radius: 12px;
-      padding: 14px;
       display: flex;
-      align-items: flex-start;
-      gap: 12px;
-      transition: border-color 0.15s ease, background-color 0.15s ease;
-    }
-
-    .printer-status-banner[data-tone="connected"] {
-      background: rgba(16, 185, 129, 0.2);
-      border-color: #10B981;
-    }
-
-    .printer-status-banner[data-tone="searching"] {
-      background: rgba(245, 158, 11, 0.22);
-      border-color: #FBBF24;
-    }
-
-    .printer-status-banner[data-tone="error"] {
-      background: rgba(239, 68, 68, 0.18);
-      border-color: #F59E0B;
-    }
-
-    .printer-status-dot {
-      display: none;
-    }
-
-    .printer-status-copy {
-      display: flex;
-      flex-direction: column;
-      gap: 4px;
-      min-width: 0;
-      width: 100%;
-    }
-
-    #printerModal .status-card-value {
-      font-size: 14.5px;
-      font-weight: 900;
-      color: #F8FAFC;
-      line-height: 1.4;
-    }
-
-    #printerModal .status-card-sub {
-      font-size: 12.5px;
-      font-weight: 700;
-      color: #FDE68A;
-      line-height: 1.4;
-    }
-
-    .printer-status-banner[data-tone="connected"] .status-card-sub {
-      color: #A7F3D0;
-    }
-
-    .connect-printer-cta {
-      width: 100%;
-      min-height: 50px;
-      appearance: none;
-      border: 1px solid #F59E0B;
-      background: linear-gradient(180deg, #FBBF24 0%, #F59E0B 100%);
-      color: #090D16;
-      font-size: 14.5px;
-      font-weight: 900;
-      letter-spacing: 0.01em;
-      border-radius: 12px;
-      padding: 12px 16px;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 8px;
-      box-shadow: 0 4px 14px rgba(245, 158, 11, 0.25);
-      transition: transform 0.06s ease, opacity 0.15s ease;
-    }
-
-    .connect-printer-cta:not(:disabled):active {
-      transform: scale(0.97);
-    }
-
-    .connect-printer-cta:disabled {
-      opacity: 0.6;
-      cursor: not-allowed;
-    }
-
-    .connect-printer-cta.is-connected {
-      background: #1E293B;
-      border-color: #334155;
-      color: #F8FAFC;
-      box-shadow: none;
-    }
-
-    .bonded-list {
-      display: none;
-      flex-direction: column;
-      gap: 8px;
-      max-height: 180px;
-      overflow-y: auto;
-    }
-
-    .bonded-list.has-items {
-      display: flex;
-    }
-
-    .bonded-item {
-      display: flex;
-      align-items: center;
       justify-content: space-between;
-      gap: 10px;
-      padding: 10px 12px;
-      background: #111827;
-      border: 1px solid #1E293B;
-      border-radius: 10px;
-    }
-
-    .bonded-item.printer-match {
-      border-color: #F59E0B;
-      background: rgba(245, 158, 11, 0.08);
-    }
-
-    .bonded-meta {
-      display: flex;
-      flex-direction: column;
-      min-width: 0;
-    }
-
-    .bonded-name {
-      font-size: 13px;
-      font-weight: 800;
-      color: #F8FAFC;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
-
-    .bonded-sub {
-      font-size: 11px;
-      font-weight: 600;
-      color: #94A3B8;
-    }
-
-    .connect-dev-btn {
-      appearance: none;
-      border: 1px solid #F59E0B;
-      background: #F59E0B;
-      color: #090D16;
-      font-size: 12px;
-      font-weight: 900;
-      padding: 7px 14px;
-      border-radius: 8px;
-      cursor: pointer;
-      white-space: nowrap;
-    }
-
-    .connect-dev-btn.connected {
-      background: #059669;
-      border-color: #059669;
-      color: #FFFFFF;
-    }
-
-    #printerModal .modal-btn-row .modal-btn {
-      background: #111827;
-      border: 1px solid #1E293B;
-      color: #E2E8F0;
-      min-height: 44px;
-      font-size: 12.5px;
-    }
-
-    #printerModal .modal-btn-row .modal-btn.danger {
-      background: rgba(127, 29, 29, 0.25);
-      border-color: #7F1D1D;
-      color: #FCA5A5;
-    }
-
-    /* Owner Hisaab Summary Specific Styles */
-    .hisaab-date-bar {
-      display: flex;
       align-items: center;
-      justify-content: space-between;
-      background: #111827;
-      color: #F8FAFC;
-      padding: 8px 12px;
-      border-radius: 10px;
-      font-size: 12px;
-      font-weight: 800;
-      font-variant-numeric: tabular-nums;
+      padding-bottom: 16px;
+      border-bottom: 1px solid #27272A;
+      margin-bottom: 16px;
     }
 
-    .hisaab-kpi-grid {
-      display: grid;
-      grid-template-columns: 1fr 1.25fr;
-      gap: 8px;
-    }
-
-    .hisaab-kpi-card {
-      background: #F8FAFC;
-      border: 1.5px solid #CBD5E1;
-      border-radius: 10px;
-      padding: 10px 12px;
+    #printerModal .printer-modal-header-copy {
       display: flex;
       flex-direction: column;
       gap: 2px;
     }
 
-    .hisaab-kpi-card.cash {
-      background: #ECFDF5;
-      border-color: #6EE7B7;
+    #printerModal .modal-title {
+      color: #FFFFFF;
+      font-size: 16px;
+      font-weight: 900;
+      letter-spacing: -0.01em;
+      line-height: 1.2;
+    }
+
+    #printerModal .printer-modal-subtitle {
+      font-family: 'Noto Sans Arabic', sans-serif;
+      font-size: 12px;
+      font-weight: 600;
+      color: #A1A1AA;
+      line-height: 1.2;
+      direction: rtl;
+    }
+
+    #printerModal .modal-close-btn {
+      width: 32px;
+      height: 32px;
+      min-width: 32px;
+      border-radius: 9999px;
+      background: #1E1E22;
+      border: 1px solid #27272A;
+      color: #A1A1AA;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+      font-weight: 700;
+      cursor: pointer;
+      padding: 0;
+      line-height: 1;
+      transition: all 0.15s ease;
+    }
+
+    #printerModal .modal-close-btn:hover {
+      background: #2A2A30;
+      color: #FFFFFF;
+      border-color: #3F3F46;
+    }
+
+    /* 3. LIVE PRINTER STATUS BEACON CARD */
+    .printer-status-banner {
+      background: #18181B;
+      border: 1px solid #27272A;
+      border-radius: 12px;
+      padding: 14px;
+      margin: 0 0 16px 0;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      transition: border-color 0.15s ease, background-color 0.15s ease;
+    }
+
+    .printer-status-icon-box {
+      position: relative;
+      width: 44px;
+      height: 44px;
+      min-width: 44px;
+      border-radius: 10px;
+      background: rgba(239, 68, 68, 0.1);
+      color: #F87171;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+      flex-shrink: 0;
+      transition: all 0.2s ease;
+    }
+
+    .printer-beacon-dot {
+      position: absolute;
+      top: -2px;
+      right: -2px;
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: #EF4444;
+      border: 2px solid #18181B;
+      animation: pulseBeaconRed 1.8s infinite;
+    }
+
+    @keyframes pulseBeaconRed {
+      0% {
+        transform: scale(0.95);
+        box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7);
+      }
+
+      70% {
+        transform: scale(1.1);
+        box-shadow: 0 0 0 6px rgba(239, 68, 68, 0);
+      }
+
+      100% {
+        transform: scale(0.95);
+        box-shadow: 0 0 0 0 rgba(239, 68, 68, 0);
+      }
+    }
+
+    @keyframes pulseBeaconAmber {
+      0% {
+        transform: scale(0.95);
+        box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.7);
+      }
+
+      70% {
+        transform: scale(1.1);
+        box-shadow: 0 0 0 6px rgba(245, 158, 11, 0);
+      }
+
+      100% {
+        transform: scale(0.95);
+        box-shadow: 0 0 0 0 rgba(245, 158, 11, 0);
+      }
+    }
+
+    .printer-status-copy {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      min-width: 0;
+      flex: 1;
+    }
+
+    #printerModal .status-card-value {
+      font-size: 14px;
+      font-weight: 700;
+      color: #FFFFFF;
+      line-height: 1.3;
+      font-family: 'Noto Sans Arabic', var(--font-sans);
+    }
+
+    #printerModal .status-card-sub {
+      font-size: 11px;
+      font-weight: 500;
+      color: #71717A;
+      line-height: 1.3;
+    }
+
+    /* State B: Connected / Ready */
+    .printer-status-banner[data-tone="connected"] {
+      border-color: rgba(16, 185, 129, 0.3);
+    }
+
+    .printer-status-banner[data-tone="connected"] .printer-status-icon-box {
+      background: rgba(16, 185, 129, 0.1);
+      color: #34D399;
+    }
+
+    .printer-status-banner[data-tone="connected"] .printer-beacon-dot {
+      background: #10B981;
+      animation: none;
+      box-shadow: 0 0 8px rgba(16, 185, 129, 0.6);
+    }
+
+    .printer-status-banner[data-tone="connected"] .status-card-sub {
+      color: #34D399;
+    }
+
+    /* State: Searching / Connecting */
+    .printer-status-banner[data-tone="searching"] {
+      border-color: rgba(245, 158, 11, 0.35);
+    }
+
+    .printer-status-banner[data-tone="searching"] .printer-status-icon-box {
+      background: rgba(245, 158, 11, 0.1);
+      color: #FBBF24;
+    }
+
+    .printer-status-banner[data-tone="searching"] .printer-beacon-dot {
+      background: #FBBF24;
+      animation: pulseBeaconAmber 1.2s infinite;
+    }
+
+    .printer-status-banner[data-tone="searching"] .status-card-sub {
+      color: #FBBF24;
+    }
+
+    /* 4. ACTION BUTTON HIERARCHY */
+    .connect-printer-cta {
+      width: 100%;
+      height: 46px;
+      min-height: 46px;
+      appearance: none;
+      border: none;
+      background: #FBBF24;
+      color: #000000;
+      font-family: var(--font-sans);
+      font-size: 14px;
+      font-weight: 900;
+      letter-spacing: -0.01em;
+      border-radius: 12px;
+      padding: 0 16px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      box-shadow: 0 4px 14px rgba(251, 191, 36, 0.25);
+      transition: transform 0.08s ease, opacity 0.15s ease, background 0.15s ease;
+    }
+
+    .connect-printer-cta:not(:disabled):active {
+      transform: scale(0.98);
+    }
+
+    .connect-printer-cta:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+      box-shadow: none;
+    }
+
+    /* Secondary Action Buttons (Row 2) */
+    #printerModal .modal-btn-row {
+      display: flex;
+      gap: 10px;
+      margin-top: 12px;
+      width: 100%;
+    }
+
+    #printerModal .modal-btn-row .modal-btn {
+      flex: 1;
+      height: 40px;
+      min-height: 40px;
+      border-radius: 12px;
+      background: #1E1E22;
+      border: 1px solid #2E2E34;
+      color: #E4E4E7;
+      font-family: var(--font-sans);
+      font-size: 12px;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      cursor: pointer;
+      padding: 0 10px;
+      white-space: nowrap;
+      transition: all 0.15s ease;
+    }
+
+    #printerModal .modal-btn-row .modal-btn:hover:not(:disabled) {
+      background: #27272A;
+      color: #FFFFFF;
+      border-color: #3F3F46;
+    }
+
+    #printerModal .modal-btn-row .modal-btn:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+    }
+
+    #printerModal .modal-btn-row .modal-btn.danger {
+      background: rgba(239, 68, 68, 0.1);
+      border: 1px solid rgba(239, 68, 68, 0.25);
+      color: #F87171;
+    }
+
+    #printerModal .modal-btn-row .modal-btn.danger:hover:not(:disabled) {
+      background: rgba(239, 68, 68, 0.18);
+      color: #EF4444;
+      border-color: rgba(239, 68, 68, 0.4);
+    }
+
+    /* Bonded Devices List (Paired Hardware) */
+    #printerModal .bonded-list {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      margin: 10px 0 0 0;
+      max-height: 160px;
+      overflow-y: auto;
+    }
+
+    #printerModal .bonded-list:empty {
+      display: none;
+    }
+
+    #printerModal .bonded-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      padding: 9px 12px;
+      background: #18181B;
+      border: 1px solid #27272A;
+      border-radius: 10px;
+      cursor: pointer;
+      transition: border-color 0.12s ease;
+    }
+
+    #printerModal .bonded-item:hover {
+      border-color: #3F3F46;
+    }
+
+    #printerModal .bonded-name {
+      font-size: 13px;
+      font-weight: 700;
+      color: #FFFFFF;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    #printerModal .bonded-mac {
+      font-size: 11px;
+      color: #71717A;
+      font-family: monospace;
+    }
+
+    #printerModal .bonded-empty {
+      font-size: 11px;
+      color: #71717A;
+      text-align: center;
+      padding: 8px 0;
+    }
+
+    /* ========================================================================
+       MODERN EXECUTIVE-LEVEL DARK "AAJ KA HISAAB" (DAILY SUMMARY) MODAL
+       ======================================================================== */
+    #hisaabModal.modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.8);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+      z-index: 9999;
+    }
+
+    #hisaabModal.modal-backdrop.open {
+      display: flex !important;
+    }
+
+    #hisaabModal .modal-sheet {
+      width: 100%;
+      max-width: 440px;
+      max-height: 92vh;
+      max-height: 92dvh;
+      background: #121214;
+      color: #F8FAFC;
+      border: 1px solid #27272A;
+      border-radius: 20px;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 0;
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.85);
+      overflow-y: auto;
+      animation: hisaabModalIn 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+      box-sizing: border-box;
+    }
+
+    #hisaabModal .modal-sheet::-webkit-scrollbar {
+      width: 5px;
+    }
+
+    #hisaabModal .modal-sheet::-webkit-scrollbar-thumb {
+      background: #27272A;
+      border-radius: 4px;
+    }
+
+    @keyframes hisaabModalIn {
+      from {
+        opacity: 0;
+        transform: scale(0.96) translateY(8px);
+      }
+
+      to {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+      }
+    }
+
+    #hisaabModal .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding-bottom: 12px;
+      border-bottom: 1px solid #27272A;
+      margin-bottom: 12px;
+    }
+
+    #hisaabModal .hisaab-modal-header-copy {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    #hisaabModal .modal-title {
+      color: #FFFFFF;
+      font-size: 17px;
+      font-weight: 900;
+      letter-spacing: -0.01em;
+      line-height: 1.2;
+    }
+
+    #hisaabModal .hisaab-modal-subtitle {
+      font-family: 'Noto Sans Arabic', sans-serif;
+      font-size: 12px;
+      font-weight: 600;
+      color: #A1A1AA;
+      line-height: 1.2;
+      direction: rtl;
+    }
+
+    #hisaabModal .modal-close-btn {
+      width: 32px;
+      height: 32px;
+      min-width: 32px;
+      border-radius: 9999px;
+      background: #1E1E22;
+      border: 1px solid #27272A;
+      color: #A1A1AA;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+      font-weight: 700;
+      cursor: pointer;
+      padding: 0;
+      line-height: 1;
+      transition: all 0.15s ease;
+    }
+
+    #hisaabModal .modal-close-btn:hover {
+      background: #2A2A30;
+      color: #FFFFFF;
+      border-color: #3F3F46;
+    }
+
+    /* Sub-bar (Hardware / Context Bar) */
+    .hisaab-date-bar {
+      background: #18181B;
+      border: 1px solid #27272A;
+      border-radius: 12px;
+      padding: 8px 14px;
+      margin-bottom: 12px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 12px;
+    }
+
+    .hisaab-date-bar .hisaab-date-val {
+      color: #D4D4D8;
+      font-family: monospace, var(--font-sans);
+      font-weight: 700;
+    }
+
+    .hisaab-date-bar .hisaab-token-val {
+      color: #FBBF24;
+      font-family: var(--font-sans);
+      font-weight: 900;
+      letter-spacing: 0.02em;
+    }
+
+    /* 3. KPI TILES GRID (2x2 Clean Cards) */
+    .hisaab-kpi-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-bottom: 12px;
+    }
+
+    .hisaab-kpi-card {
+      background: #18181B;
+      border: 1px solid #27272A;
+      border-radius: 12px;
+      padding: 12px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      gap: 4px;
     }
 
     .hisaab-kpi-label {
       font-size: 10px;
-      font-weight: 900;
+      font-weight: 700;
       text-transform: uppercase;
-      color: #64748B;
-      letter-spacing: 0.04em;
-    }
-
-    .hisaab-kpi-card.cash .hisaab-kpi-label {
-      color: #065F46;
+      color: #71717A;
+      letter-spacing: 0.05em;
     }
 
     .hisaab-kpi-val {
-      font-size: 19px;
+      font-size: 20px;
       font-weight: 900;
-      color: #0F172A;
+      color: #FFFFFF;
       font-variant-numeric: tabular-nums;
-      line-height: 1.15;
+      line-height: 1.1;
+      font-family: var(--font-sans);
     }
 
     .hisaab-kpi-card.cash .hisaab-kpi-val {
-      color: #065F46;
+      color: #10B981;
     }
 
-    .hisaab-breakdown {
-      background: #F8FAFC;
-      border: 1px solid #CBD5E1;
-      border-radius: 10px;
-      padding: 10px 12px;
+    .hisaab-kpi-card.warn .hisaab-kpi-val {
+      color: #EF4444;
+      font-size: 13px;
+      font-weight: 700;
+      line-height: 1.3;
+    }
+
+    .hisaab-kpi-card.reprint .hisaab-kpi-val {
+      color: #FBBF24;
+    }
+
+    /* 4. CASH & EXPENSE BREAKDOWN (HERO FINANCIAL BLOCK) */
+    .hisaab-galla-banner {
+      background: #18181B;
+      border: 1px solid #27272A;
+      border-radius: 12px;
+      padding: 14px;
+      margin-bottom: 12px;
       display: flex;
       flex-direction: column;
-      gap: 6px;
+      gap: 8px;
+      font-size: 12px;
+    }
+
+    .hisaab-galla-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 12px;
+      font-weight: 600;
+      color: #A1A1AA;
+    }
+
+    .hisaab-galla-row span:last-child {
+      color: #FFFFFF;
+      font-weight: 700;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .hisaab-galla-row.expense span:last-child {
+      color: #F87171;
+    }
+
+    .hisaab-galla-divider {
+      border-top: 1px dotted #27272A;
+      margin: 4px 0;
+    }
+
+    .hisaab-galla-row.net {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding-top: 4px;
+    }
+
+    .hisaab-galla-row.net span:first-child {
+      color: #FBBF24;
+      font-size: 12px;
+      font-weight: 900;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .hisaab-galla-row.net span:last-child {
+      color: #FBBF24;
+      font-size: 22px;
+      font-weight: 900;
+      font-family: monospace, var(--font-sans);
+    }
+
+    /* 5. TOP SELLING ITEMS CARD */
+    .hisaab-breakdown {
+      background: #18181B;
+      border: 1px solid #27272A;
+      border-radius: 12px;
+      padding: 14px;
+      margin-bottom: 12px;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .hisaab-breakdown-title {
+      font-size: 10px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: #71717A;
+      margin-bottom: 8px;
+      display: block;
     }
 
     .hisaab-list {
       display: flex;
       flex-direction: column;
-      gap: 6px;
-      max-height: 165px;
+      gap: 2px;
+      max-height: 120px;
       overflow-y: auto;
+      padding-right: 2px;
+    }
+
+    .hisaab-list::-webkit-scrollbar {
+      width: 4px;
+    }
+
+    .hisaab-list::-webkit-scrollbar-thumb {
+      background: #27272A;
+      border-radius: 4px;
     }
 
     .hisaab-item-row {
       display: flex;
       align-items: center;
       justify-content: space-between;
-      font-size: 12px;
-      font-weight: 800;
-      color: #0F172A;
-      padding: 5px 8px;
-      background: #FFFFFF;
-      border: 1px solid #E2E8F0;
-      border-radius: 6px;
-      font-variant-numeric: tabular-nums;
+      padding: 6px 0;
+      border-bottom: 1px solid rgba(39, 39, 42, 0.5);
+      font-size: 13px;
+    }
+
+    .hisaab-item-row:last-child {
+      border-bottom: none;
+    }
+
+    .hisaab-item-left {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      min-width: 0;
+      flex: 1;
+    }
+
+    .hisaab-item-title {
+      font-size: 13px;
+      font-weight: 700;
+      color: #FFFFFF;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
 
     .hisaab-item-qty {
-      background: #FEF3C7;
-      border: 1px solid #FDE68A;
-      color: #92400E;
-      padding: 2px 7px;
-      border-radius: 6px;
-      font-size: 11px;
-      font-weight: 900;
+      background: rgba(245, 158, 11, 0.15);
+      color: #FCD34D;
+      font-size: 10px;
+      font-weight: 700;
+      padding: 2px 8px;
+      border-radius: 9999px;
+      white-space: nowrap;
+      font-family: var(--font-sans);
     }
 
-    .reset-confirm-box {
-      display: none;
-      background: #FEF2F2;
-      border: 1.5px solid #FCA5A5;
-      border-radius: 10px;
-      padding: 10px;
+    .hisaab-item-amt {
+      color: #D4D4D8;
+      font-size: 12px;
+      font-weight: 700;
+      font-family: var(--font-sans);
+      flex-shrink: 0;
+    }
+
+    /* 6. ACTION BUTTONS */
+    #hisaabModal .modal-btn-row {
+      display: flex;
+      gap: 10px;
+      margin-top: 4px;
+      width: 100%;
+    }
+
+    .hisaab-btn-print {
+      flex: 1;
+      height: 44px;
+      min-height: 44px;
+      border-radius: 12px;
+      background: #FBBF24;
+      color: #000000;
+      border: none;
+      font-family: var(--font-sans);
+      font-size: 12px;
+      font-weight: 900;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      box-shadow: 0 4px 14px rgba(251, 191, 36, 0.25);
+      transition: all 0.1s ease;
+    }
+
+    .hisaab-btn-print:hover {
+      background: #F59E0B;
+    }
+
+    .hisaab-btn-print:active {
+      transform: scale(0.95);
+    }
+
+    .hisaab-btn-whatsapp {
+      flex: 1;
+      height: 44px;
+      min-height: 44px;
+      border-radius: 12px;
+      background: #10B981;
+      color: #000000;
+      border: none;
+      font-family: var(--font-sans);
+      font-size: 12px;
+      font-weight: 900;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      box-shadow: 0 4px 14px rgba(16, 185, 129, 0.25);
+      transition: all 0.1s ease;
+    }
+
+    .hisaab-btn-whatsapp:hover {
+      background: #059669;
+    }
+
+    .hisaab-btn-whatsapp:active {
+      transform: scale(0.95);
+    }
+
+    .hisaab-secondary-actions {
+      display: flex;
       flex-direction: column;
       gap: 8px;
+      margin-top: 10px;
+      width: 100%;
+    }
+
+    .hisaab-btn-settings {
+      width: 100%;
+      height: 38px;
+      border-radius: 12px;
+      background: #1E1E22;
+      border: 1px solid #2E2E34;
+      color: #D4D4D8;
+      font-family: var(--font-sans);
+      font-size: 12px;
+      font-weight: 700;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      transition: all 0.12s ease;
+    }
+
+    .hisaab-btn-settings:hover {
+      background: #27272A;
+      color: #FFFFFF;
+      border-color: #3F3F46;
+    }
+
+    .hisaab-btn-endshift {
+      width: 100%;
+      height: 38px;
+      border-radius: 12px;
+      background: rgba(239, 68, 68, 0.1);
+      border: 1px solid rgba(239, 68, 68, 0.25);
+      color: #F87171;
+      font-family: var(--font-sans);
+      font-size: 12px;
+      font-weight: 700;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      transition: all 0.12s ease;
+    }
+
+    .hisaab-btn-endshift:hover {
+      background: rgba(239, 68, 68, 0.18);
+      color: #EF4444;
+      border-color: rgba(239, 68, 68, 0.4);
+    }
+
+    /* Reset Confirmation Box */
+    .reset-confirm-box {
+      display: none;
+      background: #18181B;
+      border: 1px solid rgba(239, 68, 68, 0.35);
+      border-radius: 12px;
+      padding: 14px;
+      margin-top: 10px;
+      flex-direction: column;
+      gap: 10px;
     }
 
     .reset-confirm-box.show {
@@ -1489,9 +2245,40 @@
 
     .reset-confirm-text {
       font-size: 12px;
-      font-weight: 800;
-      color: #991B1B;
-      line-height: 1.3;
+      font-weight: 700;
+      color: #F87171;
+      line-height: 1.35;
+    }
+
+    .reset-confirm-box .modal-btn-row {
+      display: flex;
+      gap: 8px;
+    }
+
+    .reset-confirm-box .btn-cancel {
+      flex: 1;
+      height: 36px;
+      border-radius: 8px;
+      background: #27272A;
+      border: 1px solid #3F3F46;
+      color: #E4E4E7;
+      font-family: var(--font-sans);
+      font-size: 12px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    .reset-confirm-box .btn-confirm {
+      flex: 1;
+      height: 36px;
+      border-radius: 8px;
+      background: #DC2626;
+      border: none;
+      color: #FFFFFF;
+      font-family: var(--font-sans);
+      font-size: 12px;
+      font-weight: 900;
+      cursor: pointer;
     }
 
     .reprint-btn {
@@ -1520,34 +2307,6 @@
     .reprint-btn:not(:disabled):active {
       transform: scale(0.95);
       background: #334155;
-    }
-
-    .hisaab-kpi-card.warn {
-      background: #FEF2F2;
-      border-color: #FECACA;
-    }
-
-    .hisaab-kpi-card.warn .hisaab-kpi-label {
-      color: #991B1B;
-    }
-
-    .hisaab-kpi-card.warn .hisaab-kpi-val {
-      color: #DC2626;
-      font-size: 16px;
-    }
-
-    .hisaab-kpi-card.reprint {
-      background: #FFFBEB;
-      border-color: #FDE68A;
-    }
-
-    .hisaab-kpi-card.reprint .hisaab-kpi-label {
-      color: #92400E;
-    }
-
-    .hisaab-kpi-card.reprint .hisaab-kpi-val {
-      color: #B45309;
-      font-size: 16px;
     }
 
     /* Owner 4-Digit PIN Modal Styles */
@@ -1680,140 +2439,436 @@
       border-color: #7F1D1D;
     }
 
-    /* Owner Shop & Menu Settings Modal */
-    #settingsModal .modal-sheet {
-      max-height: 90vh;
-      overflow-y: auto;
-      background: #F8FAFC;
-      color: #0F172A;
+    /* ========================================================================
+       MODERN PITCH-BLACK & GOLDEN AMBER SETTINGS MODAL
+       ======================================================================== */
+    #settingsModal.modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.8);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+      z-index: 9999;
     }
 
-    .settings-section {
-      background: #FFFFFF;
-      border: 1px solid #CBD5E1;
-      border-radius: 10px;
-      padding: 10px 12px;
+    #settingsModal.modal-backdrop.open {
+      display: flex !important;
+    }
+
+    #settingsModal .modal-sheet {
+      width: 100%;
+      max-width: 440px;
+      max-height: 90vh;
+      max-height: 90dvh;
+      background: #121214;
+      color: #F8FAFC;
+      border: 1px solid #27272A;
+      border-radius: 20px;
+      padding: 20px;
       display: flex;
       flex-direction: column;
-      gap: 8px;
+      gap: 0;
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.85);
+      overflow-y: auto;
+      animation: settingsModalIn 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+      box-sizing: border-box;
+    }
+
+    #settingsModal .modal-sheet::-webkit-scrollbar {
+      width: 5px;
+    }
+
+    #settingsModal .modal-sheet::-webkit-scrollbar-thumb {
+      background: #27272A;
+      border-radius: 4px;
+    }
+
+    @keyframes settingsModalIn {
+      from {
+        opacity: 0;
+        transform: scale(0.96) translateY(8px);
+      }
+
+      to {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+      }
+    }
+
+    #settingsModal .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding-bottom: 14px;
+      border-bottom: 1px solid #27272A;
+      margin-bottom: 16px;
+    }
+
+    #settingsModal .settings-modal-header-copy {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    #settingsModal .modal-title {
+      color: #FFFFFF;
+      font-size: 17px;
+      font-weight: 900;
+      letter-spacing: -0.01em;
+      line-height: 1.2;
+    }
+
+    #settingsModal .settings-modal-subtitle {
+      font-family: 'Noto Sans Arabic', sans-serif;
+      font-size: 12px;
+      font-weight: 600;
+      color: #A1A1AA;
+      line-height: 1.2;
+      direction: rtl;
+    }
+
+    #settingsModal .modal-close-btn {
+      width: 32px;
+      height: 32px;
+      min-width: 32px;
+      border-radius: 9999px;
+      background: #1E1E22;
+      border: 1px solid #27272A;
+      color: #A1A1AA;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+      font-weight: 700;
+      cursor: pointer;
+      padding: 0;
+      line-height: 1;
+      transition: all 0.15s ease;
+    }
+
+    #settingsModal .modal-close-btn:hover {
+      background: #2A2A30;
+      color: #FFFFFF;
+      border-color: #3F3F46;
+    }
+
+    /* 3. SECTION CARDS (Dark Elevated Blocks) */
+    .settings-section {
+      background: #18181B;
+      border: 1px solid #27272A;
+      border-radius: 14px;
+      padding: 16px;
+      margin-bottom: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
     }
 
     .settings-section-title {
-      font-size: 12px;
-      font-weight: 900;
-      text-transform: uppercase;
-      color: #0F172A;
-      letter-spacing: 0.04em;
-      border-bottom: 1px solid #E2E8F0;
-      padding-bottom: 5px;
       display: flex;
       align-items: center;
       justify-content: space-between;
+      padding-bottom: 8px;
+      border-bottom: 1px solid #27272A;
+      color: #FBBF24;
+      font-size: 11px;
+      font-weight: 900;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
     }
 
     .settings-grid-2 {
       display: grid;
       grid-template-columns: 1fr 1fr;
-      gap: 8px;
+      gap: 10px;
     }
 
     .settings-field {
       display: flex;
       flex-direction: column;
-      gap: 3px;
+      gap: 5px;
     }
 
     .settings-field label {
-      font-size: 10.5px;
-      font-weight: 800;
-      color: #475569;
+      font-size: 11px;
+      font-weight: 700;
+      color: #A1A1AA;
       text-transform: uppercase;
+      letter-spacing: 0.02em;
     }
 
     .settings-input,
     .settings-select {
       width: 100%;
-      height: 34px;
-      padding: 0 9px;
-      border-radius: 7px;
-      border: 1px solid #CBD5E1;
-      background: #F8FAFC;
-      color: #0F172A;
-      font-size: 12.5px;
-      font-weight: 700;
+      height: 38px;
+      padding: 0 12px;
+      border-radius: 8px;
+      border: 1px solid #2E2E34;
+      background: #1E1E22;
+      color: #FFFFFF;
+      font-family: var(--font-sans);
+      font-size: 13px;
+      font-weight: 600;
       outline: none;
+      box-sizing: border-box;
+      transition: border-color 0.15s ease, box-shadow 0.15s ease;
     }
 
     .settings-input:focus,
     .settings-select:focus {
-      border-color: #0F172A;
-      background: #FFFFFF;
+      border-color: rgba(251, 191, 36, 0.5);
+      box-shadow: 0 0 0 2px rgba(251, 191, 36, 0.15);
     }
 
+    .settings-select option {
+      background: #18181B;
+      color: #FFFFFF;
+    }
+
+    /* Save Profile Button & Add Menu Item Button */
+    .settings-save-btn {
+      width: 100%;
+      height: 38px;
+      min-height: 38px;
+      appearance: none;
+      border: none;
+      background: #FBBF24;
+      color: #000000;
+      font-family: var(--font-sans);
+      font-size: 12px;
+      font-weight: 900;
+      letter-spacing: 0.01em;
+      border-radius: 8px;
+      padding: 0 14px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      margin-top: 4px;
+      transition: background 0.12s ease, transform 0.08s ease;
+      box-shadow: 0 3px 12px rgba(251, 191, 36, 0.2);
+    }
+
+    .settings-save-btn:hover {
+      background: #F59E0B;
+    }
+
+    .settings-save-btn:active {
+      transform: scale(0.98);
+    }
+
+    /* C) Existing Menu Items List */
     .menu-editor-list {
       display: flex;
       flex-direction: column;
-      gap: 6px;
-      max-height: 190px;
+      gap: 8px;
+      max-height: 180px;
       overflow-y: auto;
+      margin-top: 4px;
+      padding-right: 2px;
+    }
+
+    .menu-editor-list::-webkit-scrollbar {
+      width: 4px;
+    }
+
+    .menu-editor-list::-webkit-scrollbar-thumb {
+      background: #27272A;
+      border-radius: 4px;
     }
 
     .menu-editor-row {
       display: flex;
       align-items: center;
       justify-content: space-between;
-      gap: 6px;
-      padding: 6px 8px;
-      background: #F8FAFC;
-      border: 1px solid #E2E8F0;
+      gap: 10px;
+      padding: 10px 12px;
+      background: #1E1E22;
+      border: 1px solid #27272A;
       border-radius: 8px;
-      font-size: 12px;
+      transition: border-color 0.12s ease;
+    }
+
+    .menu-editor-row:hover {
+      border-color: #3F3F46;
     }
 
     .menu-editor-info {
       display: flex;
       flex-direction: column;
+      gap: 2px;
       min-width: 0;
       flex: 1;
     }
 
     .menu-editor-title {
-      font-weight: 800;
-      color: #0F172A;
+      font-size: 13px;
+      font-weight: 700;
+      color: #FFFFFF;
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
+      display: flex;
+      align-items: center;
+      gap: 6px;
     }
 
-    .menu-editor-sub {
-      font-size: 11px;
+    .menu-editor-title .urdu-title {
+      font-family: 'Noto Sans Arabic', sans-serif;
       font-weight: 700;
-      color: #64748B;
+      color: #FFFFFF;
+    }
+
+    .menu-editor-title .en-title {
+      font-size: 12px;
+      color: #A1A1AA;
+      font-weight: 500;
+    }
+
+    .menu-editor-price {
+      font-size: 12px;
+      font-weight: 800;
+      color: #FBBF24;
+      font-family: var(--font-sans);
     }
 
     .menu-editor-actions {
       display: flex;
       align-items: center;
-      gap: 4px;
+      gap: 6px;
       flex-shrink: 0;
     }
 
     .mini-btn {
       appearance: none;
-      border: 1px solid #CBD5E1;
-      background: #FFFFFF;
-      color: #0F172A;
-      font-size: 11px;
-      font-weight: 800;
-      padding: 4px 8px;
+      border: none;
+      background: #27272A;
+      color: #D4D4D8;
+      font-family: var(--font-sans);
+      font-size: 12px;
+      font-weight: 700;
+      padding: 4px 10px;
       border-radius: 6px;
       cursor: pointer;
+      transition: all 0.12s ease;
+    }
+
+    .mini-btn:hover {
+      background: #3F3F46;
+      color: #FFFFFF;
     }
 
     .mini-btn.del {
-      border-color: #FECACA;
-      background: #FEF2F2;
-      color: #DC2626;
+      background: rgba(239, 68, 68, 0.15);
+      border: 1px solid rgba(239, 68, 68, 0.3);
+      color: #F87171;
+    }
+
+    .mini-btn.del:hover {
+      background: rgba(239, 68, 68, 0.25);
+      color: #EF4444;
+    }
+
+    /* D) Stall Info Strip & License / Logout Actions */
+    .stall-info-strip {
+      background: #1E1E22;
+      border: 1px solid #27272A;
+      border-radius: 8px;
+      padding: 12px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 2px;
+    }
+
+    .stall-id-box {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      font-size: 12px;
+      color: #A1A1AA;
+    }
+
+    .stall-id-box strong {
+      color: #E4E4E7;
+      font-family: monospace;
+      font-size: 13px;
+    }
+
+    .stall-expiry-text {
+      font-size: 11px;
+      color: #71717A;
+    }
+
+    .license-badge-pill {
+      font-size: 11px;
+      font-weight: 800;
+      padding: 4px 10px;
+      border-radius: 9999px;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      border: 1px solid rgba(16, 185, 129, 0.4);
+      background: rgba(16, 185, 129, 0.15);
+      color: #34D399;
+    }
+
+    .settings-action-row {
+      display: flex;
+      gap: 8px;
+      margin-top: 4px;
+      width: 100%;
+    }
+
+    .btn-cashier-mode {
+      flex: 1;
+      height: 38px;
+      border-radius: 8px;
+      background: #27272A;
+      border: 1px solid #3F3F46;
+      color: #E4E4E7;
+      font-family: var(--font-sans);
+      font-size: 12px;
+      font-weight: 700;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      transition: background 0.12s ease;
+    }
+
+    .btn-cashier-mode:hover {
+      background: #3F3F46;
+      color: #FFFFFF;
+    }
+
+    .btn-logout-switch {
+      flex: 1;
+      height: 38px;
+      border-radius: 8px;
+      background: rgba(239, 68, 68, 0.1);
+      border: 1px solid rgba(239, 68, 68, 0.25);
+      color: #F87171;
+      font-family: var(--font-sans);
+      font-size: 12px;
+      font-weight: 700;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      transition: background 0.12s ease;
+    }
+
+    .btn-logout-switch:hover {
+      background: rgba(239, 68, 68, 0.18);
+      color: #EF4444;
+      border-color: rgba(239, 68, 68, 0.4);
     }
 
     /* Feature 1: Kharcha / Expense Button & Modal Styles */
@@ -1840,30 +2895,362 @@
       background: rgba(245, 158, 11, 0.25);
     }
 
+    /* ========================================================================
+       MODERN PITCH-BLACK & GOLDEN AMBER EXPENSE MODAL (ROZ KA KHARCHA)
+       ======================================================================== */
+    #expenseModal.modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.8);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+      z-index: 9999;
+    }
+
+    #expenseModal.modal-backdrop.open {
+      display: flex !important;
+    }
+
+    #expenseModal .modal-sheet {
+      width: 100%;
+      max-width: 420px;
+      max-height: 90vh;
+      max-height: 90dvh;
+      background: #121214;
+      color: #F8FAFC;
+      border: 1px solid #27272A;
+      border-radius: 20px;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 0;
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.85);
+      overflow-y: auto;
+      animation: expenseModalIn 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+      box-sizing: border-box;
+    }
+
+    #expenseModal .modal-sheet::-webkit-scrollbar {
+      width: 5px;
+    }
+
+    #expenseModal .modal-sheet::-webkit-scrollbar-thumb {
+      background: #27272A;
+      border-radius: 4px;
+    }
+
+    @keyframes expenseModalIn {
+      from {
+        opacity: 0;
+        transform: scale(0.96) translateY(8px);
+      }
+
+      to {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+      }
+    }
+
+    #expenseModal .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding-bottom: 14px;
+      border-bottom: 1px solid #27272A;
+      margin-bottom: 16px;
+    }
+
+    #expenseModal .expense-modal-header-copy {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    #expenseModal .modal-title {
+      color: #FFFFFF;
+      font-size: 16px;
+      font-weight: 900;
+      letter-spacing: -0.01em;
+      line-height: 1.2;
+    }
+
+    #expenseModal .expense-modal-subtitle {
+      font-family: 'Noto Sans Arabic', sans-serif;
+      font-size: 12px;
+      font-weight: 600;
+      color: #A1A1AA;
+      line-height: 1.2;
+      direction: rtl;
+    }
+
+    #expenseModal .modal-close-btn {
+      width: 32px;
+      height: 32px;
+      min-width: 32px;
+      border-radius: 9999px;
+      background: #1E1E22;
+      border: 1px solid #27272A;
+      color: #A1A1AA;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+      font-weight: 700;
+      cursor: pointer;
+      padding: 0;
+      line-height: 1;
+      transition: all 0.15s ease;
+    }
+
+    #expenseModal .modal-close-btn:hover {
+      background: #2A2A30;
+      color: #FFFFFF;
+      border-color: #3F3F46;
+    }
+
+    /* 3. QUICK SELECT CHIPS (1-TAP EXPENSE TAGS) */
+    .expense-section-label {
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: #A1A1AA;
+      margin-bottom: 8px;
+      display: block;
+    }
+
     .expense-pills-grid {
       display: flex;
       flex-wrap: wrap;
-      gap: 6px;
+      gap: 8px;
+      margin-bottom: 16px;
     }
 
     .expense-quick-pill {
       appearance: none;
-      border: 1px solid #CBD5E1;
-      background: #F1F5F9;
-      color: #0F172A;
-      font-size: 11.5px;
-      font-weight: 800;
-      padding: 5px 10px;
-      border-radius: 999px;
+      border: 1px solid #2E2E34;
+      background: #1E1E22;
+      color: #D4D4D8;
+      font-family: var(--font-sans);
+      font-size: 12px;
+      font-weight: 700;
+      padding: 6px 12px;
+      border-radius: 8px;
       cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 6px;
       transition: all 0.12s ease;
     }
 
-    .expense-quick-pill:active,
-    .expense-quick-pill.active {
-      background: #0F172A;
+    .expense-quick-pill:hover {
+      background: #27272A;
       color: #FFFFFF;
-      border-color: #0F172A;
+      border-color: #3F3F46;
+    }
+
+    .expense-quick-pill:active {
+      transform: scale(0.95);
+    }
+
+    .expense-quick-pill.selected,
+    .expense-quick-pill.active {
+      background: #FBBF24 !important;
+      border-color: #FBBF24 !important;
+      color: #000000 !important;
+      font-weight: 900 !important;
+      box-shadow: 0 2px 8px rgba(251, 191, 36, 0.3) !important;
+    }
+
+    /* 4. FORM INPUTS */
+    #expenseModal .expense-grid-2 {
+      display: grid;
+      grid-template-columns: 1.2fr 0.8fr;
+      gap: 10px;
+      margin-bottom: 12px;
+    }
+
+    #expenseModal .expense-field {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    #expenseModal .expense-field label {
+      font-size: 11px;
+      font-weight: 700;
+      color: #A1A1AA;
+      text-transform: uppercase;
+      letter-spacing: 0.02em;
+    }
+
+    #expenseModal .expense-input {
+      width: 100%;
+      height: 42px;
+      padding: 0 14px;
+      border-radius: 12px;
+      border: 1px solid #2E2E34;
+      background: #1E1E22;
+      color: #FFFFFF;
+      font-family: var(--font-sans);
+      font-size: 14px;
+      font-weight: 700;
+      outline: none;
+      box-sizing: border-box;
+      transition: border-color 0.15s ease, box-shadow 0.15s ease;
+    }
+
+    #expenseModal .expense-input:focus {
+      border-color: #FBBF24;
+      box-shadow: 0 0 0 2px rgba(251, 191, 36, 0.25);
+    }
+
+    #expenseModal .expense-input.amount {
+      color: #FBBF24;
+      font-family: monospace, var(--font-sans);
+      font-size: 16px;
+      font-weight: 900;
+      letter-spacing: 0.02em;
+    }
+
+    /* 5. SAVE BUTTON */
+    .expense-save-btn {
+      width: 100%;
+      height: 46px;
+      min-height: 46px;
+      appearance: none;
+      border: none;
+      background: #FBBF24;
+      color: #000000;
+      font-family: var(--font-sans);
+      font-size: 14px;
+      font-weight: 900;
+      letter-spacing: -0.01em;
+      border-radius: 12px;
+      padding: 0 16px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      box-shadow: 0 4px 14px rgba(251, 191, 36, 0.25);
+      transition: transform 0.08s ease, opacity 0.15s ease, background 0.15s ease;
+    }
+
+    .expense-save-btn:hover {
+      background: #F59E0B;
+    }
+
+    .expense-save-btn:active {
+      transform: scale(0.98);
+    }
+
+    /* 6. TODAY'S RECORDED EXPENSES (SUMMARY CARD) */
+    .expense-summary-card {
+      background: #18181B;
+      border: 1px solid #27272A;
+      border-radius: 12px;
+      padding: 14px;
+      margin-top: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .expense-summary-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding-bottom: 8px;
+      border-bottom: 1px solid rgba(39, 39, 42, 0.6);
+      font-size: 12px;
+    }
+
+    .expense-summary-title {
+      color: #A1A1AA;
+      font-weight: 700;
+    }
+
+    .expense-summary-total {
+      color: #FBBF24;
+      font-family: var(--font-sans);
+      font-size: 14px;
+      font-weight: 900;
+      letter-spacing: -0.01em;
+    }
+
+    .expense-items-scroll {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      max-height: 150px;
+      overflow-y: auto;
+      margin-top: 4px;
+      padding-right: 2px;
+    }
+
+    .expense-items-scroll::-webkit-scrollbar {
+      width: 4px;
+    }
+
+    .expense-items-scroll::-webkit-scrollbar-thumb {
+      background: #27272A;
+      border-radius: 4px;
+    }
+
+    .expense-item-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      padding: 8px 12px;
+      background: #1E1E22;
+      border: 1px solid #27272A;
+      border-radius: 8px;
+    }
+
+    .expense-item-info {
+      display: flex;
+      flex-direction: column;
+      gap: 1px;
+      min-width: 0;
+      flex: 1;
+    }
+
+    .expense-item-title {
+      font-size: 13px;
+      font-weight: 700;
+      color: #FFFFFF;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .expense-item-time {
+      font-size: 10.5px;
+      color: #71717A;
+    }
+
+    .expense-item-actions {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-shrink: 0;
+    }
+
+    .expense-amount-badge {
+      font-size: 12px;
+      font-weight: 800;
+      color: #F87171;
+      background: rgba(239, 68, 68, 0.12);
+      border: 1px solid rgba(239, 68, 68, 0.25);
+      padding: 3px 8px;
+      border-radius: 6px;
+      font-family: var(--font-sans);
     }
 
     /* Feature 2: Cash vs Online (EasyPaisa/JazzCash) 1-Tap Toggle */
@@ -1999,34 +3386,6 @@
       cursor: pointer;
     }
 
-    .hisaab-galla-banner {
-      background: #ECFDF5;
-      border: 1.5px solid #6EE7B7;
-      border-radius: 10px;
-      padding: 9px 12px;
-      display: flex;
-      flex-direction: column;
-      gap: 4px;
-    }
-
-    .hisaab-galla-row {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      font-size: 12px;
-      font-weight: 800;
-      color: #064E3B;
-      font-variant-numeric: tabular-nums;
-    }
-
-    .hisaab-galla-row.net {
-      border-top: 1px dashed #34D399;
-      padding-top: 5px;
-      margin-top: 2px;
-      font-size: 14px;
-      font-weight: 900;
-      color: #047857;
-    }
 
     .role-badge {
       display: inline-flex;
@@ -2182,56 +3541,68 @@
 <body>
 
   <div class="pos-screen">
-    <!-- 1. Cohesive Dark Commercial Top Bar -->
-    <header>
-      <div class="brand-wrap">
-        <div class="brand" id="shopBrandTitle">STUDENT BURGER</div>
-        <span class="role-badge" id="roleIndicatorBadge" title="Tap to switch mode">👤 Cashier</span>
-        <button type="button" class="owner-gear-btn" id="openSettingsHeaderBtn"
-          title="Owner Settings &amp; Menu Editor">⚙️</button>
+    <!-- 1. TOP APP BAR (Height: 46px, px: 16px, bg-[#09090B]) -->
+    <header class="pos-top-header">
+      <div class="header-left">
+        <div class="brand-title" id="shopBrandTitle">STUDENT BURGER</div>
+        <div class="role-subtitle" id="roleIndicatorBadge" title="Tap to switch mode">Cashier Mode</div>
       </div>
-      <button type="button" class="token-tag" id="tokenDisplay" title="Tap to open Aaj Ka Hisaab (PIN Protected)">
-        TOKEN #001
-      </button>
-      <button type="button" class="printer-status" id="printerStatus" data-state="disconnected"
-        title="Tap to open Printer Settings">
-        <span class="status-dot" aria-hidden="true"></span>
-        <span id="printerStatusLabel">🖨️ پرنٹر بند ہے (Connect)</span>
-      </button>
+      <div class="header-right">
+        <!-- Printer Button: [ 🖨️ Connect ] -->
+        <button type="button" class="printer-connect-btn" id="printerStatus" data-state="disconnected"
+          title="Printer Settings">
+          <span>🖨️</span>
+          <span id="printerStatusLabel">Connect</span>
+        </button>
+        <!-- Settings Button: Square #18181B button with gear icon (34x34px) -->
+        <button type="button" class="owner-gear-btn" id="openSettingsHeaderBtn" title="Shop Settings &amp; Menu Editor">
+          ⚙️
+        </button>
+      </div>
     </header>
 
-    <!-- 2. Modern Horizontal Pill Category Filter Bar -->
+    <!-- 2. CATEGORY FILTER STRIP (Row 2, Height: 38px, px: 16px, gap: 8px) -->
     <nav class="category-bar" id="categoryBar" aria-label="Menu Categories">
-      <button type="button" class="cat-chip active" data-cat="all">All</button>
-      <button type="button" class="cat-chip" data-cat="burgers" lang="ur">برگر</button>
-      <button type="button" class="cat-chip" data-cat="shawarma" lang="ur">شوارما</button>
-      <button type="button" class="cat-chip" data-cat="sandwiches" lang="ur">سینڈوچ</button>
+      <button type="button" class="cat-chip" data-cat="all">All Items</button>
+      <button type="button" class="cat-chip active" data-cat="burgers">Burgers</button>
+      <button type="button" class="cat-chip" data-cat="shawarma">Shawarma &amp; Rolls</button>
+      <button type="button" class="cat-chip" data-cat="sandwiches">Sandwiches &amp; Fries</button>
     </nav>
+
+    <!-- 3. STICKY HERO TOKEN BADGE (Row 3, Solid #FBBF24, black text) -->
+    <div class="token-strip">
+      <button type="button" class="hero-token-pill" id="tokenDisplay" title="Tap to open Daily Hisaab (Z-Report)">
+        TOKEN #005
+      </button>
+    </div>
 
     <div id="toast" role="status" aria-live="polite"></div>
 
-    <!-- 3. Modern Commercial POS Punch Grid -->
+    <!-- 4. MENU GRID CONTAINER -->
     <div class="menu-container" id="menuContainer">
       <div class="menu-section" id="section-burgers" data-section="burgers">
-        <div class="section-title">
-          <span>Burgers</span>
-          <span class="section-title-urdu" lang="ur">برگر</span>
+        <div class="section-divider">
+          <span class="section-divider-line"></span>
+          <span class="section-divider-title">BURGERS</span>
+          <span class="section-divider-line"></span>
         </div>
         <div class="grid-2col" id="grid-burgers"></div>
       </div>
 
-      <div class="menu-section" id="section-shawarma" data-section="shawarma">
-        <div class="section-title">
-          <span>Shawarma &amp; Rolls</span>
-          <span class="section-title-urdu" lang="ur">شوارما و رول</span>
+      <div class="menu-section" id="section-shawarma" data-section="shawarma" style="display:none;">
+        <div class="section-divider">
+          <span class="section-divider-line"></span>
+          <span class="section-divider-title">SHAWARMA &amp; ROLLS</span>
+          <span class="section-divider-line"></span>
         </div>
         <div class="grid-2col" id="grid-shawarma"></div>
       </div>
 
-      <div class="menu-section" id="section-sandwiches" data-section="sandwiches">
-        <div class="section-title">
-          <span>Sandwiches &amp; Fries</span>
-          <span class="section-title-urdu" lang="ur">سینڈوچ و فرائز</span>
+      <div class="menu-section" id="section-sandwiches" data-section="sandwiches" style="display:none;">
+        <div class="section-divider">
+          <span class="section-divider-line"></span>
+          <span class="section-divider-title">SANDWICHES &amp; FRIES</span>
+          <span class="section-divider-line"></span>
         </div>
         <div class="grid-2col" id="grid-sandwiches"></div>
       </div>
@@ -2259,127 +3630,143 @@
       </div>
     </div>
 
-    <!-- 4. Running Order Ticker Strip -->
-    <div class="cart-strip empty" id="cartStrip" role="button" tabindex="0" title="Tap to view or edit ticket items">
-      <div class="cart-preview-text" id="cartPreviewText">Tap any tile above to punch items</div>
-      <span class="cart-drawer-toggle" id="cartDrawerToggle">Ticket ▲</span>
+    <!-- Hidden compatibility elements for app.js references -->
+    <div style="display:none;" aria-hidden="true">
+      <button type="button" id="cartStrip"><span id="cartPreviewText"></span><span
+          id="cartDrawerToggle"></span></button>
+      <button type="button" id="customerToggleBtn"></button>
+      <div class="customer-input-wrap" id="customerInputWrap">
+        <input type="text" id="customerInput" maxlength="32">
+      </div>
+      <button type="button" id="reprintLastBtn"></button>
     </div>
 
-    <!-- 5. Bottom Checkout Dock -->
-    <footer>
-      <div class="register-meta-row">
-        <button type="button" id="customerToggleBtn" class="customer-toggle-btn" title="Tap to add customer name">
-          👤 + Customer
-        </button>
-        <div class="customer-input-wrap" id="customerInputWrap">
-          <input type="text" id="customerInput" class="customer-input" maxlength="32" autocomplete="off"
-            placeholder="Customer Name / گاہک کا نام">
-        </div>
-        <button type="button" id="openExpenseModalBtn" class="expense-trigger-btn"
-          title="Add Roz Ka Kharcha / Stall Expense">
+    <!-- 5. CLEAN BOTTOM DOCK -->
+    <footer class="pos-checkout-dock">
+      <!-- Row 1: Kharcha + Segment Switch + Clear Dustbin -->
+      <div class="dock-row-1">
+        <!-- ➕ Kharcha Button -->
+        <button type="button" id="openExpenseModalBtn" class="dock-kharcha-btn" title="Add Roz Ka Kharcha">
           ➕ Kharcha
         </button>
-        <button type="button" id="reprintLastBtn" class="reprint-btn" disabled
-          title="Reprint last receipt (Logged in Audit Trail)">
-          🖨️ Reprint
-        </button>
-        <button type="button" id="clearOrderBtn" class="clear-order-btn" disabled title="Reset draft cart in 1 tap">
-          Clear
-        </button>
-      </div>
-      <div class="payment-mode-row" role="group" aria-label="Payment Mode Toggle">
-        <button type="button" class="pay-mode-btn active" id="payModeCashBtn" data-mode="cash">
-          💵 Cash (Default)
-        </button>
-        <button type="button" class="pay-mode-btn" id="payModeOnlineBtn" data-mode="online">
-          📱 Online (EasyPaisa/JazzCash)
-        </button>
-      </div>
-      <div class="checkout-row">
-        <div class="summary-box">
-          <span class="summary-total" id="grandTotalDisplay">Rs. 0</span>
-          <span class="summary-label" id="itemCountLabel">0 ITEMS</span>
+
+        <!-- Segmented switch [ 💵 Cash ] [ 📱 Online ] -->
+        <div class="dock-pay-segment" role="group" aria-label="Payment Mode">
+          <button type="button" class="pay-mode-btn active" id="payModeCashBtn" data-mode="cash">
+            💵 Cash
+          </button>
+          <button type="button" class="pay-mode-btn" id="payModeOnlineBtn" data-mode="online">
+            📱 Online
+          </button>
         </div>
-        <button type="button" class="print-btn" id="printBtn" disabled>PRINT KOT ⚡</button>
+
+        <!-- Dustbin button [ 🗑️ ] to clear current cart -->
+        <button type="button" id="clearOrderBtn" class="dock-dustbin-btn" disabled title="Clear Cart">
+          🗑️
+        </button>
+      </div>
+
+      <!-- Row 2: Subtotal box + Wide solid Emerald Green PRINT button -->
+      <div class="dock-row-2">
+        <div class="dock-subtotal-box">
+          <span class="dock-item-count" id="itemCountLabel">0 ITEMS</span>
+          <span class="dock-grand-total" id="grandTotalDisplay">Rs. 0</span>
+        </div>
+        <button type="button" class="dock-print-btn" id="printBtn" disabled>
+          PRINT
+        </button>
       </div>
     </footer>
 
-    <!-- Owner Daily Hisaab (Z-Report) Modal (Triggered by tapping TOKEN badge) -->
     <div class="modal-backdrop" id="hisaabModal" role="dialog" aria-modal="true" aria-labelledby="hisaabModalTitle">
       <div class="modal-sheet">
+        <!-- 2. HEADER & DATE PILL -->
         <div class="modal-header">
-          <span class="modal-title" id="hisaabModalTitle">Aaj Ka Hisaab • آج کا حساب</span>
-          <button type="button" class="modal-close-btn" id="closeHisaabModalBtn">Close</button>
+          <div class="hisaab-modal-header-copy">
+            <span class="modal-title" id="hisaabModalTitle">آج کا حساب (Daily Summary)</span>
+            <span class="hisaab-modal-subtitle">روزانہ کی مجموعی رپورٹ</span>
+          </div>
+          <button type="button" class="modal-close-btn" id="closeHisaabModalBtn" title="Close"
+            aria-label="Close">✕</button>
         </div>
 
         <div class="hisaab-date-bar">
-          <span>Aaj Ki Date: <strong id="hisaabDateText">--</strong></span>
-          <span id="hisaabNextTokenText">Next: #001</span>
+          <span class="hisaab-date-val">📅 <strong id="hisaabDateText">--</strong></span>
+          <span class="hisaab-token-val" id="hisaabNextTokenText">Next Token: #001</span>
         </div>
 
+        <!-- 3. KPI TILES GRID (2x2 Clean Cards) -->
         <div class="hisaab-kpi-grid">
           <div class="hisaab-kpi-card">
-            <span class="hisaab-kpi-label">Total Orders</span>
+            <span class="hisaab-kpi-label">TOTAL ORDERS</span>
             <span class="hisaab-kpi-val" id="hisaabTotalOrders">0</span>
           </div>
           <div class="hisaab-kpi-card cash">
-            <span class="hisaab-kpi-label">Total Gross Sale</span>
+            <span class="hisaab-kpi-label">GROSS SALE</span>
             <span class="hisaab-kpi-val" id="hisaabTotalCash">Rs. 0</span>
           </div>
           <div class="hisaab-kpi-card warn">
-            <span class="hisaab-kpi-label">Cancelled / Voided</span>
+            <span class="hisaab-kpi-label">CANCELLED</span>
             <span class="hisaab-kpi-val" id="hisaabVoidedOrders">0</span>
           </div>
           <div class="hisaab-kpi-card reprint">
-            <span class="hisaab-kpi-label">Receipt Reprints</span>
+            <span class="hisaab-kpi-label">REPRINTS</span>
             <span class="hisaab-kpi-val" id="hisaabReprintCount">0</span>
           </div>
         </div>
 
+        <!-- 4. CASH & EXPENSE BREAKDOWN (HERO FINANCIAL BLOCK) -->
         <div class="hisaab-galla-banner">
           <div class="hisaab-galla-row">
-            <span>💵 Cash Sales:</span>
+            <span>💵 Cash Sales</span>
             <span id="hisaabCashSalesVal">Rs. 0</span>
           </div>
           <div class="hisaab-galla-row">
-            <span>📱 Online (EasyPaisa/JazzCash):</span>
+            <span>📱 Online (EasyPaisa/JazzCash)</span>
             <span id="hisaabOnlineSalesVal">Rs. 0</span>
           </div>
-          <div class="hisaab-galla-row" style="color:#B91C1C;">
-            <span>💸 Total Kharcha (Expenses):</span>
+          <div class="hisaab-galla-row expense">
+            <span>🔻 Total Kharcha (Expenses)</span>
             <span id="hisaabExpensesVal">- Rs. 0</span>
           </div>
+          <div class="hisaab-galla-divider"></div>
           <div class="hisaab-galla-row net">
-            <span>💰 NET GALLE KA CASH:</span>
+            <span>💰 NET GALLE KA CASH</span>
             <span id="hisaabNetGallaVal">Rs. 0</span>
           </div>
         </div>
 
+        <!-- 5. TOP SELLING ITEMS CARD -->
         <div class="hisaab-breakdown">
-          <span class="status-card-title">Top Selling Items &amp; Category Summary</span>
+          <span class="hisaab-breakdown-title">TOP SELLING ITEMS</span>
           <div class="hisaab-list" id="hisaabTopItemsList">
-            <div class="status-card-sub">No confirmed orders recorded today yet.</div>
+            <div class="status-card-sub" style="text-align:center;padding:8px 0;font-style:italic;color:#71717A;">
+              No confirmed orders recorded today yet.
+            </div>
           </div>
         </div>
 
+        <!-- 6. ACTION BUTTONS -->
         <div class="modal-btn-row">
-          <button type="button" class="modal-btn primary" id="printSummarySlipBtn">Print Daily Summary 🧾</button>
-          <button type="button" class="modal-btn whatsapp" id="sendWhatsAppBtn">Share WhatsApp 📲</button>
+          <button type="button" class="hisaab-btn-print" id="printSummarySlipBtn">📄 Print Daily Summary</button>
+          <button type="button" class="hisaab-btn-whatsapp" id="sendWhatsAppBtn">💬 Share WhatsApp</button>
         </div>
 
-        <button type="button" class="modal-btn" id="openSettingsFromHisaabBtn">⚙️ Menu &amp; Shop Settings</button>
+        <div class="hisaab-secondary-actions">
+          <button type="button" class="hisaab-btn-settings" id="openSettingsFromHisaabBtn">⚙️ Menu &amp; Shop
+            Settings</button>
+          <button type="button" class="hisaab-btn-endshift" id="resetDayTriggerBtn">🔴 End Shift / Close Day</button>
+        </div>
 
         <div class="reset-confirm-box" id="resetConfirmBox">
           <div class="reset-confirm-text">
             Close today's shift, send Auto-WhatsApp Z-Report, and reset Token counter to #001?
           </div>
           <div class="modal-btn-row">
-            <button type="button" class="modal-btn" id="cancelResetDayBtn">Cancel</button>
-            <button type="button" class="modal-btn danger" id="confirmResetDayBtn">End Shift &amp; Send Report</button>
+            <button type="button" class="btn-cancel" id="cancelResetDayBtn">Cancel</button>
+            <button type="button" class="btn-confirm" id="confirmResetDayBtn">End Shift &amp; Send Report</button>
           </div>
         </div>
-
-        <button type="button" class="modal-btn danger" id="resetDayTriggerBtn">End Shift / Close Day 🔄</button>
       </div>
     </div>
 
@@ -2419,14 +3806,18 @@
     <div class="modal-backdrop" id="settingsModal" role="dialog" aria-modal="true" aria-labelledby="settingsModalTitle">
       <div class="modal-sheet">
         <div class="modal-header">
-          <span class="modal-title" id="settingsModalTitle">⚙️ Shop &amp; Menu Settings</span>
-          <button type="button" class="modal-close-btn" id="closeSettingsModalBtn">Close</button>
+          <div class="settings-modal-header-copy">
+            <span class="modal-title" id="settingsModalTitle">Shop &amp; Menu Settings</span>
+            <span class="settings-modal-subtitle">دکان کی معلومات اور ریٹ لسٹ</span>
+          </div>
+          <button type="button" class="modal-close-btn" id="closeSettingsModalBtn" title="Close"
+            aria-label="Close">✕</button>
         </div>
 
-        <!-- 1. Shop Details & Owner PIN -->
+        <!-- A) SHOP PROFILE & OWNER PIN -->
         <div class="settings-section">
           <div class="settings-section-title">
-            <span>🏪 Shop Profile &amp; Owner PIN</span>
+            <span>🏪 SHOP PROFILE</span>
           </div>
           <div class="settings-grid-2">
             <div class="settings-field">
@@ -2434,7 +3825,7 @@
               <input type="text" id="cfgShopName" class="settings-input" maxlength="32" placeholder="Student Burger">
             </div>
             <div class="settings-field">
-              <label for="cfgShopPhone">Owner WhatsApp / Phone</label>
+              <label for="cfgShopPhone">Owner Phone</label>
               <input type="text" id="cfgShopPhone" class="settings-input" maxlength="20" placeholder="0300-1234567">
             </div>
           </div>
@@ -2450,29 +3841,28 @@
                 placeholder="1234">
             </div>
           </div>
-          <div class="settings-field">
+          <div class="settings-field" style="display:none;">
             <label for="cfgFooterNote">Receipt Footer Note</label>
             <input type="text" id="cfgFooterNote" class="settings-input" maxlength="40"
               placeholder="Thank You For Coming">
           </div>
-          <button type="button" class="modal-btn primary" id="saveShopConfigBtn">💾 Save Shop &amp; PIN
-            Settings</button>
+          <button type="button" class="settings-save-btn" id="saveShopConfigBtn">💾 Save Profile &amp; PIN</button>
         </div>
 
-        <!-- 2. Dynamic Menu Item Editor -->
+        <!-- B) ADD NEW MENU ITEM -->
         <div class="settings-section">
           <div class="settings-section-title">
-            <span id="menuFormHeading">🍔 Add / Edit Menu Item</span>
+            <span id="menuFormHeading">🍔 ADD MENU ITEM</span>
             <button type="button" class="mini-btn" id="resetItemFormBtn" style="display:none;">+ New Item</button>
           </div>
           <input type="hidden" id="editItemId" value="">
           <div class="settings-grid-2">
             <div class="settings-field">
-              <label for="itemNameEnInput">Item Name (English)</label>
+              <label for="itemNameEnInput">English Name</label>
               <input type="text" id="itemNameEnInput" class="settings-input" maxlength="28" placeholder="Shami Burger">
             </div>
             <div class="settings-field">
-              <label for="itemNameUrInput">Item Name (Urdu)</label>
+              <label for="itemNameUrInput">Urdu Name</label>
               <input type="text" id="itemNameUrInput" class="settings-input" maxlength="28" dir="rtl"
                 placeholder="شامی برگر">
             </div>
@@ -2491,29 +3881,32 @@
               <input type="number" id="itemPriceInput" class="settings-input" min="1" max="99999" placeholder="150">
             </div>
           </div>
-          <button type="button" class="modal-btn primary" id="saveMenuItemBtn">➕ Save Menu Item</button>
+          <button type="button" class="settings-save-btn" id="saveMenuItemBtn">➕ Add Menu Item</button>
+
+          <!-- C) EXISTING MENU ITEMS LIST -->
           <div class="menu-editor-list" id="menuEditorList"></div>
         </div>
 
-        <!-- 3. JSON Backup & Restore + License Status -->
+        <!-- D) LICENSE & LOGOUT ACTIONS -->
         <div class="settings-section">
-          <div class="settings-section-title">
-            <span>🔑 License &amp; Stall Backup</span>
-            <span id="settingsLicenseBadge" style="font-size:10.5px;color:#059669;">Active</span>
+          <div class="stall-info-strip">
+            <div class="stall-id-box">
+              <span>Stall ID: <strong id="settingsStallIdText">BD-0000</strong></span>
+              <span id="settingsExpiryText" class="stall-expiry-text">--</span>
+            </div>
+            <span id="settingsLicenseBadge" class="license-badge-pill">Active</span>
           </div>
-          <div style="font-size:11.5px;font-weight:800;color:#334155;display:flex;justify-content:space-between;">
-            <span>Stall ID: <strong id="settingsStallIdText">BD-0000</strong></span>
-            <span id="settingsExpiryText">--</span>
-          </div>
-          <div class="settings-grid-2">
+
+          <!-- Hidden Activation Key input kept for compatibility -->
+          <div style="display:none;">
             <input type="text" id="settingsLicenseKeyInput" class="settings-input" maxlength="8" inputmode="numeric"
               placeholder="8-Digit Activation Key">
-            <button type="button" class="modal-btn primary" id="settingsActivateKeyBtn"
-              style="min-height:34px;padding:4px 10px;">🔓 Activate Key</button>
+            <button type="button" class="modal-btn primary" id="settingsActivateKeyBtn">🔓 Activate Key</button>
           </div>
-          <div class="modal-btn-row" style="margin-top:8px;">
-            <button type="button" class="modal-btn" id="lockToCashierBtn">🔒 Lock to Cashier Mode</button>
-            <button type="button" class="modal-btn danger" id="logoutSessionBtn">🚪 Switch Shop / Logout</button>
+
+          <div class="settings-action-row">
+            <button type="button" class="btn-cashier-mode" id="lockToCashierBtn">🔒 Cashier Mode</button>
+            <button type="button" class="btn-logout-switch" id="logoutSessionBtn">🚪 Logout / Switch</button>
           </div>
         </div>
       </div>
@@ -2523,46 +3916,54 @@
     <div class="modal-backdrop" id="expenseModal" role="dialog" aria-modal="true" aria-labelledby="expenseModalTitle">
       <div class="modal-sheet">
         <div class="modal-header">
-          <span class="modal-title" id="expenseModalTitle">💸 Roz Ka Kharcha (Stall Expense)</span>
-          <button type="button" class="modal-close-btn" id="closeExpenseModalBtn">Close</button>
+          <div class="expense-modal-header-copy">
+            <span class="modal-title" id="expenseModalTitle">روز کا خرچہ (Stall Expense)</span>
+            <span class="expense-modal-subtitle">روزانہ کے اخراجات درج کریں</span>
+          </div>
+          <button type="button" class="modal-close-btn" id="closeExpenseModalBtn" title="Close"
+            aria-label="Close">✕</button>
         </div>
 
-        <div class="settings-section">
-          <div class="settings-section-title">
-            <span>Quick Select Kharcha Type</span>
-          </div>
-          <div class="expense-pills-grid" id="expenseQuickPills">
-            <button type="button" class="expense-quick-pill" data-title="Baraf (Ice)">🧊 Baraf</button>
-            <button type="button" class="expense-quick-pill" data-title="Buns / Bread">🍔 Buns</button>
-            <button type="button" class="expense-quick-pill" data-title="Gas Cylinder">🔥 Gas</button>
-            <button type="button" class="expense-quick-pill" data-title="Sabzi / Salad">🥬 Sabzi</button>
-            <button type="button" class="expense-quick-pill" data-title="Worker Khana">🍛 Worker Khana</button>
-            <button type="button" class="expense-quick-pill" data-title="Shoppers / Packing">🛍️ Packing</button>
-          </div>
-
-          <div class="settings-grid-2">
-            <div class="settings-field">
-              <label for="expenseTitleInput">Kharcha Details</label>
-              <input type="text" id="expenseTitleInput" class="settings-input" maxlength="32"
-                placeholder="e.g. Buns / Bread">
-            </div>
-            <div class="settings-field">
-              <label for="expenseAmountInput">Amount (Rs.)</label>
-              <input type="number" id="expenseAmountInput" class="settings-input" min="1" max="999999"
-                placeholder="1500">
-            </div>
-          </div>
-
-          <button type="button" class="modal-btn primary" id="saveExpenseBtn">💾 Save Expense (خرچہ درج کریں)</button>
+        <!-- 3. QUICK SELECT CHIPS (1-TAP EXPENSE TAGS) -->
+        <span class="expense-section-label">فوری انتخاب (QUICK SELECT)</span>
+        <div class="expense-pills-grid" id="expenseQuickPills">
+          <button type="button" class="expense-quick-pill" data-title="Baraf (Ice)">🧊 Baraf</button>
+          <button type="button" class="expense-quick-pill" data-title="Buns / Bread">🍔 Buns</button>
+          <button type="button" class="expense-quick-pill" data-title="Gas Cylinder">🔥 Gas</button>
+          <button type="button" class="expense-quick-pill" data-title="Sabzi / Salad">🥬 Sabzi</button>
+          <button type="button" class="expense-quick-pill" data-title="Worker Khana">🍛 Worker Khana</button>
+          <button type="button" class="expense-quick-pill" data-title="Shoppers / Packing">🛍️ Packing</button>
         </div>
 
-        <div class="hisaab-breakdown">
-          <div style="display:flex;justify-content:space-between;align-items:center;">
-            <span class="status-card-title">Today's Recorded Expenses</span>
-            <strong id="expenseModalTotalText" style="font-size:12.5px;color:#DC2626;">Total: Rs. 0</strong>
+        <!-- 4. FORM INPUTS -->
+        <div class="expense-grid-2">
+          <div class="expense-field">
+            <label for="expenseTitleInput">Kharcha Details</label>
+            <input type="text" id="expenseTitleInput" class="expense-input" maxlength="32"
+              placeholder="e.g. Buns / Bread">
           </div>
-          <div class="hisaab-list" id="expenseListContainer">
-            <div class="status-card-sub">No expenses recorded today.</div>
+          <div class="expense-field">
+            <label for="expenseAmountInput">Amount (Rs.)</label>
+            <input type="number" id="expenseAmountInput" class="expense-input amount" min="1" max="999999"
+              placeholder="1500">
+          </div>
+        </div>
+
+        <!-- 5. SAVE BUTTON -->
+        <button type="button" class="expense-save-btn" id="saveExpenseBtn">
+          💾 خرچہ محفوظ کریں (Save Expense)
+        </button>
+
+        <!-- 6. TODAY'S RECORDED EXPENSES (SUMMARY CARD) -->
+        <div class="expense-summary-card">
+          <div class="expense-summary-header">
+            <span class="expense-summary-title">آج کے کل اخراجات (Today's Total)</span>
+            <strong id="expenseModalTotalText" class="expense-summary-total">Rs. 0</strong>
+          </div>
+          <div class="expense-items-scroll" id="expenseListContainer">
+            <div class="status-card-sub" style="text-align:center;padding:8px 0;font-style:italic;color:#71717A;">
+              آج کوئی خرچہ درج نہیں ہوا (No expenses recorded)
+            </div>
           </div>
         </div>
       </div>
@@ -2591,30 +3992,34 @@
     <div class="modal-backdrop" id="printerModal" role="dialog" aria-modal="true" aria-labelledby="printerModalTitle">
       <div class="modal-sheet">
         <div class="modal-header">
-          <span class="modal-title" id="printerModalTitle">پرنٹر سیٹنگ (Printer Settings)</span>
-          <button type="button" class="modal-close-btn" id="closePrinterModalBtn">بند کریں (Close)</button>
+          <div class="printer-modal-header-copy">
+            <span class="modal-title" id="printerModalTitle">Thermal Printer</span>
+            <span class="printer-modal-subtitle">پرنٹر کنکشن اور سیٹنگ</span>
+          </div>
+          <button type="button" class="modal-close-btn" id="closePrinterModalBtn" title="Close"
+            aria-label="Close">✕</button>
         </div>
 
         <div class="printer-status-banner" id="printerStatusBanner" data-tone="idle">
-          <span class="printer-status-dot" aria-hidden="true"></span>
+          <div class="printer-status-icon-box" id="printerStatusIconBox">
+            <span class="printer-beacon-dot" id="printerBeaconDot"></span>
+            <span class="printer-icon-glyph" id="printerIconGlyph">🖨️</span>
+          </div>
           <div class="printer-status-copy">
-            <span class="status-card-value" id="modalPrinterStateText">⚠️ پرنٹر کنیکٹ نہیں ہے۔ نیچے دیے گئے پیلے بٹن کو
-              دبائیں۔</span>
-            <span class="status-card-sub" id="modalPrinterHintText">
-              (Printer connect nahi hai, neechay button dabayein)
-            </span>
+            <span class="status-card-value" id="modalPrinterStateText">پرنٹر بند ہے (Disconnected)</span>
+            <span class="status-card-sub" id="modalPrinterHintText">Make sure Bluetooth &amp; printer are ON</span>
           </div>
         </div>
 
         <button type="button" class="connect-printer-cta" id="connectPrinterModalBtn">
-          🔗 پرنٹر کنیکٹ کریں (Search Printer)
+          🔍 پرنٹر تلاش کریں (Connect Printer)
         </button>
 
         <div class="bonded-list" id="bondedDevicesList"></div>
 
         <div class="modal-btn-row">
-          <button type="button" class="modal-btn" id="testPrintBtn" disabled>📄 چیک پرچی (Test Print)</button>
-          <button type="button" class="modal-btn danger" id="disconnectPrinterBtn" disabled>❌ بند کریں
+          <button type="button" class="modal-btn" id="testPrintBtn" disabled>📄 ٹیسٹ پرچی (Test Slip)</button>
+          <button type="button" class="modal-btn danger" id="disconnectPrinterBtn" disabled>✕ ڈسکنیکٹ
             (Disconnect)</button>
         </div>
       </div>
@@ -2622,20 +4027,23 @@
 
     <!-- Hidden Offscreen Canvas for 384px 58mm Urdu Thermal Receipt Bitmap Rendering -->
     <!-- Unified Initial Login Gateway Modal -->
-    <div class="login-gateway-overlay hidden" id="loginGatewayOverlay" role="dialog" aria-modal="true" aria-labelledby="loginGatewayTitle">
+    <div class="login-gateway-overlay hidden" id="loginGatewayOverlay" role="dialog" aria-modal="true"
+      aria-labelledby="loginGatewayTitle">
       <div class="login-gateway-card">
         <div class="login-badge">🍔 BiteDash POS Login</div>
         <div class="login-gateway-title" id="loginGatewayTitle">کاؤنٹر لاگ ان کریں</div>
         <div class="login-gateway-sub">Enter Shop Code &amp; 4-Digit PIN to start shift</div>
-        
+
         <div class="login-field-wrap">
           <label for="loginShopCodeInput">Shop Code (Stall ID)</label>
-          <input type="text" id="loginShopCodeInput" class="login-input uppercase" maxlength="12" placeholder="e.g. BD-5694" autocomplete="off" autocapitalize="characters">
+          <input type="text" id="loginShopCodeInput" class="login-input uppercase" maxlength="12"
+            placeholder="e.g. BD-5694" autocomplete="off" autocapitalize="characters">
         </div>
 
         <div class="login-field-wrap">
           <label for="loginPinInput">4-Digit PIN (Owner / Cashier)</label>
-          <input type="password" id="loginPinInput" class="login-input pin" maxlength="4" inputmode="numeric" placeholder="••••">
+          <input type="password" id="loginPinInput" class="login-input pin" maxlength="4" inputmode="numeric"
+            placeholder="••••">
         </div>
 
         <div class="login-error-msg" id="loginErrorMsg"></div>
@@ -2652,7 +4060,48 @@
 
   <!-- Native Capacitor & Android SPP Printer Bridge -->
   <script src="android-bridge.js"></script>
+  <script src="printer-helper.js"></script>
   <script src="app.js"></script>
+
+  <!-- Zero-Downtime Live Updates Service Worker -->
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('./sw.js')
+          .then((reg) => {
+            console.log('[BiteDash SW] Active for live updates:', reg.scope);
+            if (navigator.onLine) {
+              reg.update();
+            }
+            reg.addEventListener('updatefound', () => {
+              const newWorker = reg.installing;
+              if (newWorker) {
+                newWorker.addEventListener('statechange', () => {
+                  if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                    console.log('[BiteDash SW] Remote code update ready. Reloading for zero downtime...');
+                    if (typeof showToast === 'function') {
+                      showToast('🚀 New update available. Updating...', 'info');
+                    }
+                    setTimeout(() => window.location.reload(), 800);
+                  }
+                });
+              }
+            });
+          })
+          .catch((err) => {
+            console.warn('[BiteDash SW] Registration error:', err);
+          });
+
+        let refreshing = false;
+        navigator.serviceWorker.addEventListener('controllerchange', () => {
+          if (!refreshing) {
+            refreshing = true;
+            window.location.reload();
+          }
+        });
+      });
+    }
+  </script>
 </body>
 
 </html>
