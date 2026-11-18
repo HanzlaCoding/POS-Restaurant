@@ -21,6 +21,7 @@ const LAST_PRINTED_ORDER_KEY = 'bitedash_last_printed_order';
 const EXPENSES_KEY = 'bitedash_expenses';
 const STALL_ID_KEY = 'bitedash_stall_id';
 const STALL_ID_STORAGE_KEY = 'bitedash_stall_id';
+const DEVICE_ID_STORAGE_KEY = 'bitedash_device_id';
 const LICENSE_STATE_STORAGE_KEY = 'bitedash_license_state';
 const SESSION_STORAGE_KEY = 'bitedash_session';
 const SYNC_QUEUE_KEY = 'bitedash_sync_queue';
@@ -32,7 +33,7 @@ const SUPABASE_ANON_KEY = 'sb_publishable_ICpRf007sA4GPPkkroSM5g_43PZIU1b';
 
 const CLOUD_SYNC_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
 const SILENT_CONNECT_TIMEOUT_MS = 2000;
-const THREE_DAYS_MS = 3 * 24 * 60 * 60 * 1000;
+const SEVEN_DAYS_MS = 7 * 24 * 60 * 60 * 1000;
 const THIRTY_DAYS_MS = 30 * 24 * 60 * 60 * 1000;
 const ONE_YEAR_MS = 365 * 24 * 60 * 60 * 1000;
 const LIFETIME_EXPIRY_TS = 4102444800000; // Jan 1, 2100
@@ -386,6 +387,7 @@ async function handleLoginGatewaySubmit() {
   btn.disabled = false;
   btn.textContent = '🚀 Start POS Counter / لاگ ان';
   showToast(`Welcome! Logged in as ${role === 'owner' ? '👑 Owner' : '👤 Cashier'}`, 'success');
+  await syncAndVerifyServerTrial(rawCode);
   syncToCloud();
   sendStallHeartbeat();
 }
@@ -1340,13 +1342,13 @@ function showToast(message, tone = 'default') {
 
 function setPrinterStatus(status, message) {
   printerStatus.dataset.state = status;
-  let badgeLabel = 'Connect';
+  let badgeLabel = '🔴 Tap to Pair';
   if (status === 'ready') {
-    badgeLabel = 'Ready';
+    badgeLabel = '🟢 Ready';
   } else if (status === 'connecting' || status === 'printing') {
-    badgeLabel = 'Connecting...';
+    badgeLabel = '⏳ Connecting...';
   } else if (status === 'reconnecting') {
-    badgeLabel = 'Reconnecting...';
+    badgeLabel = '⏳ Reconnecting...';
   }
   if (printerStatusLabel) {
     printerStatusLabel.textContent = badgeLabel;
@@ -1357,21 +1359,23 @@ function setPrinterStatus(status, message) {
 
 function getFriendlyPrinterErrorMessage(error) {
   const name = String((error && error.name) || '');
+  const code = String((error && error.code) || '').toLowerCase();
   const msg = String((error && error.message) || '').toLowerCase();
 
-  if (name === 'NotFoundError' || msg.includes('cancelled') || msg.includes('canceled') || msg.includes('no device selected')) {
-    return 'پرنٹر سلیکٹ نہیں ہوا (Printer select karein)';
+  if (
+    name === 'SecurityError' ||
+    name === 'NotAllowedError' ||
+    code.includes('bt_disabled') ||
+    msg.includes('adapter not available') ||
+    msg.includes('bluetooth is turned off') ||
+    msg.includes('bt_disabled') ||
+    msg.includes('bluetooth off') ||
+    msg.includes('not supported') ||
+    msg.includes('permission')
+  ) {
+    return 'Bluetooth band hai — pehle on karein';
   }
-  if (name === 'SecurityError' || name === 'NotAllowedError' || msg.includes('permission')) {
-    return 'بلوٹوتھ کی اجازت دیں (Bluetooth allow karein)';
-  }
-  if (msg.includes('adapter not available') || msg.includes('bluetooth is turned off') || msg.includes('bt_disabled')) {
-    return 'فون کا بلوٹوتھ آن کریں (Bluetooth ON karein)';
-  }
-  if (name === 'NetworkError' || msg.includes('gatt') || msg.includes('disconnected') || msg.includes('out of range') || msg.includes('timeout')) {
-    return 'پرنٹر بند ہے یا دور ہے (Printer ON karein)';
-  }
-  return 'پرنٹر کنیکٹ نہیں ہوا، پرنٹر آن چیک کریں (Printer ON check karein)';
+  return 'Printer nazdeek rakhein aur dubara try karein';
 }
 
 async function connectToWebBluetoothGatt(device) {
@@ -1725,6 +1729,8 @@ async function trySilentConnect(mac) {
     } catch (e) {
       return false;
     }
+  } else if (navigator.bluetooth && typeof navigator.bluetooth.getDevices === 'function') {
+    return await autoReconnectWebBluetoothOnStartup();
   }
   return false;
 }
@@ -1839,14 +1845,15 @@ async function syncPrinterStatusFromBridge() {
   const disconnectBtn = document.getElementById('disconnectPrinterBtn');
 
   if (bleDevice && bleDevice.gatt && bleDevice.gatt.connected && bleCharacteristic) {
-    const name = bleDevice.name || 'Bluetooth Thermal Printer';
+    const name = bleDevice.name || 'Bluetooth Printer';
     setPrinterStatus('ready');
     if (banner) banner.dataset.tone = 'connected';
-    if (stateText) stateText.textContent = 'پرنٹر تیار ہے (Connected)';
-    if (hintText) hintText.textContent = `Device: ${name} (Ready)`;
+    if (stateText) stateText.textContent = '🟢 Printer Connected';
+    if (hintText) hintText.textContent = `${name} — Ready to print`;
     if (connectBtn) {
-      connectBtn.disabled = true;
-      connectBtn.style.opacity = '0.5';
+      connectBtn.disabled = false;
+      connectBtn.textContent = '🔗 Connect Bluetooth Printer';
+      connectBtn.style.opacity = '1';
     }
     if (testBtn) testBtn.disabled = false;
     if (disconnectBtn) disconnectBtn.disabled = false;
@@ -1856,10 +1863,11 @@ async function syncPrinterStatusFromBridge() {
   if (!bridge || typeof bridge.getStatus !== 'function') {
     setPrinterStatus('disconnected');
     if (banner) banner.dataset.tone = 'idle';
-    if (stateText) stateText.textContent = 'پرنٹر بند ہے (Disconnected)';
-    if (hintText) hintText.textContent = 'Make sure Bluetooth & printer are ON';
+    if (stateText) stateText.textContent = '🔴 Printer Not Connected';
+    if (hintText) hintText.textContent = 'Turn on printer & tap Connect';
     if (connectBtn) {
       connectBtn.disabled = false;
+      connectBtn.textContent = '🔗 Connect Bluetooth Printer';
       connectBtn.style.opacity = '1';
     }
     if (testBtn) testBtn.disabled = true;
@@ -1873,14 +1881,15 @@ async function syncPrinterStatusFromBridge() {
 
     if (isConn) {
       stopAutoReconnect();
-      const printerName = status.name || getSavedPrinterMac() || 'Speedx M450';
+      const printerName = status.name || getSavedPrinterMac() || 'Bluetooth Printer';
       setPrinterStatus('ready');
       if (banner) banner.dataset.tone = 'connected';
-      if (stateText) stateText.textContent = 'پرنٹر تیار ہے (Connected)';
-      if (hintText) hintText.textContent = `Device: ${printerName} (Ready)`;
+      if (stateText) stateText.textContent = '🟢 Printer Connected';
+      if (hintText) hintText.textContent = `${printerName} — Ready to print`;
       if (connectBtn) {
-        connectBtn.disabled = true;
-        connectBtn.style.opacity = '0.5';
+        connectBtn.disabled = false;
+        connectBtn.textContent = '🔗 Connect Bluetooth Printer';
+        connectBtn.style.opacity = '1';
       }
       if (testBtn) testBtn.disabled = false;
       if (disconnectBtn) disconnectBtn.disabled = false;
@@ -1888,16 +1897,17 @@ async function syncPrinterStatusFromBridge() {
       if (reconnectInterval) {
         setPrinterStatus('reconnecting');
         if (banner) banner.dataset.tone = 'connecting';
-        if (stateText) stateText.textContent = 'پرنٹر دوبارہ جوڑا جا رہا ہے (Reconnecting...)';
-        if (hintText) hintText.textContent = 'Attempting auto-reconnect every 4s...';
+        if (stateText) stateText.textContent = '⏳ Reconnecting Printer...';
+        if (hintText) hintText.textContent = 'Turn on printer & tap Connect';
       } else {
         setPrinterStatus('disconnected');
         if (banner) banner.dataset.tone = 'idle';
-        if (stateText) stateText.textContent = 'پرنٹر بند ہے (Disconnected)';
-        if (hintText) hintText.textContent = 'Make sure Bluetooth & printer are ON';
+        if (stateText) stateText.textContent = '🔴 Printer Not Connected';
+        if (hintText) hintText.textContent = 'Turn on printer & tap Connect';
       }
       if (connectBtn) {
         connectBtn.disabled = false;
+        connectBtn.textContent = '🔗 Connect Bluetooth Printer';
         connectBtn.style.opacity = '1';
       }
       if (testBtn) testBtn.disabled = true;
@@ -1931,62 +1941,10 @@ async function triggerOpenBluetoothSettings() {
 window.triggerOpenBluetoothSettings = triggerOpenBluetoothSettings;
 
 async function loadBondedDevicesInModal() {
-  const bridge = window.AndroidPOSBridge;
   const listEl = document.getElementById('bondedDevicesList');
-  if (!listEl) return;
-
-  if (!listEl.dataset.hasClickListener) {
-    listEl.dataset.hasClickListener = 'true';
-    listEl.addEventListener('click', async (e) => {
-      const item = e.target.closest('.bonded-item');
-      if (!item) return;
-      const mac = item.getAttribute('data-mac');
-      const name = item.getAttribute('data-name');
-      if (!mac || !bridge) return;
-
-      try {
-        showToast(`⏳ ${name || 'Printer'} کنیکٹ ہو رہا ہے...`, 'default');
-        await bridge.connect(mac, 12000);
-        savePrinterMac(mac, name);
-        showToast(`پرنٹر (${name || 'Printer'}) کنیکٹ ہو گیا!`, 'success');
-        closePrinterModal();
-      } catch (err) {
-        showToast(getFriendlyPrinterErrorMessage(err), 'error');
-      } finally {
-        await syncPrinterStatusFromBridge();
-        await loadBondedDevicesInModal();
-      }
-    });
-  }
-
-  if (!bridge || typeof bridge.listBondedDevices !== 'function') {
+  if (listEl) {
     listEl.innerHTML = '';
-    return;
-  }
-
-  try {
-    const devices = await bridge.listBondedDevices();
-    if (!Array.isArray(devices) || devices.length === 0) {
-      listEl.innerHTML = `
-        <div class="bonded-empty" style="padding:14px 10px;text-align:center;background:#18181B;border:1px dashed #27272A;border-radius:12px;">
-          <div style="color:#A1A1AA;font-size:12px;margin-bottom:10px;">Android Bluetooth Settings mein koi printer pair nahi mila.</div>
-          <button type="button" onclick="triggerOpenBluetoothSettings()" style="background:#FBBF24;color:#09090B;font-weight:800;border:none;padding:8px 16px;border-radius:10px;font-size:12px;cursor:pointer;display:inline-flex;align-items:center;gap:6px;box-shadow:0 2px 8px rgba(251,191,36,0.25);">
-            ⚙️ Open Bluetooth Settings / بلوٹوتھ کھولیں
-          </button>
-        </div>
-      `;
-      return;
-    }
-
-    const savedMac = getSavedPrinterMac();
-    listEl.innerHTML = devices.map(d => `
-      <div class="bonded-item" data-mac="${escapeHtml(d.address)}" data-name="${escapeHtml(d.name || '')}">
-        <div class="bonded-name">${escapeHtml(d.name || 'Unnamed Device')}</div>
-        <div class="bonded-mac">${escapeHtml(d.address)} ${d.address === savedMac ? '★ (Last Used)' : ''}</div>
-      </div>
-    `).join('');
-  } catch (err) {
-    listEl.innerHTML = '<div class="bonded-empty">Could not load paired Bluetooth devices.</div>';
+    listEl.style.display = 'none';
   }
 }
 
@@ -1998,7 +1956,6 @@ const disconnectPrinterBtn = document.getElementById('disconnectPrinterBtn');
 function openPrinterModal() {
   printerModal.classList.add('open');
   syncPrinterStatusFromBridge();
-  loadBondedDevicesInModal();
 }
 
 function closePrinterModal() {
@@ -2015,51 +1972,48 @@ async function handleConnectPrinterModalClick() {
 
   if (bridge && typeof bridge.isNative === 'function' && bridge.isNative()) {
     connectPrinterModalBtn.disabled = true;
-    connectPrinterModalBtn.textContent = '⏳ پرنٹر تلاش کر رہا ہے...';
+    connectPrinterModalBtn.textContent = '⏳ Connecting...';
     try {
       const devices = await bridge.listBondedDevices();
       if (!Array.isArray(devices) || devices.length === 0) {
-        showToast('کوئی پیئرڈ پرنٹر نہیں ملا، بلوٹوتھ سیٹنگز کھولی جا رہی ہیں...', 'default');
+        showToast('Printer nazdeek rakhein aur dubara try karein', 'error');
         await triggerOpenBluetoothSettings();
         return;
       }
 
-      // If devices exist, connect to saved printer MAC or first/matching device
       const savedMac = getSavedPrinterMac();
       let targetDevice = devices.find(d => d.address === savedMac) ||
                          devices.find(d => /speed|m450|bt-450|mpt|pos|printer|thermal|zj|rpp/i.test(d.name || '')) ||
                          devices[0];
 
       if (targetDevice && targetDevice.address) {
-        connectPrinterModalBtn.textContent = `⏳ ${targetDevice.name || 'Printer'} کنیکٹ ہو رہا ہے...`;
         await bridge.connect(targetDevice.address, 12000);
         savePrinterMac(targetDevice.address, targetDevice.name);
-        showToast(`پرنٹر (${targetDevice.name || 'Thermal Printer'}) کنیکٹ ہو گیا!`, 'success');
+        showToast(`🟢 ${targetDevice.name || 'Bluetooth Printer'} Connected!`, 'success');
         closePrinterModal();
       }
     } catch (err) {
       showToast(getFriendlyPrinterErrorMessage(err), 'error');
     } finally {
       connectPrinterModalBtn.disabled = false;
-      connectPrinterModalBtn.textContent = '🔍 پرنٹر تلاش کریں (Connect Printer)';
+      connectPrinterModalBtn.textContent = '🔗 Connect Bluetooth Printer';
       await syncPrinterStatusFromBridge();
-      await loadBondedDevicesInModal();
     }
     return;
   }
 
-  // Web Bluetooth fallback
+  // Web Bluetooth
   try {
     connectPrinterModalBtn.disabled = true;
-    connectPrinterModalBtn.textContent = '⏳ پرنٹر تلاش کر رہا ہے...';
+    connectPrinterModalBtn.textContent = '⏳ Connecting...';
     await pairAndConnectWebBluetoothInteractive();
-    showToast('پرنٹر کنیکٹ ہو گیا ہے! (Connected)', 'success');
+    showToast('🟢 Bluetooth Printer Connected!', 'success');
     closePrinterModal();
   } catch (err) {
     showToast(getFriendlyPrinterErrorMessage(err), 'error');
   } finally {
     connectPrinterModalBtn.disabled = false;
-    connectPrinterModalBtn.textContent = '🔍 پرنٹر تلاش کریں (Connect Printer)';
+    connectPrinterModalBtn.textContent = '🔗 Connect Bluetooth Printer';
     await syncPrinterStatusFromBridge();
   }
 }
@@ -2407,8 +2361,66 @@ function generateKeysForStallId(stallIdInput) {
 
 window.BiteDashKeygen = generateKeysForStallId;
 
+function computeFallbackDeviceFingerprint() {
+  try {
+    const parts = [
+      navigator.userAgent || '',
+      navigator.language || '',
+      `${screen.width || 0}x${screen.height || 0}x${screen.colorDepth || 0}`,
+      navigator.hardwareConcurrency || 0,
+      navigator.maxTouchPoints || 0,
+      (Intl.DateTimeFormat && Intl.DateTimeFormat().resolvedOptions().timeZone) || ''
+    ];
+    try {
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
+      if (ctx) {
+        ctx.textBaseline = 'top';
+        ctx.font = '14px Arial';
+        ctx.fillText('BiteDashPOS-FP', 2, 2);
+        parts.push(canvas.toDataURL().slice(-64));
+      }
+    } catch (e) {}
+
+    const raw = parts.join('|');
+    let h1 = 0x811c9dc5;
+    let h2 = 0x9e3779b9;
+    for (let i = 0; i < raw.length; i++) {
+      const ch = raw.charCodeAt(i);
+      h1 ^= ch;
+      h1 = Math.imul(h1, 0x01000193);
+      h2 ^= ch + i;
+      h2 = Math.imul(h2, 0x85ebca6b);
+    }
+    return `FP-${(h1 >>> 0).toString(16).padStart(8, '0')}${(h2 >>> 0).toString(16).padStart(8, '0')}`;
+  } catch (e) {
+    return 'FP-DEFAULT-0000';
+  }
+}
+
+async function getPersistentDeviceId() {
+  try {
+    const capDevice = window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.Device;
+    if (capDevice && typeof capDevice.getId === 'function') {
+      const info = await capDevice.getId();
+      if (info && info.identifier) {
+        localStorage.setItem(DEVICE_ID_STORAGE_KEY, info.identifier);
+        return info.identifier;
+      }
+    }
+  } catch (e) {}
+
+  let cached = localStorage.getItem(DEVICE_ID_STORAGE_KEY);
+  if (!cached) {
+    cached = computeFallbackDeviceFingerprint();
+    localStorage.setItem(DEVICE_ID_STORAGE_KEY, cached);
+  }
+  return cached;
+}
+
 function getLicenseData() {
   const stallId = getOrCreateStallId();
+  const deviceId = localStorage.getItem(DEVICE_ID_STORAGE_KEY) || '';
   try {
     const raw = localStorage.getItem(LICENSE_STATE_STORAGE_KEY);
     if (raw) {
@@ -2416,26 +2428,37 @@ function getLicenseData() {
       if (parsed && typeof parsed.licenseExpiryDate === 'number') {
         const now = Date.now();
         let status = parsed.licenseStatus || 'trial';
-        if (now > parsed.licenseExpiryDate && status !== 'lifetime') {
+        const trialStartDate = typeof parsed.trialStartDate === 'number'
+          ? parsed.trialStartDate
+          : (status === 'trial' ? parsed.licenseExpiryDate - SEVEN_DAYS_MS : null);
+
+        if (status === 'trial' && trialStartDate && now >= trialStartDate + SEVEN_DAYS_MS && now > parsed.licenseExpiryDate) {
+          status = 'expired';
+        } else if (now > parsed.licenseExpiryDate && status !== 'lifetime') {
           status = 'expired';
         }
         return {
           stallId,
+          deviceId: parsed.deviceId || deviceId,
+          trialStartDate,
           licenseExpiryDate: parsed.licenseExpiryDate,
           licenseStatus: status,
-          planLabel: parsed.planLabel || (status === 'trial' ? '3-Day Free Trial' : 'Active License')
+          planLabel: parsed.planLabel || (status === 'trial' ? '7-Day Free Trial' : 'Active License')
         };
       }
     }
   } catch (e) {}
 
-  // First install -> auto 3-Day Free Trial
-  const initialExpiry = Date.now() + THREE_DAYS_MS;
+  // First install -> auto 7-Day Free Trial
+  const now = Date.now();
+  const initialExpiry = now + SEVEN_DAYS_MS;
   const initialData = {
     stallId,
+    deviceId,
+    trialStartDate: now,
     licenseExpiryDate: initialExpiry,
     licenseStatus: 'trial',
-    planLabel: '3-Day Free Trial'
+    planLabel: '7-Day Free Trial'
   };
   localStorage.setItem(LICENSE_STATE_STORAGE_KEY, JSON.stringify(initialData));
   return initialData;
@@ -2448,7 +2471,8 @@ function saveLicenseData(data) {
 function isLicenseExpired() {
   const data = getLicenseData();
   if (data.licenseStatus === 'lifetime') return false;
-  return Date.now() > data.licenseExpiryDate;
+  if (data.licenseStatus === 'expired') return true;
+  return Date.now() >= data.licenseExpiryDate;
 }
 
 function formatLicenseExpiryText(data) {
@@ -2503,14 +2527,186 @@ function enforceLicenseLockUI() {
   const data = getLicenseData();
   const overlay = document.getElementById('licenseLockOverlay');
   const stallEl = document.getElementById('licenseOverlayStallId');
-  if (stallEl) stallEl.textContent = data.stallId;
+  const titleEl = document.getElementById('licenseLockTitle');
+  if (stallEl) stallEl.textContent = `Stall ID: ${data.stallId}`;
 
   if (isLicenseExpired()) {
+    if (titleEl) {
+      titleEl.textContent = '🔒 Trial Expired - Contact Support to Activate';
+    }
     if (overlay) overlay.classList.add('locked');
   } else {
     if (overlay) overlay.classList.remove('locked');
   }
   updateSettingsLicenseCardUI();
+}
+
+async function syncLicenseActivationToServer(updated) {
+  if (typeof navigator !== 'undefined' && !navigator.onLine) return;
+  try {
+    const deviceId = await getPersistentDeviceId();
+    const supabaseHeaders = {
+      'apikey': SUPABASE_ANON_KEY,
+      'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+      'Content-Type': 'application/json',
+      'Prefer': 'resolution=merge-duplicates'
+    };
+    await fetch(`${SUPABASE_URL}/stalls?on_conflict=stall_id`, {
+      method: 'POST',
+      headers: supabaseHeaders,
+      body: JSON.stringify({
+        stall_id: updated.stallId,
+        device_id: deviceId,
+        license_status: updated.licenseStatus,
+        license_expires_at: new Date(updated.licenseExpiryDate).toISOString(),
+        last_synced_at: new Date().toISOString()
+      })
+    }).catch(() => null);
+  } catch (e) {}
+}
+
+async function syncAndVerifyServerTrial(stallIdOverride) {
+  const stallId = stallIdOverride || getOrCreateStallId();
+  const deviceId = await getPersistentDeviceId();
+  const localData = getLicenseData();
+
+  if (typeof navigator !== 'undefined' && !navigator.onLine) {
+    enforceLicenseLockUI();
+    return localData;
+  }
+
+  const supabaseHeaders = {
+    'apikey': SUPABASE_ANON_KEY,
+    'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+    'Content-Type': 'application/json'
+  };
+
+  try {
+    const controller = typeof AbortController !== 'undefined' ? new AbortController() : null;
+    const timeoutId = controller ? setTimeout(() => controller.abort(), 6000) : null;
+
+    const [stallRes, deviceRes] = await Promise.all([
+      fetch(`${SUPABASE_URL}/stalls?stall_id=eq.${encodeURIComponent(stallId)}&select=stall_id,license_status,license_expires_at,trial_start_date,device_id`, {
+        headers: supabaseHeaders,
+        signal: controller ? controller.signal : undefined
+      }),
+      fetch(`${SUPABASE_URL}/device_trials?device_id=eq.${encodeURIComponent(deviceId)}&select=device_id,first_stall_id,trial_start_date`, {
+        headers: supabaseHeaders,
+        signal: controller ? controller.signal : undefined
+      }).catch(() => null)
+    ]);
+
+    if (timeoutId) clearTimeout(timeoutId);
+
+    const stallRows = stallRes && stallRes.ok ? await stallRes.json() : [];
+    const deviceRows = deviceRes && deviceRes.ok ? await deviceRes.json() : [];
+    const stall = Array.isArray(stallRows) && stallRows.length > 0 ? stallRows[0] : null;
+    const deviceTrial = Array.isArray(deviceRows) && deviceRows.length > 0 ? deviceRows[0] : null;
+
+    const now = Date.now();
+
+    // Respect active/lifetime license on server
+    if (stall && (stall.license_status === 'lifetime' || stall.license_status === 'active')) {
+      const serverExp = stall.license_expires_at ? new Date(stall.license_expires_at).getTime() : LIFETIME_EXPIRY_TS;
+      if (stall.license_status === 'lifetime' || serverExp > now) {
+        const synced = {
+          stallId,
+          deviceId,
+          trialStartDate: stall.trial_start_date ? new Date(stall.trial_start_date).getTime() : localData.trialStartDate,
+          licenseExpiryDate: serverExp,
+          licenseStatus: stall.license_status,
+          planLabel: stall.license_status === 'lifetime' ? 'Lifetime Pro License' : 'Active Pro License'
+        };
+        saveLicenseData(synced);
+        enforceLicenseLockUI();
+        return synced;
+      }
+    }
+
+    // Also respect local paid activation if server hasn't caught up yet
+    if ((localData.licenseStatus === 'lifetime' || localData.licenseStatus === 'active') && localData.licenseExpiryDate > now) {
+      syncLicenseActivationToServer(localData);
+      enforceLicenseLockUI();
+      return localData;
+    }
+
+    // Determine earliest authoritative trialStartDate across account & hardware device
+    const candidates = [];
+    if (stall && stall.trial_start_date) {
+      const t = new Date(stall.trial_start_date).getTime();
+      if (!Number.isNaN(t)) candidates.push(t);
+    }
+    if (deviceTrial && deviceTrial.trial_start_date) {
+      const t = new Date(deviceTrial.trial_start_date).getTime();
+      if (!Number.isNaN(t)) candidates.push(t);
+    }
+
+    let authoritativeStart = candidates.length > 0 ? Math.min(...candidates) : null;
+
+    if (!authoritativeStart) {
+      // True first login on this account and device -> bind trialStartDate now
+      authoritativeStart = now;
+    }
+
+    const startIso = new Date(authoritativeStart).toISOString();
+    let expiryMs = authoritativeStart + SEVEN_DAYS_MS;
+
+    // Allow admin-extended trial expiry only if explicitly set beyond default 7-day window
+    if (stall && stall.license_status === 'trial' && stall.license_expires_at) {
+      const serverExp = new Date(stall.license_expires_at).getTime();
+      if (!Number.isNaN(serverExp) && serverExp > expiryMs) {
+        expiryMs = serverExp;
+      }
+    }
+
+    const isExpired = now >= expiryMs;
+    const status = isExpired ? 'expired' : 'trial';
+
+    // Persist binding to device_trials and stalls if missing or out of sync
+    const upsertHeaders = { ...supabaseHeaders, 'Prefer': 'resolution=merge-duplicates' };
+    if (!deviceTrial || !deviceTrial.trial_start_date) {
+      fetch(`${SUPABASE_URL}/device_trials?on_conflict=device_id`, {
+        method: 'POST',
+        headers: upsertHeaders,
+        body: JSON.stringify({
+          device_id: deviceId,
+          first_stall_id: stallId,
+          trial_start_date: startIso
+        })
+      }).catch(() => null);
+    }
+
+    if (!stall || !stall.trial_start_date || !stall.device_id || (isExpired && stall.license_status !== 'expired')) {
+      fetch(`${SUPABASE_URL}/stalls?on_conflict=stall_id`, {
+        method: 'POST',
+        headers: upsertHeaders,
+        body: JSON.stringify({
+          stall_id: stallId,
+          shop_name: (shopConfig && shopConfig.shopName) ? shopConfig.shopName : 'Student Burger',
+          device_id: deviceId,
+          trial_start_date: startIso,
+          license_status: status,
+          license_expires_at: new Date(expiryMs).toISOString(),
+          last_synced_at: new Date().toISOString()
+        })
+      }).catch(() => null);
+    }
+
+    const updated = {
+      stallId,
+      deviceId,
+      trialStartDate: authoritativeStart,
+      licenseExpiryDate: expiryMs,
+      licenseStatus: status,
+      planLabel: isExpired ? 'Trial Expired' : '7-Day Free Trial'
+    };
+    saveLicenseData(updated);
+    enforceLicenseLockUI();
+    return updated;
+  } catch (e) {
+    enforceLicenseLockUI();
+    return localData;
+  }
 }
 
 function validateAndActivateLicenseKey(rawKeyInput) {
@@ -2526,36 +2722,42 @@ function validateAndActivateLicenseKey(rawKeyInput) {
 
   if (cleanKey === expected.key30Days) {
     const updated = {
+      ...currentData,
       stallId,
       licenseExpiryDate: baseTime + THIRTY_DAYS_MS,
       licenseStatus: 'active',
       planLabel: '30-Day Monthly License'
     };
     saveLicenseData(updated);
+    syncLicenseActivationToServer(updated);
     enforceLicenseLockUI();
     return { ok: true, message: '✅ 30-Day License Activated Successfully!' };
   }
 
   if (cleanKey === expected.key1Year) {
     const updated = {
+      ...currentData,
       stallId,
       licenseExpiryDate: baseTime + ONE_YEAR_MS,
       licenseStatus: 'active',
       planLabel: '1-Year Annual License'
     };
     saveLicenseData(updated);
+    syncLicenseActivationToServer(updated);
     enforceLicenseLockUI();
     return { ok: true, message: '✅ 1-Year License Activated Successfully!' };
   }
 
   if (cleanKey === expected.keyLifetime || cleanKey === expected.masterKey) {
     const updated = {
+      ...currentData,
       stallId,
       licenseExpiryDate: LIFETIME_EXPIRY_TS,
       licenseStatus: 'lifetime',
       planLabel: 'Lifetime Pro License'
     };
     saveLicenseData(updated);
+    syncLicenseActivationToServer(updated);
     enforceLicenseLockUI();
     return { ok: true, message: '🎉 Lifetime License Activated Forever!' };
   }
@@ -2946,6 +3148,7 @@ function scheduleDebouncedCloudSync(delayMs = 2000) {
 
 // Window online trigger
 window.addEventListener('online', () => {
+  syncAndVerifyServerTrial();
   syncToCloud();
 });
 
@@ -3344,7 +3547,7 @@ printerModal.addEventListener('click', (e) => {
 
 testPrintBtn.addEventListener('click', async () => {
   testPrintBtn.disabled = true;
-  testPrintBtn.textContent = '⏳ پرنٹ ہو رہا ہے...';
+  testPrintBtn.textContent = '⏳ Printing...';
   try {
     const testOrderData = {
       token: state.token || 1,
@@ -3369,11 +3572,11 @@ testPrintBtn.addEventListener('click', async () => {
     } else {
       await sendBytesOverWebBluetooth(asciiBytes);
     }
-    showToast('✅ ٹیسٹ پرچی پرنٹ ہو گئی! (Test Slip OK)', 'success');
+    showToast('✅ Test Print Successful!', 'success');
   } catch (err) {
     showToast(getFriendlyPrinterErrorMessage(err), 'error');
   } finally {
-    testPrintBtn.textContent = '📄 ٹیسٹ پرچی (Test Slip)';
+    testPrintBtn.textContent = '🖨️ Test Print';
     await syncPrinterStatusFromBridge();
   }
 });
@@ -3530,6 +3733,7 @@ window.addEventListener('load', async () => {
   loadSyncQueue();
   initLoginSessionAndRBAC();
   enforceLicenseLockUI();
+  syncAndVerifyServerTrial();
   syncPaymentModeToggleUI();
   document.getElementById('customerInput').value = state.customer || '';
   renderMenu();
@@ -3539,20 +3743,18 @@ window.addEventListener('load', async () => {
   setInterval(sendStallHeartbeat, 120000);
   await syncPrinterStatusFromBridge();
 
-  // Auto-reconnect Web Bluetooth or Android SPP
+  // Silent background Bluetooth auto-reconnect on window.load
   const bridge = window.AndroidPOSBridge;
   if (bridge && typeof bridge.isNative === 'function' && bridge.isNative()) {
-    const savedMac = getSavedPrinterMac();
-    if (savedMac) {
-      trySilentConnect(savedMac).then((ok) => {
-        syncPrinterStatusFromBridge();
-        if (!ok) {
-          startAutoReconnect();
-        }
-      });
-    }
+    ensureSilentPrinterConnection().then((ok) => {
+      syncPrinterStatusFromBridge();
+      if (!ok && getSavedPrinterMac()) {
+        startAutoReconnect();
+      }
+    });
   } else {
     autoReconnectWebBluetoothOnStartup().then((ok) => {
+      syncPrinterStatusFromBridge();
       if (!ok && getSavedPrinterMac()) {
         startAutoReconnect();
       }

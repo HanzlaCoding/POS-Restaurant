@@ -82,14 +82,14 @@
     .pos-top-header {
       background: #09090B;
       color: #FFFFFF;
-      padding: 0 16px;
+      padding: 0 12px;
       height: 46px;
       min-height: 46px;
       max-height: 46px;
       display: flex;
       align-items: center;
       justify-content: space-between;
-      gap: 12px;
+      gap: 8px;
       flex-shrink: 0;
       border-bottom: 1px solid #18181B;
       z-index: 40;
@@ -134,7 +134,7 @@
       flex-shrink: 0;
     }
 
-    /* Printer Button: [ 🖨️ Connect ] (Red #DC2626 when offline, Green pill when connected) */
+    /* Printer Button: [ 🔴 Tap to Pair / 🟢 Ready ] */
     .printer-status,
     .printer-connect-btn {
       appearance: none;
@@ -144,15 +144,25 @@
       font-family: var(--font-sans);
       font-size: 12px;
       font-weight: 800;
-      padding: 0 12px;
+      padding: 0 10px;
       height: 34px;
+      max-width: 145px;
       border-radius: 8px;
       cursor: pointer;
       display: inline-flex;
       align-items: center;
-      gap: 6px;
+      gap: 5px;
       white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      flex-shrink: 0;
       transition: all 0.15s ease;
+    }
+
+    #printerStatusLabel {
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
 
     .printer-status .status-dot {
@@ -310,6 +320,8 @@
       align-items: center;
       justify-content: center;
       line-height: 1;
+      flex-shrink: 0;
+      white-space: nowrap;
       box-shadow: 0 3px 10px rgba(251, 191, 36, 0.4);
       transition: transform 0.08s ease;
     }
@@ -3823,11 +3835,10 @@
         <button type="button" class="header-icon-btn" id="openOrderHistoryBtn" title="Order History &amp; Anti-Theft Void">
           📜
         </button>
-        <!-- Printer Button: [ 🖨️ Connect ] -->
+        <!-- Printer Button: [ 🔴 Tap to Pair / 🟢 Ready ] -->
         <button type="button" class="printer-connect-btn" id="printerStatus" data-state="disconnected"
           title="Printer Settings">
-          <span>🖨️</span>
-          <span id="printerStatusLabel">Connect</span>
+          <span id="printerStatusLabel">🔴 Tap to Pair</span>
         </button>
         <!-- Settings Button: Square #18181B button with gear icon (34x34px) -->
         <button type="button" class="owner-gear-btn" id="openSettingsHeaderBtn" title="Shop Settings &amp; Menu Editor">
@@ -4282,7 +4293,7 @@
     <div class="license-lock-overlay" id="licenseLockOverlay" role="dialog" aria-modal="true"
       aria-labelledby="licenseLockTitle">
       <div class="license-card">
-        <div class="license-lock-title" id="licenseLockTitle">🔒 Software License Expired</div>
+        <div class="license-lock-title" id="licenseLockTitle">🔒 Trial Expired - Contact Support to Activate</div>
         <div class="license-stall-badge" id="licenseOverlayStallId">Stall ID: BD-0000</div>
         <div class="license-contact-box">
           Nayi Key ke liye rabta karein:<br>
@@ -4297,13 +4308,13 @@
       </div>
     </div>
 
-    <!-- Local Stall-Optimized Bluetooth Printer Modal -->
+    <!-- Simplified Bluetooth Printer Modal -->
     <div class="modal-backdrop" id="printerModal" role="dialog" aria-modal="true" aria-labelledby="printerModalTitle">
       <div class="modal-sheet">
         <div class="modal-header">
           <div class="printer-modal-header-copy">
-            <span class="modal-title" id="printerModalTitle">Thermal Printer</span>
-            <span class="printer-modal-subtitle">پرنٹر کنکشن اور سیٹنگ</span>
+            <span class="modal-title" id="printerModalTitle">Bluetooth Printer</span>
+            <span class="printer-modal-subtitle">Turn on printer &amp; tap Connect</span>
           </div>
           <button type="button" class="modal-close-btn" id="closePrinterModalBtn" title="Close"
             aria-label="Close">✕</button>
@@ -4315,21 +4326,20 @@
             <span class="printer-icon-glyph" id="printerIconGlyph">🖨️</span>
           </div>
           <div class="printer-status-copy">
-            <span class="status-card-value" id="modalPrinterStateText">پرنٹر بند ہے (Disconnected)</span>
-            <span class="status-card-sub" id="modalPrinterHintText">Make sure Bluetooth &amp; printer are ON</span>
+            <span class="status-card-value" id="modalPrinterStateText">🔴 Printer Not Connected</span>
+            <span class="status-card-sub" id="modalPrinterHintText">Turn on printer &amp; tap Connect</span>
           </div>
         </div>
 
         <button type="button" class="connect-printer-cta" id="connectPrinterModalBtn">
-          🔍 پرنٹر تلاش کریں (Connect Printer)
+          🔗 Connect Bluetooth Printer
         </button>
 
-        <div class="bonded-list" id="bondedDevicesList"></div>
+        <div class="bonded-list" id="bondedDevicesList" style="display:none;"></div>
 
         <div class="modal-btn-row">
-          <button type="button" class="modal-btn" id="testPrintBtn" disabled>📄 ٹیسٹ پرچی (Test Slip)</button>
-          <button type="button" class="modal-btn danger" id="disconnectPrinterBtn" disabled>✕ ڈسکنیکٹ
-            (Disconnect)</button>
+          <button type="button" class="modal-btn" id="testPrintBtn" style="flex:1;" disabled>🖨️ Test Print</button>
+          <button type="button" class="modal-btn danger" id="disconnectPrinterBtn" style="display:none;" disabled>Disconnect</button>
         </div>
       </div>
     </div>
