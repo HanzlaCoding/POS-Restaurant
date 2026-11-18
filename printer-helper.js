@@ -216,11 +216,32 @@
     return new Uint8Array(bytes);
   }
 
+  function getFriendlyErrorMessage(error) {
+    const name = String((error && error.name) || '');
+    const code = String((error && error.code) || '').toLowerCase();
+    const msg = String((error && error.message) || '').toLowerCase();
+    if (
+      name === 'SecurityError' ||
+      name === 'NotAllowedError' ||
+      code.includes('bt_disabled') ||
+      msg.includes('adapter not available') ||
+      msg.includes('bluetooth is turned off') ||
+      msg.includes('bt_disabled') ||
+      msg.includes('bluetooth off') ||
+      msg.includes('not supported') ||
+      msg.includes('permission')
+    ) {
+      return 'Bluetooth band hai — pehle on karein';
+    }
+    return 'Printer nazdeek rakhein aur dubara try karein';
+  }
+
   const PrinterHelper = {
     CMD: CMD,
     toPrintableAscii: toPrintableAscii,
     formatItemLinesFor58mm: formatItemLinesFor58mm,
-    buildKotEscPosBytes: buildKotEscPosBytes
+    buildKotEscPosBytes: buildKotEscPosBytes,
+    getFriendlyErrorMessage: getFriendlyErrorMessage
   };
 
   if (typeof module !== 'undefined' && module.exports) {

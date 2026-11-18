@@ -46,10 +46,9 @@ public class MainActivity extends BridgeActivity {
     private static final String KEY_BUNDLE_VERSION = "app_bundle_version";
 
     /**
-     * Remote endpoint for silent version checking.
-     * Host this JSON on your Supabase Storage (bitedash-updates bucket), S3, or custom server.
+     * Remote endpoint for silent version checking (served from Vercel ota_releases/).
      */
-    public static final String OTA_VERSION_URL = "https://giyfjerwbkcbdtvgghjp.supabase.co/storage/v1/object/public/bitedash-updates/bitedash_version.json";
+    public static final String OTA_VERSION_URL = "https://pos-restaurant-dun.vercel.app/ota_releases/bitedash_version.json";
 
     @Override
     public void onCreate(Bundle savedInstanceState) {

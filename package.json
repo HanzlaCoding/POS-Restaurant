@@ -1,9 +1,14 @@
 {
+  "name": "bitedash-pos",
   "version": "1.0.0",
+  "main": "server.js",
   "scripts": {
+    "start": "node server.js",
+    "prepare-www": "node scripts/prepare-www.js"
   },
   "dependencies": {
-  },
-  "devDependencies": {
+    "cors": "^2.8.6",
+    "express": "^4.22.3",
+    "mongoose": "^8.24.10"
   }
 }

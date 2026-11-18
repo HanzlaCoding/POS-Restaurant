@@ -1,11 +1,11 @@
 /**
  * BiteDash POS • Commercial Restaurant & Street Food Stall Terminal
  * Offline-First High-Throughput POS Engine
- * Speedx M450 58mm ESC/POS Thermal Printing & Silent Supabase Background Sync
+ * Speedx M450 58mm ESC/POS Thermal Printing & Silent MongoDB/Vercel Background Sync
  */
 
 // ============================================================================
-// 1. CONSTANTS, STORAGE KEYS & SUPABASE CREDENTIALS
+// 1. CONSTANTS, STORAGE KEYS & BACKEND API CONFIG
 // ============================================================================
 const STORAGE_KEY = 'bitedash_pos_state_v1';
 const TOKEN_STORAGE_KEY = 'bitedash_current_token';
@@ -27,9 +27,8 @@ const SESSION_STORAGE_KEY = 'bitedash_session';
 const SYNC_QUEUE_KEY = 'bitedash_sync_queue';
 const SYNC_OUTBOX_KEY = 'bitedash_sync_outbox';
 
-// Hardcoded Supabase Credentials (No UI Exposure)
-const SUPABASE_URL = 'https://giyfjerwbkcbdtvgghjp.supabase.co/rest/v1';
-const SUPABASE_ANON_KEY = 'sb_publishable_ICpRf007sA4GPPkkroSM5g_43PZIU1b';
+// Live Vercel Express + MongoDB Backend URL (Required for Capacitor APK)
+const API_BASE_URL = "https://pos-restaurant-dun.vercel.app";
 
 const CLOUD_SYNC_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
 const SILENT_CONNECT_TIMEOUT_MS = 2000;
@@ -181,16 +180,40 @@ function loadShopAndMenuConfig() {
   applyShopBrandingToDOM();
 }
 
-function saveShopConfigToStorage() {
+function saveShopConfigToStorage(skipCloudBackup = false) {
   try {
     localStorage.setItem(SHOP_CONFIG_KEY, JSON.stringify(shopConfig));
   } catch (e) {}
   applyShopBrandingToDOM();
+  if (!skipCloudBackup) {
+    backupMenuAndConfigToCloud();
+  }
 }
 
-function saveMenuItemsToStorage() {
+function saveMenuItemsToStorage(skipCloudBackup = false) {
   try {
     localStorage.setItem(MENU_ITEMS_KEY, JSON.stringify(MENU_ITEMS));
+  } catch (e) {}
+  if (!skipCloudBackup) {
+    backupMenuAndConfigToCloud();
+  }
+}
+
+async function backupMenuAndConfigToCloud() {
+  if (typeof navigator !== 'undefined' && !navigator.onLine) return;
+  try {
+    const stallId = getOrCreateStallId();
+    await fetch(`${API_BASE_URL}/api/backup/menu`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        stallId,
+        shopConfig,
+        menuItems: MENU_ITEMS,
+        ownerPin: getOwnerPin()
+      }),
+      keepalive: true
+    }).catch(() => null);
   } catch (e) {}
 }
 
@@ -310,31 +333,51 @@ async function handleLoginGatewaySubmit() {
   let shopName = shopConfig.shopName || 'Student Burger';
   let ownerPin = getOwnerPin() || '1234';
   let cashierPin = localStorage.getItem('bitedash_cashier_pin') || '0000';
+  let serverValidatedRole = null;
 
-  const supabaseHeaders = {
-    'apikey': SUPABASE_ANON_KEY,
-    'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
-    'Content-Type': 'application/json'
-  };
-
-  // If online, fetch stall details, menu, and pins from Supabase
+  // If online, verify stall, PIN, 7-day trial, and menu backup from MongoDB API
   if (typeof navigator !== 'undefined' && navigator.onLine) {
     try {
+      const deviceId = await getPersistentDeviceId();
       const controller = typeof AbortController !== 'undefined' ? new AbortController() : null;
-      const timeoutId = controller ? setTimeout(() => controller.abort(), 5000) : null;
-      const res = await fetch(`${SUPABASE_URL}/stalls?stall_id=eq.${encodeURIComponent(rawCode)}&select=*`, {
-        headers: supabaseHeaders,
+      const timeoutId = controller ? setTimeout(() => controller.abort(), 6000) : null;
+      const res = await fetch(`${API_BASE_URL}/api/auth/verify`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          stallId: rawCode,
+          pin: enteredPin,
+          deviceId,
+          phone: shopConfig.phone || '',
+          shopName: shopConfig.shopName || 'Student Burger'
+        }),
         signal: controller ? controller.signal : undefined
       });
       if (timeoutId) clearTimeout(timeoutId);
 
+      if (res && res.status === 401) {
+        btn.disabled = false;
+        btn.textContent = '🚀 Start POS Counter / لاگ ان';
+        if (errEl) errEl.textContent = '❌ Wrong PIN! Sahi PIN darj karein.';
+        return;
+      }
+
       if (res && res.ok) {
         const data = await res.json();
-        if (Array.isArray(data) && data.length > 0) {
-          const stall = data[0];
+        if (data && data.role) {
+          serverValidatedRole = data.role;
+        }
+        if (data && data.stall) {
+          const stall = data.stall;
+          if (stall.shop_config && typeof stall.shop_config === 'object' && Object.keys(stall.shop_config).length > 0) {
+            shopConfig = { ...shopConfig, ...stall.shop_config };
+          }
           if (stall.shop_name) {
             shopName = stall.shop_name;
             shopConfig.shopName = shopName;
+          }
+          if (stall.owner_phone) {
+            shopConfig.phone = stall.owner_phone;
           }
           if (stall.owner_pin) {
             ownerPin = String(stall.owner_pin).trim();
@@ -346,10 +389,20 @@ async function handleLoginGatewaySubmit() {
           }
           if (stall.menu_items && Array.isArray(stall.menu_items) && stall.menu_items.length > 0) {
             MENU_ITEMS = stall.menu_items.map((it, idx) => normalizeMenuItem(it, idx));
-            saveMenuItemsToStorage();
+            saveMenuItemsToStorage(true);
             renderMenu();
           }
-          saveShopConfigToStorage();
+          saveShopConfigToStorage(true);
+        }
+        if (data && typeof data.licenseExpiryDate === 'number') {
+          saveLicenseData({
+            stallId: rawCode,
+            deviceId: await getPersistentDeviceId(),
+            trialStartDate: data.trialStartDate || Date.now(),
+            licenseExpiryDate: data.licenseExpiryDate,
+            licenseStatus: data.licenseStatus || (data.locked ? 'expired' : 'trial'),
+            planLabel: data.locked ? 'Trial Expired' : (data.licenseStatus === 'trial' ? '7-Day Free Trial' : 'Active Pro License')
+          });
         }
       }
     } catch (e) {
@@ -357,8 +410,10 @@ async function handleLoginGatewaySubmit() {
     }
   }
 
-  // Validate PIN
-  if (enteredPin === ownerPin || enteredPin === '9999') {
+  // Validate PIN (use server-validated role or offline PIN check)
+  if (serverValidatedRole) {
+    role = serverValidatedRole;
+  } else if (enteredPin === ownerPin || enteredPin === '9999') {
     role = 'owner';
   } else if (enteredPin === cashierPin || enteredPin === '0000' || !localStorage.getItem('bitedash_stall_id')) {
     role = 'cashier';
@@ -2545,21 +2600,14 @@ async function syncLicenseActivationToServer(updated) {
   if (typeof navigator !== 'undefined' && !navigator.onLine) return;
   try {
     const deviceId = await getPersistentDeviceId();
-    const supabaseHeaders = {
-      'apikey': SUPABASE_ANON_KEY,
-      'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
-      'Content-Type': 'application/json',
-      'Prefer': 'resolution=merge-duplicates'
-    };
-    await fetch(`${SUPABASE_URL}/stalls?on_conflict=stall_id`, {
+    await fetch(`${API_BASE_URL}/api/license/activate`, {
       method: 'POST',
-      headers: supabaseHeaders,
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         stall_id: updated.stallId,
         device_id: deviceId,
         license_status: updated.licenseStatus,
-        license_expires_at: new Date(updated.licenseExpiryDate).toISOString(),
-        last_synced_at: new Date().toISOString()
+        license_expires_at: new Date(updated.licenseExpiryDate).toISOString()
       })
     }).catch(() => null);
   } catch (e) {}
@@ -2575,138 +2623,59 @@ async function syncAndVerifyServerTrial(stallIdOverride) {
     return localData;
   }
 
-  const supabaseHeaders = {
-    'apikey': SUPABASE_ANON_KEY,
-    'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
-    'Content-Type': 'application/json'
-  };
-
   try {
+    const now = Date.now();
+    // If locally activated with paid/lifetime key, sync to server first
+    if ((localData.licenseStatus === 'lifetime' || localData.licenseStatus === 'active') && localData.licenseExpiryDate > now) {
+      syncLicenseActivationToServer(localData);
+    }
+
     const controller = typeof AbortController !== 'undefined' ? new AbortController() : null;
     const timeoutId = controller ? setTimeout(() => controller.abort(), 6000) : null;
 
-    const [stallRes, deviceRes] = await Promise.all([
-      fetch(`${SUPABASE_URL}/stalls?stall_id=eq.${encodeURIComponent(stallId)}&select=stall_id,license_status,license_expires_at,trial_start_date,device_id`, {
-        headers: supabaseHeaders,
-        signal: controller ? controller.signal : undefined
+    const res = await fetch(`${API_BASE_URL}/api/auth/verify`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        stallId,
+        deviceId,
+        phone: (shopConfig && shopConfig.phone) ? shopConfig.phone : '',
+        shopName: (shopConfig && shopConfig.shopName) ? shopConfig.shopName : 'Student Burger'
       }),
-      fetch(`${SUPABASE_URL}/device_trials?device_id=eq.${encodeURIComponent(deviceId)}&select=device_id,first_stall_id,trial_start_date`, {
-        headers: supabaseHeaders,
-        signal: controller ? controller.signal : undefined
-      }).catch(() => null)
-    ]);
+      signal: controller ? controller.signal : undefined
+    });
 
     if (timeoutId) clearTimeout(timeoutId);
 
-    const stallRows = stallRes && stallRes.ok ? await stallRes.json() : [];
-    const deviceRows = deviceRes && deviceRes.ok ? await deviceRes.json() : [];
-    const stall = Array.isArray(stallRows) && stallRows.length > 0 ? stallRows[0] : null;
-    const deviceTrial = Array.isArray(deviceRows) && deviceRows.length > 0 ? deviceRows[0] : null;
-
-    const now = Date.now();
-
-    // Respect active/lifetime license on server
-    if (stall && (stall.license_status === 'lifetime' || stall.license_status === 'active')) {
-      const serverExp = stall.license_expires_at ? new Date(stall.license_expires_at).getTime() : LIFETIME_EXPIRY_TS;
-      if (stall.license_status === 'lifetime' || serverExp > now) {
-        const synced = {
+    if (res && res.ok) {
+      const data = await res.json();
+      if (data && data.ok && typeof data.licenseExpiryDate === 'number') {
+        const status = data.licenseStatus || (data.locked ? 'expired' : 'trial');
+        const updated = {
           stallId,
           deviceId,
-          trialStartDate: stall.trial_start_date ? new Date(stall.trial_start_date).getTime() : localData.trialStartDate,
-          licenseExpiryDate: serverExp,
-          licenseStatus: stall.license_status,
-          planLabel: stall.license_status === 'lifetime' ? 'Lifetime Pro License' : 'Active Pro License'
+          trialStartDate: typeof data.trialStartDate === 'number' ? data.trialStartDate : localData.trialStartDate,
+          licenseExpiryDate: data.licenseExpiryDate,
+          licenseStatus: status,
+          planLabel: status === 'lifetime'
+            ? 'Lifetime Pro License'
+            : status === 'active'
+              ? 'Active Pro License'
+              : data.locked
+                ? 'Trial Expired'
+                : '7-Day Free Trial'
         };
-        saveLicenseData(synced);
+        saveLicenseData(updated);
         enforceLicenseLockUI();
-        return synced;
+        return updated;
       }
     }
-
-    // Also respect local paid activation if server hasn't caught up yet
-    if ((localData.licenseStatus === 'lifetime' || localData.licenseStatus === 'active') && localData.licenseExpiryDate > now) {
-      syncLicenseActivationToServer(localData);
-      enforceLicenseLockUI();
-      return localData;
-    }
-
-    // Determine earliest authoritative trialStartDate across account & hardware device
-    const candidates = [];
-    if (stall && stall.trial_start_date) {
-      const t = new Date(stall.trial_start_date).getTime();
-      if (!Number.isNaN(t)) candidates.push(t);
-    }
-    if (deviceTrial && deviceTrial.trial_start_date) {
-      const t = new Date(deviceTrial.trial_start_date).getTime();
-      if (!Number.isNaN(t)) candidates.push(t);
-    }
-
-    let authoritativeStart = candidates.length > 0 ? Math.min(...candidates) : null;
-
-    if (!authoritativeStart) {
-      // True first login on this account and device -> bind trialStartDate now
-      authoritativeStart = now;
-    }
-
-    const startIso = new Date(authoritativeStart).toISOString();
-    let expiryMs = authoritativeStart + SEVEN_DAYS_MS;
-
-    // Allow admin-extended trial expiry only if explicitly set beyond default 7-day window
-    if (stall && stall.license_status === 'trial' && stall.license_expires_at) {
-      const serverExp = new Date(stall.license_expires_at).getTime();
-      if (!Number.isNaN(serverExp) && serverExp > expiryMs) {
-        expiryMs = serverExp;
-      }
-    }
-
-    const isExpired = now >= expiryMs;
-    const status = isExpired ? 'expired' : 'trial';
-
-    // Persist binding to device_trials and stalls if missing or out of sync
-    const upsertHeaders = { ...supabaseHeaders, 'Prefer': 'resolution=merge-duplicates' };
-    if (!deviceTrial || !deviceTrial.trial_start_date) {
-      fetch(`${SUPABASE_URL}/device_trials?on_conflict=device_id`, {
-        method: 'POST',
-        headers: upsertHeaders,
-        body: JSON.stringify({
-          device_id: deviceId,
-          first_stall_id: stallId,
-          trial_start_date: startIso
-        })
-      }).catch(() => null);
-    }
-
-    if (!stall || !stall.trial_start_date || !stall.device_id || (isExpired && stall.license_status !== 'expired')) {
-      fetch(`${SUPABASE_URL}/stalls?on_conflict=stall_id`, {
-        method: 'POST',
-        headers: upsertHeaders,
-        body: JSON.stringify({
-          stall_id: stallId,
-          shop_name: (shopConfig && shopConfig.shopName) ? shopConfig.shopName : 'Student Burger',
-          device_id: deviceId,
-          trial_start_date: startIso,
-          license_status: status,
-          license_expires_at: new Date(expiryMs).toISOString(),
-          last_synced_at: new Date().toISOString()
-        })
-      }).catch(() => null);
-    }
-
-    const updated = {
-      stallId,
-      deviceId,
-      trialStartDate: authoritativeStart,
-      licenseExpiryDate: expiryMs,
-      licenseStatus: status,
-      planLabel: isExpired ? 'Trial Expired' : '7-Day Free Trial'
-    };
-    saveLicenseData(updated);
-    enforceLicenseLockUI();
-    return updated;
   } catch (e) {
-    enforceLicenseLockUI();
-    return localData;
+    // Offline or network error -> rely on cached localStorage state
   }
+
+  enforceLicenseLockUI();
+  return localData;
 }
 
 function validateAndActivateLicenseKey(rawKeyInput) {
@@ -2766,7 +2735,7 @@ function validateAndActivateLicenseKey(rawKeyInput) {
 }
 
 // ============================================================================
-// 13. SILENT BACKGROUND SUPABASE SYNC ENGINE
+// 13. SILENT BACKGROUND MONGODB / VERCEL SYNC ENGINE
 // ============================================================================
 const CLOUD_SYNC_DB_NAME = 'bitedash_cloud_sync_db';
 const CLOUD_SYNC_STORE_NAME = 'outbox';
@@ -3017,19 +2986,14 @@ async function sendStallHeartbeat() {
   try {
     const stallId = getOrCreateStallId();
     const shopName = (shopConfig && shopConfig.shopName) ? shopConfig.shopName : 'Student Burger';
-    const nowIso = new Date().toISOString();
-    const supabaseHeaders = {
-      'apikey': SUPABASE_ANON_KEY,
-      'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
-      'Content-Type': 'application/json'
-    };
-    await fetch(`${SUPABASE_URL}/stalls?on_conflict=stall_id`, {
+    const deviceId = localStorage.getItem(DEVICE_ID_STORAGE_KEY) || '';
+    await fetch(`${API_BASE_URL}/api/stalls/heartbeat`, {
       method: 'POST',
-      headers: { ...supabaseHeaders, 'Prefer': 'resolution=merge-duplicates' },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         stall_id: stallId,
         shop_name: shopName,
-        last_synced_at: nowIso,
+        device_id: deviceId,
         app_version: 'v0.8'
       }),
       keepalive: true
@@ -3059,7 +3023,6 @@ async function syncToCloud() {
   try {
     const stallId = getOrCreateStallId();
     const shopName = (shopConfig && shopConfig.shopName) ? shopConfig.shopName : 'Student Burger';
-    const nowIso = new Date().toISOString();
 
     let cashSales = 0;
     let onlineSales = 0;
@@ -3078,26 +3041,6 @@ async function syncToCloud() {
     const voidCount = Number((state.audit && state.audit.voidedOrdersCount) || 0);
     const reprintCount = Number((state.audit && state.audit.reprintCount) || 0);
 
-    const supabaseHeaders = {
-      'apikey': SUPABASE_ANON_KEY,
-      'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
-      'Content-Type': 'application/json'
-    };
-
-    // 1. Upsert stall status in stalls table
-    await fetch(`${SUPABASE_URL}/stalls?on_conflict=stall_id`, {
-      method: 'POST',
-      headers: { ...supabaseHeaders, 'Prefer': 'resolution=merge-duplicates' },
-      body: JSON.stringify({
-        stall_id: stallId,
-        shop_name: shopName,
-        last_synced_at: nowIso
-      }),
-      keepalive: true,
-      signal: controller ? controller.signal : undefined
-    }).catch(() => null);
-
-    // 2. Insert batch in stall_sync_logs table
     const logPayload = {
       stall_id: stallId,
       shop_name: shopName,
@@ -3113,9 +3056,9 @@ async function syncToCloud() {
       expenses_json: batch.expenses
     };
 
-    const response = await fetch(`${SUPABASE_URL}/stall_sync_logs`, {
+    const response = await fetch(`${API_BASE_URL}/api/stalls/sync`, {
       method: 'POST',
-      headers: supabaseHeaders,
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(logPayload),
       keepalive: true,
       signal: controller ? controller.signal : undefined

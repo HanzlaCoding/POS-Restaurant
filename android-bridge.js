@@ -24,6 +24,8 @@
   const PAPER_WIDTH_CHARS = 32; // Standard 58mm thermal paper (48mm printable width, Font A = 32 cols)
   const CONNECT_TIMEOUT_MS = 12000;
   const PRINT_TIMEOUT_MS = 12000;
+  const OTA_RELEASES_BASE_URL = 'https://pos-restaurant-dun.vercel.app/ota_releases/';
+  const OTA_VERSION_URL = 'https://pos-restaurant-dun.vercel.app/ota_releases/bitedash_version.json';
 
   // ESC/POS Command Constants
   const ESC = 0x1B;
@@ -692,7 +694,9 @@
 
     buildKotEscPosBytes: buildKotEscPosBytes,
     buildTestSlipEscPosBytes: buildTestSlipEscPosBytes,
-    formatTwoColumns: formatTwoColumns
+    formatTwoColumns: formatTwoColumns,
+    OTA_RELEASES_BASE_URL: OTA_RELEASES_BASE_URL,
+    OTA_VERSION_URL: OTA_VERSION_URL
   };
 
   return Bridge;

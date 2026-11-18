@@ -103,15 +103,15 @@
               <span class="font-mono text-[10px] uppercase font-bold px-2 py-0.5 rounded bg-[var(--bg-surface-elevated)] text-[var(--text-muted)] border border-[var(--border-subtle)]">ENTERPRISE</span>
             </div>
           </div>
-          <!-- Status Beacon: Subtle pill with green dot + truncated project ref -->
+          <!-- Status Beacon: Subtle pill with green dot + backend ref -->
           <div class="hidden md:flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[var(--bg-surface-elevated)] border border-[var(--border-subtle)] text-[11px] text-[var(--text-muted)] ml-2">
             <span class="relative flex h-2 w-2">
               <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
               <span class="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
             </span>
-            <span class="font-semibold text-emerald-500">Supabase Live</span>
+            <span class="font-semibold text-emerald-500">MongoDB Live</span>
             <span class="opacity-40">•</span>
-            <span class="font-mono text-[10px] opacity-75">giyfjerwb...</span>
+            <span class="font-mono text-[10px] opacity-75">Vercel API</span>
           </div>
         </div>
 
@@ -133,10 +133,10 @@
             <span id="refreshTimerLabel">Refresh (<span id="autoTimerSec">60</span>s)</span>
           </button>
 
-          <!-- Supabase SQL Utility Pill -->
-          <button onclick="openSqlModal()" title="View Supabase SQL Setup"
+          <!-- MongoDB Schema Utility Pill -->
+          <button onclick="openSqlModal()" title="View MongoDB Schema &amp; API Info"
             class="hidden lg:flex items-center gap-1 px-3 py-1.5 rounded-xl text-xs font-semibold bg-[var(--bg-surface-elevated)] hover:bg-[var(--border-subtle)] text-[var(--text-muted)] hover:text-[var(--text-primary)] border border-[var(--border-subtle)] active:scale-95 transition">
-            <span>🗄️ Supabase SQL</span>
+            <span>🍃 MongoDB API</span>
           </button>
 
           <!-- Quick Keygen Trigger Pill -->
@@ -305,7 +305,7 @@
               <tr>
                 <td colspan="8" class="py-12 text-center text-[var(--text-muted)]">
                   <div class="inline-block animate-spin mb-2">⏳</div>
-                  <div>Loading live stalls from Supabase...</div>
+                  <div>Loading live stalls from MongoDB...</div>
                 </td>
               </tr>
             </tbody>
@@ -495,28 +495,27 @@
   </div>
 
   <!-- ====================================================================== -->
-  <!-- 9. SUPABASE SQL SETUP MODAL                                           -->
+  <!-- 9. MONGODB / VERCEL API INFO MODAL                                     -->
   <!-- ====================================================================== -->
   <div id="sqlModal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/75 backdrop-blur-md p-4">
     <div class="w-full max-w-2xl rounded-3xl border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-6 shadow-2xl space-y-4">
       <div class="flex items-center justify-between pb-3 border-b border-[var(--border-subtle)]">
         <div class="flex items-center gap-2">
-          <span class="text-xl">🗄️</span>
-          <h2 class="text-base font-bold text-[var(--text-primary)]">Supabase SQL Schema &amp; RLS Policies</h2>
+          <span class="text-xl">🍃</span>
+          <h2 class="text-base font-bold text-[var(--text-primary)]">MongoDB + Vercel API Configuration</h2>
         </div>
         <button onclick="closeSqlModal()" class="h-8 w-8 rounded-full bg-[var(--bg-surface-elevated)] text-[var(--text-muted)] hover:text-[var(--text-primary)] flex items-center justify-center transition">✕</button>
       </div>
 
       <p class="text-xs text-[var(--text-muted)]">
-        If you haven't enabled table policies on Supabase yet, copy and execute this SQL script in your
-        <a href="https://supabase.com/dashboard/project/giyfjerwbkcbdtvgghjp/sql/new" target="_blank" rel="noopener" class="text-amber-400 underline font-semibold">Supabase SQL Editor</a>.
+        Ensure <code class="text-amber-400">MONGODB_URI</code> is configured in your Vercel project Environment Variables.
       </p>
 
       <pre id="sqlSetupCode" class="bg-[var(--bg-canvas)] p-4 rounded-xl font-mono text-[11px] text-emerald-400 overflow-x-auto border border-[var(--border-subtle)] max-h-72"></pre>
 
       <div class="flex justify-end gap-2 pt-2">
         <button onclick="copySqlSetup()" class="px-4 py-2 rounded-xl text-xs font-black bg-[#FBBF24] hover:bg-amber-300 text-black flex items-center gap-1.5 shadow-md transition">
-          📋 Copy SQL to Clipboard
+          📋 Copy Config Info
         </button>
       </div>
     </div>

@@ -10,7 +10,10 @@ const WWW = path.join(ROOT, 'www');
 
 const FILES_TO_COPY = [
   'index.html',
+  'admin.html',
   'android-bridge.js',
+  'printer-helper.js',
+  'sound-helper.js',
   'manifest.json',
   'sw.js',
   'style.css',
@@ -41,5 +44,6 @@ for (const file of FILES_TO_COPY) {
 }
 
 copyDirRecursive(path.join(ROOT, 'assets'), path.join(WWW, 'assets'));
+copyDirRecursive(path.join(ROOT, 'admin'), path.join(WWW, 'admin'));
 
 console.log('[prepare-www] Copied web assets to www/');

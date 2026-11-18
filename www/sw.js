@@ -48,8 +48,8 @@ self.addEventListener('fetch', (event) => {
 
   const url = new URL(event.request.url);
 
-  // Skip caching for external API requests (e.g. Supabase REST)
-  if (url.origin.includes('supabase.co')) {
+  // Skip caching for dynamic API and OTA requests
+  if (url.pathname.startsWith('/api/') || url.pathname.startsWith('/ota_releases/')) {
     return;
   }
 
