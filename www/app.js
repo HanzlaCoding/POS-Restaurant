@@ -3030,7 +3030,7 @@ async function sendStallHeartbeat() {
         stall_id: stallId,
         shop_name: shopName,
         last_synced_at: nowIso,
-        app_version: 'v2.0'
+        app_version: 'v0.8'
       }),
       keepalive: true
     }).catch(() => null);

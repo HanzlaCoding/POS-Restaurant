@@ -8,9 +8,12 @@ const fs = require('fs');
 const path = require('path');
 const { execSync } = require('child_process');
 
-const version = parseInt(process.argv[2] || '2', 10);
+const rawVersion = String(process.argv[2] || '0.8').trim().replace(/^v/i, '');
+// Extract integer version_code (e.g. "0.8" -> 8) so Android MainActivity.java (optInt("version_code") > localVersion) triggers OTA
+const parsedInt = parseInt(rawVersion.includes('.') ? rawVersion.split('.').pop() : rawVersion, 10);
+const versionCode = Number.isNaN(parsedInt) || parsedInt <= 0 ? 8 : parsedInt;
 const outDir = path.join(__dirname, 'ota_releases');
-const bundleZip = path.join(outDir, `bundle_v${version}.zip`);
+const bundleZip = path.join(outDir, `bundle_v${rawVersion}.zip`);
 const versionJsonPath = path.join(outDir, 'bitedash_version.json');
 
 // Your Supabase Storage bucket URL (Bucket name: bitedash-updates)
@@ -40,7 +43,7 @@ if (fs.existsSync(bundleZip)) {
   fs.unlinkSync(bundleZip);
 }
 
-console.log(`📦 Packaging OTA Bundle v${version}...`);
+console.log(`📦 Packaging OTA Bundle v${rawVersion} (version_code: ${versionCode})...`);
 
 // Use PowerShell Compress-Archive for zip generation on Windows
 const itemsList = filesToBundle.map(f => `'${f}'`).join(', ');
@@ -52,8 +55,9 @@ try {
 
   // Create bitedash_version.json
   const versionData = {
-    version_code: version,
-    zip_url: `${PUBLIC_STORAGE_URL}/bundle_v${version}.zip`
+    version: `v${rawVersion}`,
+    version_code: versionCode,
+    zip_url: `${PUBLIC_STORAGE_URL}/bundle_v${rawVersion}.zip`
   };
 
   fs.writeFileSync(versionJsonPath, JSON.stringify(versionData, null, 2), 'utf8');
@@ -62,7 +66,7 @@ try {
   console.log('🚀 READY TO DEPLOY:');
   console.log(`1. Supabase Storage mein jao aur bucket banao: "${BUCKET_NAME}" (Public: YES)`);
   console.log(`2. Yeh dono files "ota_releases/" folder se Supabase bucket mein upload kar do:`);
-  console.log(`   - bundle_v${version}.zip`);
+  console.log(`   - bundle_v${rawVersion}.zip`);
   console.log(`   - bitedash_version.json`);
   console.log(`3. MainActivity.java line 65 par yeh URL paste karein:`);
   console.log(`   ${PUBLIC_STORAGE_URL}/bitedash_version.json`);
